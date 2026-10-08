@@ -14,6 +14,8 @@ public actor FakeHerdrServer {
     public var snapshotDelay: Duration = .zero
     /// When true, snapshot requests are never answered.
     public var stallSnapshots = false
+    /// A recorded snapshot served instead of `herd`, for fixture and demo use.
+    public private(set) var recordedSnapshot: Data?
 
     public private(set) var requests: [String] = []
     public private(set) var snapshotCount = 0
@@ -72,6 +74,18 @@ public actor FakeHerdrServer {
 
     public func setSnapshotDelay(_ delay: Duration) { snapshotDelay = delay }
     public func setStallSnapshots(_ stall: Bool) { stallSnapshots = stall }
+
+    /// Serves a recorded snapshot instead of the built herd.
+    public func serve(_ fixture: RecordedFixture) {
+        recordedSnapshot = fixture.snapshot
+    }
+
+    private var knownPaneIDs: Set<String> {
+        guard let recordedSnapshot,
+              let object = try? JSONSerialization.jsonObject(with: recordedSnapshot) as? [String: Any],
+              let panes = object["panes"] as? [[String: Any]] else { return Set(herd.panes.map(\.id)) }
+        return Set(panes.compactMap { $0["pane_id"] as? String })
+    }
 
     // MARK: Changing the herd
 
@@ -166,8 +180,7 @@ public actor FakeHerdrServer {
         case "events.subscribe":
             let entries = params["subscriptions"] as? [[String: Any]] ?? []
             let paneIDs = Set(entries.compactMap { $0["pane_id"] as? String })
-            let known = Set(herd.panes.map(\.id))
-            guard paneIDs.isSubset(of: known) else {
+            guard paneIDs.isSubset(of: knownPaneIDs) else {
                 replyError(connection, requestID, code: "pane_not_found", message: "pane not found")
                 return
             }
@@ -193,7 +206,8 @@ public actor FakeHerdrServer {
             return
         }
         if snapshotDelay > .zero { try? await Task.sleep(for: snapshotDelay) }
-        reply(connection, requestID, ["type": "session_snapshot", "snapshot": herd.snapshotJSON()])
+        let recorded = recordedSnapshot.flatMap { try? JSONSerialization.jsonObject(with: $0) }
+        reply(connection, requestID, ["type": "session_snapshot", "snapshot": recorded ?? herd.snapshotJSON()])
     }
 
     private func subscribersChanged() {

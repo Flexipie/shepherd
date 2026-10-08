@@ -13,7 +13,9 @@ let package = Package(
         // herdr socket client, data models and the live session store. No UI.
         .target(name: "HerdrKit"),
         // A fake herdr on a real Unix socket, for tests and demo mode. No UI.
-        .target(name: "HerdrFake", dependencies: ["HerdrKit"]),
+        .target(name: "HerdrFake", dependencies: ["HerdrKit"], resources: [.copy("Fixtures")]),
+        // Dev tool: records a sanitised fixture from the running herdr (`make fixture`).
+        .executableTarget(name: "RecordFixture", dependencies: ["HerdrKit", "HerdrFake"]),
         // Module protocol, registry, config, token rules and action templates.
         .target(name: "ShepherdCore", dependencies: ["HerdrKit"]),
         // Built-in features, one folder per module.
