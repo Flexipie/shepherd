@@ -103,4 +103,29 @@ package enum UnixSocket {
             }
         }
     }
+
+    /// Reads exactly one line, one byte at a time, so nothing after the newline is consumed.
+    /// For short handshake replies that are followed by a stream on the same socket.
+    package static func readLineExact(_ fd: Int32, maxLength: Int = 64 * 1024) throws -> Data {
+        var line = Data()
+        var byte: UInt8 = 0
+        while true {
+            let count = Darwin.read(fd, &byte, 1)
+            if count == 1 {
+                if byte == 0x0A {
+                    if line.last == 0x0D { line.removeLast() }
+                    if line.isEmpty { continue }
+                    return line
+                }
+                line.append(byte)
+                if line.count > maxLength { throw HerdrError.lineTooLong }
+            } else if count == 0 {
+                throw HerdrError.disconnected
+            } else if errno == EINTR {
+                continue
+            } else {
+                throw errno == EAGAIN ? HerdrError.timeout : HerdrError.io(errno)
+            }
+        }
+    }
 }
