@@ -6,21 +6,27 @@ change has to clear. [PRD.md](PRD.md) says how it is built; this says why and ho
 ## The goal
 
 Shepherd is a real product, built to be published on GitHub for every developer who runs coding
-agents in herdr. Not a personal script, not a demo. Someone should be able to find the repo,
+agents in parallel. Not a personal script, not a demo. Someone should be able to find the repo,
 install it in a minute, and keep it running because it makes their day better.
 
-The one-line pitch: **herdr runs your herd of agents; Shepherd lets you watch and steer it from
-anywhere on your Mac.**
+The one-line pitch: **run a herd of coding agents from anywhere on your Mac. One queue for
+everything that needs you, from every agent you use.**
+
+Shepherd is a power tool for running many agents, not a companion that watches one. Think inbox
+zero for your agents, with the keyboard flow of the best Mac apps. herdr is the first and richest
+source of agents; others follow as source adapters (see [STRATEGY.md](STRATEGY.md) and
+PRD "Sources").
 
 ## Who it is for
 
-- **The parallel-agent developer.** Runs several agents at once across herdr workspaces and
+- **The parallel-agent developer.** Runs five to fifteen agents at once across workspaces and
   worktrees. Their problem is attention: which agent needs me, which one finished, which one is
   stuck, and what did each change. They work in other apps (browser, Slack, editor) between
   checks.
 - **The herdr power user.** Writes plugins and tunes `config.toml`. Wants a surface that renders
   what their plugins publish, and actions they can define without forking.
-- **The contributor.** Wants to add a module in an afternoon without understanding the whole app.
+- **The contributor.** Wants to add a module or a source in an afternoon without understanding
+  the whole app.
 
 The author's own setup (Linear tickets, daisy reviews, PR badges) is one example of what a user
 plugs in, not the product. Features must make sense for someone with a completely different
@@ -63,7 +69,7 @@ Creativity has guardrails. An idea is good for Shepherd when it:
 - helps with attention, awareness or control of agents (the core job), or makes the app a joy to
   use without getting in the way,
 - works for users other than the author,
-- fits the architecture: herdr's socket and plugin tokens as data, a module as the unit,
+- fits the architecture: sources (herdr first) and plugin tokens as data, a module as the unit,
 - costs little at idle and can be disabled.
 
 ## The quality bar for shipping
@@ -89,14 +95,20 @@ These are part of the product, not afterthoughts:
 - Install paths: a signed and notarised download, and later a Homebrew cask.
 - First run: detects herdr, explains what it found, works without a config file.
 - Updates: tagged releases with changelogs.
-- Privacy: everything stays local. Shepherd talks to the local herdr socket only; no telemetry, no
-  network calls unless a user-configured action makes one. Say so in the README.
+- Privacy: everything stays local. Shepherd talks to its local sources only; no telemetry, no
+  network calls unless the user turns on a source, action or endpoint that makes one. Say so in
+  the README.
 - Contributor docs: how to build, how to add a module, how to propose an idea.
 - A stable config format: once released, changes are additive or migrated.
 
 ## Non-goals
 
-- Replacing herdr or duplicating its terminal UI. Shepherd is a companion.
-- Collecting agent state on its own (hooks, terminal scraping). herdr owns state.
-- Being a general dashboard for other services. Integrations arrive as herdr plugin tokens.
+- Replacing herdr or any agent's own UI. Shepherd sits on top of them.
+- Scraping terminals. A source reads state from an API (herdr's socket, a cloud agent API) or,
+  when an agent has no API, from hooks. Hook code lives only inside that source's adapter; the
+  rest of the app never knows how a source gets its state.
+- Being a general dashboard for other services. No music, payments or LLM chat. Integrations
+  arrive as plugin tokens or as agent sources.
+- Matching other apps on the number of agents supported. A few sources done well beat many done
+  shallowly.
 - Cross-platform. macOS first and only, done properly.
