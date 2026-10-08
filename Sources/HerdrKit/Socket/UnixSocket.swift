@@ -62,7 +62,7 @@ package enum UnixSocket {
         setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, size)
     }
 
-    /// Writes every byte on a blocking socket.
+    /// Writes every byte.
     package static func writeAll(_ fd: Int32, _ data: Data) throws {
         try data.withUnsafeBytes { raw in
             guard var pointer = raw.baseAddress else { return }
@@ -70,8 +70,15 @@ package enum UnixSocket {
             while remaining > 0 {
                 let written = Darwin.write(fd, pointer, remaining)
                 if written < 0 {
-                    if errno == EINTR { continue }
-                    throw errno == EAGAIN ? HerdrError.timeout : HerdrError.disconnected
+                    let code = errno
+                    if code == EINTR { continue }
+                    // A non-blocking socket with a full buffer: wait for room. On a blocking
+                    // socket EAGAIN means the send timeout expired.
+                    if code == EAGAIN, fcntl(fd, F_GETFL) & O_NONBLOCK != 0 {
+                        var poller = pollfd(fd: fd, events: Int16(POLLOUT), revents: 0)
+                        if Darwin.poll(&poller, 1, 2000) > 0 { continue }
+                    }
+                    throw code == EAGAIN ? HerdrError.timeout : HerdrError.disconnected
                 }
                 remaining -= written
                 pointer += written
