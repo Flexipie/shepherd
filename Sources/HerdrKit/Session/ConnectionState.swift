@@ -21,4 +21,11 @@ public struct SessionUpdate: Sendable, Equatable {
     public let compatibility: Compatibility
     /// Transitions observed by the snapshot that produced this update.
     public let transitions: [Transition]
+
+    package init(session: Session, connection: ConnectionState, compatibility: Compatibility, transitions: [Transition]) {
+        self.session = session
+        self.connection = connection
+        self.compatibility = compatibility
+        self.transitions = transitions
+    }
 }

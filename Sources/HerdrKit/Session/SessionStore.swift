@@ -45,7 +45,7 @@ public final class SessionStore {
         try await client.focusAgent(paneID: paneID)
     }
 
-    func apply(_ update: SessionUpdate) {
+    package func apply(_ update: SessionUpdate) {
         if session != update.session { session = update.session }
         if needsYou != update.session.needsYou { needsYou = update.session.needsYou }
         if workingCount != update.session.workingCount { workingCount = update.session.workingCount }

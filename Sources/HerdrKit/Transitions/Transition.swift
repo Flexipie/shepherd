@@ -41,4 +41,15 @@ public struct Transition: Sendable, Equatable {
     public let missedChanges: UInt64
     /// Working turns completed between the two snapshots.
     public let completedTurns: UInt64
+
+    package init(paneID: String, kind: Kind, from: AgentStatus?, to: AgentStatus?, observedAt: Date,
+                 missedChanges: UInt64 = 0, completedTurns: UInt64 = 0) {
+        self.paneID = paneID
+        self.kind = kind
+        self.from = from
+        self.to = to
+        self.observedAt = observedAt
+        self.missedChanges = missedChanges
+        self.completedTurns = completedTurns
+    }
 }

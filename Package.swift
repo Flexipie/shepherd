@@ -23,5 +23,6 @@ let package = Package(
         // The app: menu bar item, panel, notch pill, settings.
         .executableTarget(name: "Shepherd", dependencies: ["ShepherdModules", "ShepherdCore", "HerdrKit"]),
         .testTarget(name: "HerdrKitTests", dependencies: ["HerdrKit", "HerdrFake"]),
+        .testTarget(name: "ShepherdCoreTests", dependencies: ["ShepherdCore", "ShepherdModules", "HerdrKit"]),
     ]
 )
