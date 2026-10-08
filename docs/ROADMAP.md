@@ -5,32 +5,23 @@ Open work only. When something ships, move it to the end of [SHIPPED.md](SHIPPED
 Each milestone ends with something usable and a "done when" check. Ideas that are not decided
 stay in [IDEAS.md](IDEAS.md).
 
-## Milestone 0: foundations
+## To confirm against a real herdr
 
-- CI on GitHub Actions (macOS runner): `make build` and `make test` on every push and PR.
-- Fixture recorder script: captures `session.snapshot` and a stretch of the event stream, and
-  rewrites paths, titles and ids as it goes, so fixtures are sanitised by construction.
-- `HerdrFake`: a fake herdr that serves fixtures and scripted event streams (including
-  `events_lost` and dropped connections) over a real Unix socket.
+Found while building milestone 1 and not yet checked, because each needs changes to a live
+session. Confirm, then record the answer in PRD "What herdr gives us" or "Data flow".
 
-Done when: CI is green and a test talks to `HerdrFake` over a socket.
-
-## Milestone 1: live connection, menu bar and notch base
-
-- `HerdrKit` client: request and subscription connections, lenient models for the snapshot
-  (workspaces, tabs, panes, agents, workspace and pane tokens, presentation fields) and the events
-  Shepherd uses, and a protocol and version check.
-- `SessionStore`: invalidate, coalesce, serialized refresh, `events_lost` and reconnect handling
-  as in PRD "Data flow", and a disconnected state.
-- Transition tracking: diff snapshots (status, `state_change_seq`, `completion_seq`), record when
-  Shepherd observed each change, derive time in state.
-- Settle the `ShepherdModule` protocol by building the first two modules below.
-- Status item with live counts (working, needs you), disconnected state when herdr is not running.
-- Notch panel base: appears when an agent needs you, shows which one, click focuses its pane
-  (which marks it seen) and brings the terminal forward. Top-bar fallback without a notch.
-
-Done when: against a real herdr, a blocked agent shows in the notch within a second, clicking
-jumps to it, and quitting and restarting herdr shows disconnected and then recovers.
+- Does closing a subscribed pane end the whole subscription? If so, treat an EOF within about a
+  second of `pane_closed` as a routine resubscribe, without flashing "stale".
+- Does `agent.focus` bump `state_change_seq`?
+- Is there a limit on subscription entries (try 200+ panes)?
+- Does herdr create its socket file before it listens? If so, retry `ECONNREFUSED` once after
+  250 ms instead of waiting for the backoff.
+- When the user looks at a finished pane in herdr's own UI, does the API's `done` clear, or only
+  after `agent.focus`? herdr tracks "seen" per client, so the menu bar count could lag.
+- Clicking the pill or a menu entry: herdr focuses the pane and the terminal comes forward. The
+  `agent.focus` request is tested against the fake; the click and the terminal activation have
+  not been tried on a real blocked agent yet.
+- The floating fallback bar on a display without a notch, and the pill on a second display.
 
 ## Milestone 2: the panel
 

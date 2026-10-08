@@ -47,4 +47,11 @@ make build   # swift build
 make test    # swift test
 make app     # build/Shepherd.app (release, ad-hoc signed)
 make run     # app, then relaunch it
+make fixture NAME=basic SECONDS=10   # record a sanitised fixture from the running herdr
+SHEPHERD_LIVE=1 swift test --filter LiveHerdr   # read-only checks against the real herdr
+swift run FakeHerdr /tmp/shepherd-fake.sock     # fake herdr driven from stdin; point the app at it
+                                                # with HERDR_SOCKET_PATH=/tmp/shepherd-fake.sock
 ```
+
+Check the UI against the fake before your own herdr: it lets you block, finish, add and remove
+agents and stop herdr without touching real work. Review a recorded fixture before committing it.

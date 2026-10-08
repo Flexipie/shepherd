@@ -46,7 +46,8 @@ app-owned hook server.
 | Target | Role |
 | --- | --- |
 | `HerdrKit` | Socket client, lenient Codable models, `SessionStore`, transition tracking. No UI. Usable on its own. |
-| `HerdrFake` | Planned. A fake herdr server that replays sanitised fixtures over a real Unix socket. Used by tests and by demo mode. No UI. |
+| `HerdrFake` | A fake herdr on a real Unix socket: a scriptable herd or a recorded fixture, with herdr's quirks (one request per connection, subscription validation, both event spellings, `events_lost`). Also the `Sanitiser` for fixtures. Used by tests and later demo mode. No UI. |
+| `RecordFixture`, `FakeHerdr` | Dev tools: `make fixture` records a sanitised fixture; `swift run FakeHerdr` runs a fake driven from stdin. |
 | `ShepherdCore` | `ShepherdModule` protocol, module registry, config loading and reload, token style rules, the action model. |
 | `ShepherdModules` | Built-in features, one folder each, listed in `BuiltinModules.all`. |
 | `Shepherd` | The app: status item, panel, notch panel, palette, notifications, settings. Thin. |
@@ -86,13 +87,23 @@ herdr speaks newline-delimited JSON over a Unix socket (`~/.config/herdr/herdr.s
 `HERDR_SOCKET_PATH`, or `sessions/<name>/herdr.sock` for `HERDR_SESSION`). Each request is one line
 `{"id","method","params"}`; each response echoes the `id`.
 
-1. **Subscription connection.** One long-lived connection sends `events.subscribe` for the
-   workspace, tab, pane lifecycle and `pane.agent_status_changed` events, without pane filters (a
-   filter naming a missing pane makes herdr reject the whole request and close the connection).
-   Wait for `subscription_started`; later lines are pushed events. There is no general output
-   stream to subscribe to (only `pane.output_matched` for a pattern), and that is fine: a surface
-   that shows output (hover peek, the notch pill) reads it on demand while visible.
-2. **Request connection.** A separate connection for request/response calls.
+1. **Subscription connection.** One long-lived connection sends `events.subscribe` with every
+   workspace, worktree, tab and pane lifecycle type, plus one `pane.agent_status_changed` entry
+   per pane: herdr requires a `pane_id` for status changes, and lifecycle events alone do not
+   report them. One unknown pane makes herdr reject the whole request (`pane_not_found`) and close
+   the connection, so the pane set always comes from the latest snapshot. With nothing open,
+   Shepherd starts a global-only subscription (it cannot fail on a pane), then upgrades to the
+   full set. When panes change it starts the new subscription before closing the old one, so
+   there is no window without events; a rejected upgrade keeps the old one and refreshes. All of
+   this lives in `SubscriptionPlanner`, a pure reducer. Wait for `subscription_started`; later
+   lines are pushed events. Lifecycle events arrive as `workspace_focused` (underscores, with
+   `data.type`), per-pane ones as `pane.agent_status_changed` (dots); Shepherd normalises both.
+   There is no general output stream to subscribe to (only `pane.output_matched` for a pattern),
+   and that is fine: a surface that shows output (hover peek, the notch pill) reads it on demand
+   while visible.
+2. **Requests.** herdr serves one request per connection (a second request on the same connection
+   gets EOF). Every call connects, writes one line, reads one line and closes, so calls can run in
+   parallel and there is no shared request connection to manage.
 3. **Events are invalidation, not state.** herdr gives no shared sequence between snapshots and
    events, and orders events only within one subscription entry. Shepherd does not patch its cache
    from event payloads. An event marks state dirty; a coalesced (about 100 ms) `session.snapshot`
@@ -100,8 +111,10 @@ herdr speaks newline-delimited JSON over a Unix socket (`~/.config/herdr/herdr.s
 4. **Recovery.** If the subscriber falls behind, herdr sends an error with the subscription's
    request id and `error.code: "events_lost"`, then closes that connection. On that, or on any
    dropped connection: mark state stale, resubscribe, wait for `subscription_started`, take a
-   fresh snapshot. If herdr is not running, show a disconnected state and retry with backoff
-   (no faster than the idle budget allows once it has been gone a while).
+   fresh snapshot. If herdr is not running, show a disconnected state, watch the socket's folder
+   so a returning herdr is picked up at once, and retry with backoff (0.5 s growing to a 60 s
+   cap). Retries faster than once a minute in the first minute after a disconnect are the one
+   documented exception to the idle budget.
 5. **Transitions.** After each snapshot, `HerdrKit` diffs it against the previous one (status and
    seq fields) and emits transitions with the time Shepherd observed them. Time in state, the
    needs-you queue, notifications and the outcome line all read from these transitions.
@@ -161,9 +174,13 @@ A module is a main-actor class conforming to `ShepherdModule`, in
 - notch content (what the pill shows, and when it should appear),
 - actions (see "Actions").
 
-Modules receive the current `Session`, its transitions and the config; they do not open their own
-herdr connections. The protocol is settled in milestone 1 by building the first two real modules
-(menu bar status and notch), not designed ahead of them.
+Modules get a `ModuleContext`: the `SessionStore` (session, needs-you, connection state, latest
+transitions), a `Presence` (whether herdr's terminal is frontmost) and `AgentActions` (jump to an
+agent). They do not open their own herdr connections. Contributions are value types
+(`StatusContribution`, `NotchItem`) computed from observable state; the app reads them inside
+observation tracking, so a surface redraws only when what it shows changes. The protocol grew
+from the first two real modules (`StatusModule`, `NotchModule`); panel views are added in
+milestone 2.
 
 ### Adding a module
 
