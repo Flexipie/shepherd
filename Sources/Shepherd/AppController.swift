@@ -11,6 +11,7 @@ final class AppController {
     private let activator: TerminalActivator
     private let modules: [any ShepherdModule]
     private var statusItem: StatusItemController?
+    private var notch: NotchController?
 
     init() {
         activator = TerminalActivator(store: store, presence: presence)
@@ -20,6 +21,7 @@ final class AppController {
 
     func start() {
         statusItem = StatusItemController(store: store, modules: modules, actions: activator)
+        notch = NotchController(modules: modules, actions: activator)
         store.start()
     }
 }

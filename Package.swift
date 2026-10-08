@@ -16,6 +16,8 @@ let package = Package(
         .target(name: "HerdrFake", dependencies: ["HerdrKit"], resources: [.copy("Fixtures")]),
         // Dev tool: records a sanitised fixture from the running herdr (`make fixture`).
         .executableTarget(name: "RecordFixture", dependencies: ["HerdrKit", "HerdrFake"]),
+        // Dev tool: a fake herdr driven from stdin, for trying Shepherd without real agents.
+        .executableTarget(name: "FakeHerdr", dependencies: ["HerdrFake"]),
         // Module protocol, registry, config, token rules and action templates.
         .target(name: "ShepherdCore", dependencies: ["HerdrKit"]),
         // Built-in features, one folder per module.
