@@ -21,15 +21,17 @@ Keep the root to `README.md` and `CLAUDE.md`. A new doc goes under `docs/` and g
 
 ## What this is
 
-A native macOS menu bar and notch companion for herdr, Swift 6 + SwiftUI/AppKit, built with SwiftPM
-(no Xcode project). herdr's socket API is the only data source; Shepherd never scrapes terminals or
-installs agent hooks.
+A native macOS menu bar and notch app for running a herd of coding agents, Swift 6 +
+SwiftUI/AppKit, built with SwiftPM (no Xcode project). Agents come from sources; herdr's socket API
+is the first and, until public 0.1, the only one. Shepherd never scrapes terminals. Hooks, for a
+future source with no API, live only inside that source's adapter (`docs/PRD.md`, "Sources").
 
 ## Rules
 
 - No third-party dependencies. Apple frameworks only. Ask before adding one.
 - Swift 6 language mode with strict concurrency. UI on the main actor; I/O off it.
 - `HerdrKit` has no UI imports and no knowledge of Shepherd. It must stay usable on its own.
+- Modules see the source-neutral herd model, never `HerdrKit` or other source types.
 - A feature is a module under `Sources/ShepherdModules/<Name>/`, registered in
   `BuiltinModules.all`. Do not grow a central switch or enum of features.
 - Decode herdr JSON leniently: ignore unknown fields, tolerate missing optional ones. herdr adds

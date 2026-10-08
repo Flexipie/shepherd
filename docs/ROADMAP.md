@@ -24,6 +24,11 @@ Done when: CI is green and a test talks to `HerdrFake` over a socket.
   as in PRD "Data flow", and a disconnected state.
 - Transition tracking: diff snapshots (status, `state_change_seq`, `completion_seq`), record when
   Shepherd observed each change, derive time in state.
+- Herd model and source seam (PRD "Sources"): a small source-neutral model of agents, states,
+  transitions and capabilities in `ShepherdCore`, with herdr as the only source adapting
+  `HerdrKit` to it. Modules see the herd model, never herdr types.
+- Persist observed transitions in a small local ring buffer, so the timeline, recap and
+  attention ideas have history from day one.
 - Settle the `ShepherdModule` protocol by building the first two modules below.
 - Status item with live counts (working, needs you), disconnected state when herdr is not running.
 - Notch panel base: appears when an agent needs you, shows which one, click focuses its pane
@@ -67,6 +72,9 @@ not want, and every one of them can be acted on without switching apps.
 - First run: detects herdr, explains what it found, works with no config file.
 - Demo mode: a built-in fake herd (from `HerdrFake`) so people can try Shepherd without herdr,
   and so the README GIF is reproducible.
+- The sheepdog: a mascot that sleeps when the herd is idle, perks up while agents work and herds
+  the ones that need you toward the notch. Light at idle, honours Reduce Motion, can be turned
+  off. It is the README GIF.
 - README that sells it in one screen: GIF, pitch, one-command install, the privacy statement.
 - Idle budget check (`make perf`): fails if idle CPU or memory exceed the PRD budget.
 - Tagged release with a changelog.
@@ -84,7 +92,18 @@ Done when: a stranger installs it from the README in a minute and it works with 
 - Spike: App Intents for Spotlight and Shortcuts under the SwiftPM build. Ship them if the build
   works without an Xcode project; otherwise write down why and park it.
 
+## Milestone 6: a second source
+
+- Claude Code as a source without herdr, through its hooks, contained in its own adapter (PRD
+  "Sources"). Capabilities it cannot offer are hidden, not faked.
+- First run detects which sources are present and explains each.
+- Demo mode covers both sources.
+
+Done when: someone who has never installed herdr runs three Claude Code sessions and works their
+needs-you queue from Shepherd.
+
 ## Later
 
 - Settings window.
-- Mascot with idle animations, sounds you can replace, weekly recap.
+- Cloud agent sources through their APIs (opt-in, network use stated plainly).
+- Sounds you can replace, weekly recap.

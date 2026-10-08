@@ -25,6 +25,13 @@ know it.
 - **Away mode.** When the Mac has been locked for N minutes, forward needs-you to your phone
   through a user-configured action (for example a self-hosted ntfy topic or a Pushover webhook).
   Nothing leaves the Mac unless the user sets it up.
+- **Fewer interruptions at the source.** Shepherd sees every approval. When the same one keeps
+  coming back ("you approved `swift test` 14 times this week"), it suggests adding it to that
+  agent's allowlist, with the exact config line. Calm by design: fewer interruptions, not just
+  better ones.
+- **Attention budget.** "Minutes agents waited on you" as the one number a user watches (and the
+  product's north star). When answer times keep climbing, gently suggest running fewer agents at
+  once. Shown in the panel and recap, never as a notification.
 
 ## Awareness
 
@@ -43,6 +50,9 @@ know it.
   while hovered, so it costs nothing at idle.
 - **Weekly recap.** Agent-hours, workspaces finished, busiest day, and how long agents waited on
   you. Local only, and only in the recap, never as a nag.
+- **Day card.** Export the herd timeline as an image: a day of parallel agents as coloured bars,
+  plus agent-hours and "waited on me: 12 min". Project names optional. Made to be shared; it shows
+  parallelism, which a single-session recap cannot.
 
 ## Control
 
@@ -61,6 +71,11 @@ know it.
 - **Rules.** Small JSON rules: "when <state or token condition>, run <action>", for example "when
   `review` becomes `changes_requested` and the agent is done, prompt it to address the review".
   Off by default, every automatic send logged and visible, one switch pauses all rules.
+- **Review inbox.** "Done" is where the human's work starts. A lane of finished workspaces with
+  diff stats and one key each to open in the editor, run tests, or hand off to a PR action.
+  Open question: diff data from plugin tokens only, or may Shepherd read git directly?
+- **Prompt snippets.** Reusable prompts in the palette with placeholders (`{branch}`,
+  `{token.ticket}`), sent to one agent or broadcast.
 
 ## Intelligence
 
@@ -90,8 +105,8 @@ Local first; see PRD "Intelligence" for the rules every idea here follows.
 
 ## Personality
 
-- **A sheepdog mascot.** Sleeps when the herd is idle, perks up when an agent works, runs to the
-  notch and barks (softly, optionally) when one needs you.
+- **Sheepdog extras.** The base mascot is on the roadmap (0.1). Beyond it: a soft optional bark,
+  the dog rounding up the herd strip dots, a happy run when the queue hits zero.
 - **Sounds you can replace.** Drop files into a folder to override each sound.
 - **Spatial sounds.** Pan each agent's sound left or right by its workspace position, so you hear
   which one finished. Off by default.
@@ -107,6 +122,13 @@ Local first; see PRD "Intelligence" for the rules every idea here follows.
 - **Themes.** Colour sets that match popular terminal themes.
 - **Multiple herdr sessions and remote machines,** shown side by side. herdr already knows saved
   machines (`herdr --machine`), so this may need little more than one store per socket.
+- **Cloud agent sources.** Background and cloud agents (Claude Code on the web, Codex cloud,
+  Copilot coding agent, Cursor background agents) in the same queue as local ones, through their
+  APIs. Opt-in, the first sources that use the network. A candidate for a paid tier.
+- **iPhone and Watch companion.** Live Activity with herd state, push when an agent is blocked,
+  answer approvals from the Lock Screen. Needs a sync path (the user's own iCloud, end-to-end
+  encrypted). A candidate for a paid tier; Coucou already ships a free one, so it must be clearly
+  better at many agents, not a copy.
 
 ## Contributors
 
