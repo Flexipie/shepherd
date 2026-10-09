@@ -14,7 +14,7 @@ public actor SessionEngine {
 
     var planner = SubscriptionPlanner()
     var subscriptions: [Int: EventSubscription] = [:]
-    var tracker = TransitionTracker()
+    var tracker: TransitionTracker
     var connection = ConnectionState.connecting
     var compatibility = Compatibility.matched
     var session = Session.empty
@@ -34,7 +34,9 @@ public actor SessionEngine {
     var dirWatcher: SocketDirWatcher?
 
     public init(client: HerdrClient = HerdrClient(), debounce: Duration = .milliseconds(100),
-                subscribeTimeout: Duration = .seconds(2), now: @escaping @Sendable () -> Date = { Date() }) {
+                subscribeTimeout: Duration = .seconds(2), seeds: [TransitionTracker.Seed] = [],
+                now: @escaping @Sendable () -> Date = { Date() }) {
+        self.tracker = TransitionTracker(seeds: seeds)
         self.client = client
         self.debounce = debounce
         self.subscribeTimeout = subscribeTimeout

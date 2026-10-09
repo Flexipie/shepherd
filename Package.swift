@@ -20,11 +20,14 @@ let package = Package(
         .executableTarget(name: "FakeHerdr", dependencies: ["HerdrFake"]),
         // Module protocol, registry, config, token rules and action templates.
         .target(name: "ShepherdCore", dependencies: ["HerdrKit"]),
+        // herdr as a source: adapts HerdrKit to the herd model. The only target that sees both.
+        .target(name: "HerdrSource", dependencies: ["HerdrKit", "ShepherdCore"]),
         // Built-in features, one folder per module.
         .target(name: "ShepherdModules", dependencies: ["ShepherdCore", "HerdrKit"]),
         // The app: menu bar item, panel, notch pill, settings.
         .executableTarget(name: "Shepherd", dependencies: ["ShepherdModules", "ShepherdCore", "HerdrKit"]),
         .testTarget(name: "HerdrKitTests", dependencies: ["HerdrKit", "HerdrFake"]),
+        .testTarget(name: "HerdrSourceTests", dependencies: ["HerdrSource", "HerdrKit", "HerdrFake", "ShepherdCore"]),
         .testTarget(name: "ShepherdCoreTests", dependencies: ["ShepherdCore", "ShepherdModules", "HerdrKit"]),
     ]
 )

@@ -93,4 +93,23 @@ import Testing
         #expect(session.needsYou.map(\.id) == ["c", "a", "b"])
         #expect(session.workingCount == 0)
     }
+
+    @Test func seedRestoresAnEarlierExactTimeWhenNothingChanged() {
+        let earlier = Date(timeIntervalSince1970: 500)
+        var tracker = TransitionTracker(seeds: [
+            .init(paneID: "w1:p1", terminalID: "t1", stateChangeSeq: 4, since: StateSince(earlier, .exact)),
+            .init(paneID: "w1:p2", terminalID: "t1", stateChangeSeq: 4, since: StateSince(earlier, .exact)),
+        ])
+        _ = tracker.apply(snap(agent(.blocked, seq: 4), agent("w1:p2", .blocked, seq: 6)), at: t0, continuity: .afterGap)
+        #expect(tracker.since("w1:p1") == StateSince(earlier, .exact))
+        #expect(tracker.since("w1:p2") == StateSince(t0, .noLaterThan), "seq moved on, so the seed is stale")
+    }
+
+    @Test func transitionsCarryTheirMarker() {
+        var tracker = TransitionTracker()
+        _ = tracker.apply(snap(agent(.working, seq: 3)), at: t0, continuity: .continuous)
+        let transition = tracker.apply(snap(agent(.done, seq: 4)), at: t1, continuity: .continuous).first
+        #expect(transition?.terminalID == "t1")
+        #expect(transition?.stateChangeSeq == 4)
+    }
 }
