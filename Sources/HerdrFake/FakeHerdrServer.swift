@@ -119,6 +119,29 @@ public actor FakeHerdrServer {
         emit("pane_created", data: ["pane_id": pane.id, "workspace_id": pane.workspaceID])
     }
 
+    /// Adds a workspace, or renames it if it exists.
+    public func setWorkspace(_ id: String, label: String) {
+        if let index = herd.workspaces.firstIndex(where: { $0.id == id }) {
+            herd.workspaces[index].label = label
+            emit("workspace_renamed", data: ["workspace_id": id])
+        } else {
+            herd.workspaces.append(FakeHerd.Workspace(id: id, label: label))
+            emit("workspace_created", data: ["workspace_id": id])
+        }
+    }
+
+    /// Sets a token on a workspace or a pane (an id with a `:` is a pane); an empty value removes
+    /// it, as `report_metadata` does.
+    public func setToken(_ target: String, _ key: String, _ value: String) {
+        if let index = herd.panes.firstIndex(where: { $0.id == target }) {
+            herd.panes[index].tokens[key] = value.isEmpty ? nil : value
+            emit("pane_updated", data: ["pane_id": target])
+        } else if let index = herd.workspaces.firstIndex(where: { $0.id == target }) {
+            herd.workspaces[index].tokens[key] = value.isEmpty ? nil : value
+            emit("workspace_metadata_updated", data: ["workspace_id": target])
+        }
+    }
+
     public func removePane(_ paneID: String) {
         herd.panes.removeAll { $0.id == paneID }
         emit("pane_closed", data: ["pane_id": paneID])

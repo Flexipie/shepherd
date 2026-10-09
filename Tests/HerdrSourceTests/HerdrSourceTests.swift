@@ -112,6 +112,23 @@ import Testing
         await fake.stop()
     }
 
+    @Test func tokenAndLabelChangesArrive() async throws {
+        let fake = FakeHerdrServer()
+        try await fake.start()
+        let (store, _) = running(fake)
+        try await until(store) { $0.overallState == .live }
+        await fake.setToken("w1", "pr", "#9")
+        try await until(store) { $0.projects.first?.tokens == ["pr": "#9"] }
+        await fake.setToken("w2:p1", "summary", "done soon")
+        try await until(store) { $0.agents.first { $0.id.local == "w2:p1" }?.tokens == ["summary": "done soon"] }
+        await fake.setToken("w1", "pr", "")
+        try await until(store) { $0.projects.first?.tokens == [:] }
+        await fake.setWorkspace("w3", label: "docs")
+        try await until(store) { $0.projects.map(\.name) == ["workspace 1", "workspace 2", "docs"] }
+        await store.stop()
+        await fake.stop()
+    }
+
     @Test func disconnectedWhenHerdrIsMissing() async throws {
         let fake = FakeHerdrServer()
         let (store, _) = running(fake)
