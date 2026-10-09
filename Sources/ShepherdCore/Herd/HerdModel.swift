@@ -49,28 +49,63 @@ public struct AgentID: Hashable, Sendable, Codable, CustomStringConvertible {
     public var description: String { "\(source):\(local)" }
 }
 
+/// A project's identity: its source plus the source's own id for it (for herdr, a workspace).
+public struct ProjectID: Hashable, Sendable, Codable, CustomStringConvertible {
+    public let source: SourceID
+    public let local: String
+
+    public init(source: SourceID, local: String) {
+        self.source = source
+        self.local = local
+    }
+
+    public var description: String { "\(source):\(local)" }
+}
+
+/// A place agents work in, such as a herdr workspace. A project without agents is still shown:
+/// it is somewhere the user can go.
+public struct HerdProject: Sendable, Equatable, Identifiable {
+    public let id: ProjectID
+    public let name: String
+    /// The project's own tokens; an agent's tokens are on the agent.
+    public let tokens: [String: String]
+    /// The source's own UI has this project focused.
+    public let isFocusedInSource: Bool
+
+    public init(id: ProjectID, name: String, tokens: [String: String] = [:], isFocusedInSource: Bool = false) {
+        self.id = id
+        self.name = name
+        self.tokens = tokens
+        self.isFocusedInSource = isFocusedInSource
+    }
+}
+
 /// One agent as every surface sees it.
 public struct HerdAgent: Sendable, Equatable, Identifiable {
     public let id: AgentID
     /// The kind of agent, such as `claude` or `codex`, when the source knows it.
     public let kind: String?
     public let name: String
-    /// The workspace or project the agent works in.
+    /// The project the agent works in, when its source has projects.
+    public let projectID: ProjectID?
+    /// The project's name, for display.
     public let project: String
     public let status: HerdStatus
     /// A source- or plugin-provided label for the current state, if any.
     public let statusLabel: String?
     public let since: Since?
+    /// The agent's own tokens; its project's are on the project.
     public let tokens: [String: String]
     /// The source's own UI has this agent focused, so the user may be looking at it.
     public let isFocusedInSource: Bool
 
-    public init(id: AgentID, kind: String? = nil, name: String, project: String = "", status: HerdStatus,
-                statusLabel: String? = nil, since: Since? = nil, tokens: [String: String] = [:],
+    public init(id: AgentID, kind: String? = nil, name: String, projectID: ProjectID? = nil, project: String = "",
+                status: HerdStatus, statusLabel: String? = nil, since: Since? = nil, tokens: [String: String] = [:],
                 isFocusedInSource: Bool = false) {
         self.id = id
         self.kind = kind
         self.name = name
+        self.projectID = projectID
         self.project = project
         self.status = status
         self.statusLabel = statusLabel
@@ -132,19 +167,24 @@ public struct SourceCapabilities: OptionSet, Sendable, Hashable {
     public static let approve = SourceCapabilities(rawValue: 1 << 4)
     public static let startAgent = SourceCapabilities(rawValue: 1 << 5)
     public static let createWorktree = SourceCapabilities(rawValue: 1 << 6)
+    public static let focusProject = SourceCapabilities(rawValue: 1 << 7)
 }
 
 /// Everything a source publishes at once.
 public struct SourceUpdate: Sendable, Equatable {
     public let agents: [HerdAgent]
+    /// The source's projects, in the source's own order.
+    public let projects: [HerdProject]
     public let state: SourceState
     /// Short lines about the source for the menu, such as its version or a compatibility warning.
     public let statusLines: [String]
     /// Transitions observed since the previous update.
     public let transitions: [HerdTransition]
 
-    public init(agents: [HerdAgent], state: SourceState, statusLines: [String] = [], transitions: [HerdTransition] = []) {
+    public init(agents: [HerdAgent], projects: [HerdProject] = [], state: SourceState, statusLines: [String] = [],
+                transitions: [HerdTransition] = []) {
         self.agents = agents
+        self.projects = projects
         self.state = state
         self.statusLines = statusLines
         self.transitions = transitions

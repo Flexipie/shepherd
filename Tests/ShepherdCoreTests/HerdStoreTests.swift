@@ -23,6 +23,38 @@ import Testing
         #expect(store.overallState == .live)
     }
 
+    @Test func mergesProjectsInSourceOrder() {
+        let store = HerdStore()
+        store.add(StubSource("herdr"))
+        store.add(StubSource("other"))
+        store.apply(SourceUpdate(agents: [herdAgent("other", "a", .working, projectID: "x")],
+                                 projects: [herdProject("other", "x")], state: .live), from: "other")
+        store.apply(SourceUpdate(agents: [herdAgent("herdr", "a", .working, projectID: "w2"), herdAgent("herdr", "b", .done, projectID: "w1")],
+                                 projects: [herdProject("herdr", "w2"), herdProject("herdr", "w1"), herdProject("herdr", "empty")],
+                                 state: .live), from: "herdr")
+        #expect(store.projects.map(\.id.description) == ["herdr:w2", "herdr:w1", "herdr:empty", "other:x"])
+        #expect(store.agents(in: ProjectID(source: "herdr", local: "w1")).map(\.id.local) == ["b"])
+        #expect(store.agents(in: ProjectID(source: "herdr", local: "empty")).isEmpty)
+        #expect(store.agents(in: ProjectID(source: "other", local: "x")).map(\.id.description) == ["other:a"])
+    }
+
+    @Test func focusProjectRespectsCapabilities() async throws {
+        let store = HerdStore()
+        let herdr = StubSource("herdr")
+        herdr.capabilities = [.focus, .focusProject]
+        let other = StubSource("other")
+        store.add(herdr)
+        store.add(other)
+        try await store.focusProject(ProjectID(source: "herdr", local: "w1"))
+        #expect(herdr.focusedProjects == [ProjectID(source: "herdr", local: "w1")])
+        await #expect(throws: AgentSourceError.unsupported(.focusProject)) {
+            try await store.focusProject(ProjectID(source: "other", local: "x"))
+        }
+        await #expect(throws: AgentSourceError.unknownSource("nope")) {
+            try await store.focusProject(ProjectID(source: "nope", local: "x"))
+        }
+    }
+
     @Test func overallStateReportsTheFirstProblem() {
         let store = HerdStore()
         store.add(StubSource("herdr"))

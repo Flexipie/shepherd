@@ -10,7 +10,7 @@ public final class HerdrSource: AgentSource {
 
     public let id = HerdrSource.sourceID
     public let displayName = "herdr"
-    public let capabilities: SourceCapabilities = [.focus]
+    public let capabilities: SourceCapabilities = [.focus, .focusProject]
     public let updates: AsyncStream<SourceUpdate>
 
     private let continuation: AsyncStream<SourceUpdate>.Continuation
@@ -54,6 +54,11 @@ public final class HerdrSource: AgentSource {
         if activatesTerminal { activateTerminal() }
     }
 
+    public func focusProject(_ project: ProjectID) async throws {
+        try await client.focusWorkspace(id: project.local)
+        if activatesTerminal { activateTerminal() }
+    }
+
     /// The terminal apps hosting an attached herdr client.
     public func hostApplicationPIDs() -> [pid_t] {
         TerminalLocator.hostingApps(
@@ -72,16 +77,18 @@ public final class HerdrSource: AgentSource {
 
     func adapt(_ update: SessionUpdate) -> SourceUpdate {
         let snapshot = update.session.snapshot
-        let workspaces = Dictionary(snapshot.workspaces.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let projects = snapshot.workspaces.map { workspace in
+            HerdProject(id: ProjectID(source: id, local: workspace.id), name: workspace.label, tokens: workspace.tokens,
+                        isFocusedInSource: workspace.focused || workspace.id == snapshot.focusedWorkspaceID)
+        }
         let agents = update.session.agents.map { state -> HerdAgent in
             let agent = state.agent
             known[agent.id] = (agent.agent, state.workspaceLabel)
-            let workspaceTokens = workspaces[agent.workspaceID]?.tokens ?? [:]
             return HerdAgent(
                 id: AgentID(source: id, local: agent.id), kind: agent.agent, name: agent.displayName,
-                project: state.workspaceLabel, status: Self.status(agent.status),
-                statusLabel: agent.stateLabels[agent.status.rawValue], since: state.since.map(Self.since),
-                tokens: workspaceTokens.merging(agent.tokens) { _, own in own },
+                projectID: ProjectID(source: id, local: agent.workspaceID), project: state.workspaceLabel,
+                status: Self.status(agent.status), statusLabel: agent.stateLabels[agent.status.rawValue],
+                since: state.since.map(Self.since), tokens: agent.tokens,
                 isFocusedInSource: agent.id == snapshot.focusedPaneID)
         }
         let transitions = update.transitions.map { transition -> HerdTransition in
@@ -94,7 +101,7 @@ public final class HerdrSource: AgentSource {
                 marker: Self.marker(terminalID: transition.terminalID, seq: transition.stateChangeSeq))
         }
         for transition in update.transitions where transition.kind == .closed { known[transition.paneID] = nil }
-        return SourceUpdate(agents: agents, state: Self.state(update.connection),
+        return SourceUpdate(agents: agents, projects: projects, state: Self.state(update.connection),
                             statusLines: statusLines(update), transitions: transitions)
     }
 

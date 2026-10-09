@@ -8,6 +8,8 @@ import Observation
 public final class HerdStore {
     /// Every agent, grouped by source in the order sources were added.
     public private(set) var agents: [HerdAgent] = []
+    /// Every project, grouped by source in the order sources were added, each source's in its own order.
+    public private(set) var projects: [HerdProject] = []
     /// Agents waiting on the user, across sources: blocked first, then finished, longest waiting first.
     public private(set) var needsYou: [HerdAgent] = []
     public private(set) var workingCount = 0
@@ -17,7 +19,7 @@ public final class HerdStore {
     public private(set) var lastTransitions: [HerdTransition] = []
 
     @ObservationIgnored public private(set) var sources: [any AgentSource] = []
-    @ObservationIgnored private var bySource: [SourceID: [HerdAgent]] = [:]
+    @ObservationIgnored private var bySource: [SourceID: SourceUpdate] = [:]
     @ObservationIgnored private var tasks: [Task<Void, Never>] = []
     @ObservationIgnored private let log: TransitionLog?
 
@@ -59,6 +61,18 @@ public final class HerdStore {
         try await source.focus(agent)
     }
 
+    /// Shows the project in its source and brings the source's app forward.
+    public func focusProject(_ project: ProjectID) async throws {
+        guard let source = source(project.source) else { throw AgentSourceError.unknownSource(project.source) }
+        guard source.capabilities.contains(.focusProject) else { throw AgentSourceError.unsupported(.focusProject) }
+        try await source.focusProject(project)
+    }
+
+    /// The project's agents, in source order.
+    public func agents(in project: ProjectID) -> [HerdAgent] {
+        agents.filter { $0.projectID == project }
+    }
+
     /// Live only when every source is; otherwise the first source's problem, so the user hears
     /// about it.
     public var overallState: SourceState {
@@ -70,9 +84,11 @@ public final class HerdStore {
     }
 
     package func apply(_ update: SourceUpdate, from source: SourceID) {
-        bySource[source] = update.agents
-        let merged = sources.flatMap { bySource[$0.id] ?? [] }
+        bySource[source] = update
+        let merged = sources.flatMap { bySource[$0.id]?.agents ?? [] }
         if agents != merged { agents = merged }
+        let mergedProjects = sources.flatMap { bySource[$0.id]?.projects ?? [] }
+        if projects != mergedProjects { projects = mergedProjects }
         let waiting = merged.filter(\.status.needsYou).sorted(by: Self.waitingOrder)
         if needsYou != waiting { needsYou = waiting }
         let working = merged.count { $0.status == .working }

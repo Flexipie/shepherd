@@ -34,6 +34,11 @@ public struct HerdrClient: Sendable {
         _ = try await call("agent.focus", params: ["target": paneID], as: IgnoredResult.self, timeout: timeouts.action)
     }
 
+    /// Switches herdr to the workspace.
+    public func focusWorkspace(id: String) async throws {
+        _ = try await call("workspace.focus", params: ["workspace_id": id], as: IgnoredResult.self, timeout: timeouts.action)
+    }
+
     /// Sends one request and decodes its `result`.
     public func call<Params: Encodable & Sendable, Result: Decodable & Sendable>(
         _ method: String, params: Params, as type: Result.Type, timeout: Duration

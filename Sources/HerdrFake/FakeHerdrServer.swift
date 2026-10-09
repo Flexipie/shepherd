@@ -1,8 +1,8 @@
 import Foundation
 import HerdrKit
 
-/// A fake herdr on a real Unix socket. It answers `ping`, `session.snapshot`, `agent.focus` and
-/// `events.subscribe` the way herdr 0.9.3 does: one request per connection, subscriptions
+/// A fake herdr on a real Unix socket. It answers `ping`, `session.snapshot`, `agent.focus`,
+/// `workspace.focus` and `events.subscribe` the way herdr 0.9.3 does: one request per connection, subscriptions
 /// validated against the current panes, both event name spellings, `events_lost` as an error
 /// carrying the subscribe id. Tests drive it and observe what the client did; demo mode will
 /// reuse it.
@@ -21,6 +21,7 @@ public actor FakeHerdrServer {
     public private(set) var snapshotCount = 0
     public private(set) var maxConcurrentSnapshots = 0
     public private(set) var focusedTargets: [String] = []
+    public private(set) var focusedWorkspaces: [String] = []
     /// The fewest live subscribers seen since the first one started; nil before that.
     public private(set) var subscriberLowWater: Int?
     public var subscriberCount: Int { subscribers.count }
@@ -175,8 +176,19 @@ public actor FakeHerdrServer {
             let target = params["target"] as? String ?? ""
             focusedTargets.append(target)
             herd.focusedPaneID = target
+            if let workspace = herd.panes.first(where: { $0.id == target })?.workspaceID { herd.focusedWorkspaceID = workspace }
             if herd.status(of: target) == "done" { setStatus(target, "idle") }
             reply(connection, requestID, ["type": "ok"])
+        case "workspace.focus":
+            let workspace = params["workspace_id"] as? String ?? ""
+            guard herd.workspaces.contains(where: { $0.id == workspace }) else {
+                replyError(connection, requestID, code: "workspace_not_found", message: "workspace not found")
+                return
+            }
+            focusedWorkspaces.append(workspace)
+            herd.focusedWorkspaceID = workspace
+            reply(connection, requestID, ["type": "ok"])
+            emit("workspace_focused", data: ["workspace_id": workspace])
         case "events.subscribe":
             let entries = params["subscriptions"] as? [[String: Any]] ?? []
             let paneIDs = Set(entries.compactMap { $0["pane_id"] as? String })

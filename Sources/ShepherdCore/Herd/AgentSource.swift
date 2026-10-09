@@ -17,9 +17,19 @@ public protocol AgentSource: AnyObject {
     /// Shows the agent to the user: focuses it in the source's UI and brings its app forward.
     func focus(_ agent: AgentID) async throws
 
+    /// Shows the project: focuses it in the source's UI and brings its app forward. Only called
+    /// when `capabilities` contains `.focusProject`.
+    func focusProject(_ project: ProjectID) async throws
+
     /// Pids of the apps the source's agents live in (for herdr, the terminal hosting it). Used to
     /// tell whether the user is already looking at an agent.
     func hostApplicationPIDs() -> [pid_t]
+}
+
+extension AgentSource {
+    public func focusProject(_ project: ProjectID) async throws {
+        throw AgentSourceError.unsupported(.focusProject)
+    }
 }
 
 public enum AgentSourceError: Error, Sendable, Equatable {

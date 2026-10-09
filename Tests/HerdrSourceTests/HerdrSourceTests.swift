@@ -29,14 +29,23 @@ import Testing
 
     @Test func adaptsTheHerdrSession() async throws {
         let fake = FakeHerdrServer()
-        await fake.update { $0.workspaces[1].tokens = ["pr": "12"] }
+        await fake.update {
+            $0.workspaces[1].tokens = ["pr": "12"]
+            $0.panes[3].tokens = ["review": "safe"]
+        }
         try await fake.start()
         let (store, _) = running(fake)
         try await until(store) { $0.overallState == .live }
         #expect(store.agents.map(\.id.description) == ["herdr:w1:p1", "herdr:w2:p1", "herdr:w2:p2"])
         #expect(store.agents.map(\.kind) == ["claude", "codex", "claude"])
         #expect(store.agents.first?.project == "workspace 1")
-        #expect(store.agents.last?.tokens == ["pr": "12"])
+        #expect(store.projects.map(\.id.description) == ["herdr:w1", "herdr:w2"])
+        #expect(store.projects.map(\.name) == ["workspace 1", "workspace 2"])
+        #expect(store.projects.last?.tokens == ["pr": "12"])
+        #expect(store.agents.map(\.projectID?.local) == ["w1", "w2", "w2"])
+        // Workspace tokens stay on the project; an agent carries only its own.
+        #expect(store.agents.last?.tokens == ["review": "safe"])
+        #expect(store.agents.first?.tokens == [:])
         #expect(store.workingCount == 2)
         #expect(store.statusLines["herdr"] == ["herdr 0.0.0-fake"])
 
@@ -57,6 +66,20 @@ import Testing
         try await store.focus(AgentID(source: "herdr", local: "w1:p1"))
         try await until(store) { $0.needsYou.isEmpty }
         #expect(await fake.focusedTargets == ["w1:p1"])
+        await store.stop()
+        await fake.stop()
+    }
+
+    @Test func focusProjectSwitchesWorkspace() async throws {
+        let fake = FakeHerdrServer()
+        try await fake.start()
+        let (store, _) = running(fake)
+        try await until(store) { $0.overallState == .live }
+        #expect(store.projects.allSatisfy { !$0.isFocusedInSource })
+        try await store.focusProject(ProjectID(source: "herdr", local: "w2"))
+        #expect(await fake.focusedWorkspaces == ["w2"])
+        try await until(store) { $0.projects.last?.isFocusedInSource == true }
+        await #expect(throws: HerdrError.self) { try await store.focusProject(ProjectID(source: "herdr", local: "nope")) }
         await store.stop()
         await fake.stop()
     }

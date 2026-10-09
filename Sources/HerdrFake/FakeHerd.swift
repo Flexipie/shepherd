@@ -25,9 +25,11 @@ public struct FakeHerd: Sendable, Equatable {
         public var status: String
         public var stateChangeSeq: UInt64 = 0
         public var completionSeq: UInt64? = nil
+        public var tokens: [String: String] = [:]
 
         public init(id: String, workspaceID: String, terminalID: String? = nil, agent: String? = "claude",
-                    status: String = "idle", stateChangeSeq: UInt64 = 1, completionSeq: UInt64? = nil) {
+                    status: String = "idle", stateChangeSeq: UInt64 = 1, completionSeq: UInt64? = nil,
+                    tokens: [String: String] = [:]) {
             self.id = id
             self.workspaceID = workspaceID
             self.terminalID = terminalID ?? "term-\(id)"
@@ -35,6 +37,7 @@ public struct FakeHerd: Sendable, Equatable {
             self.status = agent == nil ? "unknown" : status
             self.stateChangeSeq = stateChangeSeq
             self.completionSeq = completionSeq
+            self.tokens = tokens
         }
     }
 
@@ -43,6 +46,7 @@ public struct FakeHerd: Sendable, Equatable {
     public var workspaces: [Workspace]
     public var panes: [Pane]
     public var focusedPaneID: String?
+    public var focusedWorkspaceID: String?
 
     public init(workspaces: [Workspace] = [], panes: [Pane] = []) {
         self.workspaces = workspaces
@@ -86,13 +90,14 @@ public struct FakeHerd: Sendable, Equatable {
             "agents": panes.filter { $0.agent != nil }.map(agentJSON),
         ]
         if let focusedPaneID { result["focused_pane_id"] = focusedPaneID }
+        if let focusedWorkspaceID { result["focused_workspace_id"] = focusedWorkspaceID }
         return result
     }
 
     private func workspaceJSON(_ workspace: Workspace, number: Int) -> [String: Any] {
         let own = panes.filter { $0.workspaceID == workspace.id }
         var json: [String: Any] = [
-            "workspace_id": workspace.id, "number": number, "label": workspace.label, "focused": false,
+            "workspace_id": workspace.id, "number": number, "label": workspace.label, "focused": workspace.id == focusedWorkspaceID,
             "pane_count": own.count, "tab_count": 1, "active_tab_id": "\(workspace.id):t1",
             "agent_status": own.first(where: { $0.status == "blocked" })?.status ?? own.first?.status ?? "idle",
         ]
@@ -107,6 +112,7 @@ public struct FakeHerd: Sendable, Equatable {
             "revision": pane.stateChangeSeq,
         ]
         if let agent = pane.agent { json["agent"] = agent }
+        if !pane.tokens.isEmpty { json["tokens"] = pane.tokens }
         return json
     }
 
