@@ -13,20 +13,21 @@ final class AppController {
     private let store: HerdStore
     private let presence = Presence()
     private let actions: AppActions
-    private let modules: [any ShepherdModule]
+    private let config = ConfigStore()
+    private let registry: ModuleRegistry
     private var statusItem: StatusItemController?
     private var notch: NotchController?
 
     init() {
         store = HerdStore(log: log)
         actions = AppActions(store: store, presence: presence)
-        let context = ModuleContext(store: store, presence: presence, actions: actions)
-        modules = BuiltinModules.all.map { $0.init(context: context) }
+        let context = ModuleContext(store: store, presence: presence, actions: actions, config: config)
+        registry = ModuleRegistry(available: BuiltinModules.all, context: context)
     }
 
     func start() {
-        statusItem = StatusItemController(store: store, modules: modules, actions: actions)
-        notch = NotchController(modules: modules, actions: actions)
+        statusItem = StatusItemController(store: store, registry: registry, actions: actions)
+        notch = NotchController(registry: registry, actions: actions)
         Task {
             // The log restores exact times in state, so read it before the first snapshot.
             let history = await log.load()

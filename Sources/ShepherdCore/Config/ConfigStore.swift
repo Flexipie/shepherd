@@ -12,7 +12,8 @@ public final class ConfigStore {
     /// Problems from reading the file, then any reported by the app, for the panel footer.
     public var problems: [String] { fileProblems + reported.keys.sorted().compactMap { reported[$0] } }
 
-    public let url: URL
+    /// nil for a fixed config that is not read from a file.
+    public let url: URL?
     private var fileProblems: [String] = []
     private var reported: [String: String] = [:]
     @ObservationIgnored private var watcher: FileWatcher?
@@ -29,6 +30,12 @@ public final class ConfigStore {
         }
         self.watcher = watcher
         watcher.start(known: data)
+    }
+
+    /// A config that never changes, for tests and previews.
+    public init(fixed config: ShepherdConfig) {
+        url = nil
+        self.config = config
     }
 
     public func stop() {

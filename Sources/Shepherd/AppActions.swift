@@ -23,6 +23,10 @@ final class AppActions: AgentActions {
         Task { try? await store.focus(agent) }
     }
 
+    func focusProject(_ project: ProjectID) {
+        Task { try? await store.focusProject(project) }
+    }
+
     func updatePresence() {
         guard let front = NSWorkspace.shared.frontmostApplication?.processIdentifier else { return }
         let frontmost = Set(store.sources.filter { $0.hostApplicationPIDs().contains(front) }.map(\.id))

@@ -7,7 +7,9 @@ import Testing
 @MainActor
 final class RecordingActions: AgentActions {
     var jumps: [AgentID] = []
+    var projects: [ProjectID] = []
     func jump(to agent: AgentID) { jumps.append(agent) }
+    func focusProject(_ project: ProjectID) { projects.append(project) }
 }
 
 @MainActor

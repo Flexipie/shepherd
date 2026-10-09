@@ -8,12 +8,12 @@ import ShepherdCore
 final class StatusItemController: NSObject, NSMenuDelegate {
     private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let store: HerdStore
-    private let modules: [any ShepherdModule]
+    private let registry: ModuleRegistry
     private let actions: any AgentActions
 
-    init(store: HerdStore, modules: [any ShepherdModule], actions: any AgentActions) {
+    init(store: HerdStore, registry: ModuleRegistry, actions: any AgentActions) {
         self.store = store
-        self.modules = modules
+        self.registry = registry
         self.actions = actions
         super.init()
         let menu = NSMenu()
@@ -24,7 +24,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
     private func render() {
         let contribution = withObservationTracking {
-            modules.lazy.compactMap(\.status).first
+            registry.modules.lazy.compactMap(\.status).first
         } onChange: { [weak self] in
             Task { @MainActor in self?.render() }
         }

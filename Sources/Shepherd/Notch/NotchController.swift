@@ -7,15 +7,15 @@ import SwiftUI
 /// is something to show; when the item goes away they are torn down.
 @MainActor
 final class NotchController {
-    private let modules: [any ShepherdModule]
+    private let registry: ModuleRegistry
     private let actions: any AgentActions
     private var panel: NotchPanel?
     private var hosting: NSHostingView<NotchPillView>?
     private var current: NotchItem?
     private var screenObserver: NSObjectProtocol?
 
-    init(modules: [any ShepherdModule], actions: any AgentActions) {
-        self.modules = modules
+    init(registry: ModuleRegistry, actions: any AgentActions) {
+        self.registry = registry
         self.actions = actions
         screenObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
@@ -27,7 +27,7 @@ final class NotchController {
 
     private func render() {
         let item = withObservationTracking {
-            modules.lazy.compactMap(\.notch).first
+            registry.modules.lazy.compactMap(\.notch).first
         } onChange: { [weak self] in
             Task { @MainActor in self?.render() }
         }
