@@ -89,6 +89,20 @@ Local first; see PRD "Intelligence" for the rules every idea here follows.
   for when you are on another display or away from the keyboard. Also an accessibility win.
 - **Handoff note.** When a workspace finishes, a short local summary of what the agent did across
   its turns, ready to paste into a PR description or a standup.
+- **Rules before model for risk labels.** Label approvals (read only, writes repo, network,
+  destructive) with a plain list of known commands first: instant and never wrong. A model only
+  labels what the rules do not know, asynchronously, and nothing waits on it. Count how often the
+  rules say "unknown" in real use before building the model part. A test with a local
+  `qwen3.5:9b` through Ollama (`/api/chat` with a JSON schema in `format`) labelled a
+  `git push --force` approval correctly in about 6 s warm and 14 s cold: good enough to fill in
+  later, too slow to wait for.
+- **Ask the herd.** Type a question in the palette ("did any agent touch the schema?", "what
+  happened while I was in that meeting?") and get one short answer with jump links to the agents
+  it is about. Not a chat: no window, no history. Only for questions across agents that no card
+  answers; if a question about one agent needs asking, fix the UI instead. Answers come from what
+  Shepherd already knows (transitions, agent `report` calls, git), not from a model reading raw
+  terminal output. An experiment behind a disabled module, after an agent reporting channel
+  exists.
 
 ## Mac integration
 
