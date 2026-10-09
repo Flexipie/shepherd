@@ -5,10 +5,7 @@ import ShepherdUI
 /// the screen, centred on the notch, with its content below the camera. Elsewhere it is a small
 /// floating capsule under the menu bar.
 struct NotchGeometry: Equatable {
-    typealias Style = NotchPillView.Style
-
     let frame: NSRect
-    let style: Style
 
     static let contentHeight = NotchPillView.contentHeight
     static let minimumWidth: CGFloat = 340
@@ -30,12 +27,10 @@ struct NotchGeometry: Equatable {
             let width = max(minimumWidth, notchWidth + 120)
             let height = notchHeight + contentHeight
             let midX = full.minX + left.width + notchWidth / 2
-            return NotchGeometry(frame: NSRect(x: midX - width / 2, y: full.maxY - height, width: width, height: height),
-                                 style: .notch(height: notchHeight))
+            return NotchGeometry(frame: NSRect(x: midX - width / 2, y: full.maxY - height, width: width, height: height))
         }
         let width = minimumWidth
         let top = screen.visibleFrame.maxY - 8
-        return NotchGeometry(frame: NSRect(x: full.midX - width / 2, y: top - contentHeight, width: width, height: contentHeight),
-                             style: .floating)
+        return NotchGeometry(frame: NSRect(x: full.midX - width / 2, y: top - contentHeight, width: width, height: contentHeight))
     }
 }

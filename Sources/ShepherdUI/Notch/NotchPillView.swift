@@ -1,25 +1,17 @@
 import ShepherdCore
 import SwiftUI
 
-/// The pill's content: which agent, why, and how many others are waiting. The whole pill is one
-/// button that jumps to the agent.
+/// The pill on a display without a notch: a capsule under the menu bar showing which agent, why,
+/// and how many others are waiting. The whole pill is one button that jumps to the agent. On a
+/// notched display the same row is the notch surface's alert.
 public struct NotchPillView: View {
-    public enum Style: Equatable, Sendable {
-        /// Grows out of the notch; content sits below the camera, `height` points down.
-        case notch(height: CGFloat)
-        /// A capsule under the menu bar on a display without a notch.
-        case floating
-    }
-
     public nonisolated static let contentHeight: CGFloat = 44
 
     let item: NotchItem
-    let style: Style
     let onJump: () -> Void
 
-    public init(item: NotchItem, style: Style, onJump: @escaping () -> Void) {
+    public init(item: NotchItem, onJump: @escaping () -> Void) {
         self.item = item
-        self.style = style
         self.onJump = onJump
     }
 
@@ -27,25 +19,30 @@ public struct NotchPillView: View {
 
     public var body: some View {
         Button(action: onJump) {
-            VStack(spacing: 0) {
-                if case .notch(let height) = style { Color.clear.frame(height: height) }
-                row
-                    .padding(.horizontal, 18)
-                    .frame(height: Self.contentHeight)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(background)
-            .contentShape(Rectangle())
+            NotchPillRow(item: item, primary: .primary, secondary: .secondary, hovering: hovering)
+                .padding(.horizontal, 18)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // Solid rather than a material: materials render flat in snapshots, and the pill
+                // must read over any wallpaper.
+                .background(Capsule().fill(Color(nsColor: .windowBackgroundColor))
+                    .overlay(Capsule().strokeBorder(.separator, lineWidth: 0.5)))
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibilityText)
-        .accessibilityHint("Jumps to the agent")
-        .accessibilityAddTraits(.isButton)
+        .notchItemAccessibility(item)
     }
+}
 
-    private var row: some View {
+/// The pill's content: an icon for the reason, the agent and its project, "+N" for the others,
+/// and an arrow that brightens on hover.
+struct NotchPillRow: View {
+    let item: NotchItem
+    let primary: Color
+    let secondary: Color
+    let hovering: Bool
+
+    var body: some View {
         HStack(spacing: 10) {
             Image(systemName: item.reason == .blocked ? "exclamationmark.circle.fill" : "checkmark.circle.fill")
                 .font(.system(size: 16, weight: .semibold))
@@ -74,26 +71,14 @@ public struct NotchPillView: View {
                 .opacity(hovering ? 1 : 0.5)
         }
     }
+}
 
-    @ViewBuilder private var background: some View {
-        switch style {
-        case .notch:
-            // Black like the notch it extends, whatever the system appearance.
-            UnevenRoundedRectangle(bottomLeadingRadius: 18, bottomTrailingRadius: 18)
-                .fill(Color.black)
-        case .floating:
-            // Solid rather than a material: materials render flat in snapshots, and the pill must
-            // read over any wallpaper.
-            Capsule().fill(Color(nsColor: .windowBackgroundColor))
-                .overlay(Capsule().strokeBorder(.separator, lineWidth: 0.5))
-        }
-    }
-
-    private var primary: Color { style == .floating ? .primary : .white }
-    private var secondary: Color { style == .floating ? .secondary : Color.white.opacity(0.65) }
-
-    private var accessibilityText: String {
+extension View {
+    func notchItemAccessibility(_ item: NotchItem) -> some View {
         let others = item.others > 0 ? ", \(item.others) more waiting" : ""
-        return "\(item.title), \(item.subtitle)\(others)"
+        return accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(item.title), \(item.subtitle)\(others)")
+            .accessibilityHint("Jumps to the agent")
+            .accessibilityAddTraits(.isButton)
     }
 }

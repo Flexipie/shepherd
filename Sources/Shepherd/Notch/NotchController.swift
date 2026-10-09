@@ -39,7 +39,7 @@ final class NotchController {
 
     private func show(_ item: NotchItem) {
         guard let geometry = NotchGeometry.current() else { return }
-        let view = NotchPillView(item: item, style: geometry.style) { [weak self] in
+        let view = NotchPillView(item: item) { [weak self] in
             self?.actions.jump(to: item.agent.id)
         }
         if let hosting {

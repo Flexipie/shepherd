@@ -52,11 +52,8 @@ import Testing
 
     @Test func notchPill() throws {
         let item = NotchItem(agent: SampleHerd.blockedCodex, reason: .blocked, others: 2)
-        try Snapshot.check("notch-pill", width: 360) {
-            NotchPillView(item: item, style: .notch(height: 32)) {}.frame(height: 32 + NotchPillView.contentHeight)
-        }
         try Snapshot.check("notch-pill-floating", width: 340) {
-            NotchPillView(item: item, style: .floating) {}.frame(height: NotchPillView.contentHeight).padding(6)
+            NotchPillView(item: item) {}.frame(height: NotchPillView.contentHeight).padding(6)
         }
     }
 }
