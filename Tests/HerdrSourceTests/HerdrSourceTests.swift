@@ -18,9 +18,10 @@ import Testing
         throw TimedOut()
     }
 
-    func running(_ fake: FakeHerdrServer, history: [HerdTransition] = [], log: TransitionLog? = nil) -> (HerdStore, HerdrSource) {
+    func running(_ fake: FakeHerdrServer, history: [HerdTransition] = [], log: TransitionLog? = nil,
+                 config: URL? = nil) -> (HerdStore, HerdrSource) {
         let source = HerdrSource(client: HerdrClient(socketPath: fake.path), history: history,
-                                 debounce: .milliseconds(10), activatesTerminal: false)
+                                 debounce: .milliseconds(10), activatesTerminal: false, configURL: config)
         let store = HerdStore(log: log)
         store.add(source)
         store.start()
@@ -80,6 +81,33 @@ import Testing
         #expect(await fake.focusedWorkspaces == ["w2"])
         try await until(store) { $0.projects.last?.isFocusedInSource == true }
         await #expect(throws: HerdrError.self) { try await store.focusProject(ProjectID(source: "herdr", local: "nope")) }
+        await store.stop()
+        await fake.stop()
+    }
+
+    @Test func sidebarLayoutFollowsHerdrsConfig() async throws {
+        let directory = FileManager.default.temporaryDirectory.appending(path: "shepherd-herdr-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let config = directory.appending(path: "config.toml")
+        try Data("[ui.sidebar.spaces]\nrows = [[\"workspace\", \"$pr\"]]\n".utf8).write(to: config)
+
+        let fake = FakeHerdrServer()
+        try await fake.start()
+        let (store, _) = running(fake, config: config)
+        try await until(store) { $0.overallState == .live }
+        #expect(store.tokenLayouts["herdr"] == TokenLayout(projects: [[TokenEntry(name: "pr")]]))
+
+        try Data("[ui.sidebar.spaces]\nrows = [[{ token = \"$pr\", fg = \"nope\" }]]\n".utf8).write(to: config, options: .atomic)
+        try await until(store) { $0.tokenLayouts["herdr"] == nil }
+        #expect(store.statusLines["herdr"] == ["herdr 0.0.0-fake",
+                                               "herdr config line 2: ui.sidebar.spaces.rows[0][0].fg: must be #RGB or #RRGGBB"])
+
+        try Data("[ui.sidebar.agents]\nrows = [[\"$summary\"]]\n".utf8).write(to: config, options: .atomic)
+        try await until(store) { $0.tokenLayouts["herdr"] == TokenLayout(agents: [[TokenEntry(name: "summary")]]) }
+        #expect(store.statusLines["herdr"] == ["herdr 0.0.0-fake"])
+        // A config change re-sends the herd it has.
+        #expect(store.agents.count == 3)
         await store.stop()
         await fake.stop()
     }

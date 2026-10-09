@@ -15,6 +15,8 @@ public final class HerdStore {
     public private(set) var workingCount = 0
     public private(set) var sourceStates: [SourceID: SourceState] = [:]
     public private(set) var statusLines: [SourceID: [String]] = [:]
+    /// Each source's own token styling.
+    public private(set) var tokenLayouts: [SourceID: TokenLayout] = [:]
     /// The transitions behind the most recent update that had any.
     public private(set) var lastTransitions: [HerdTransition] = []
 
@@ -95,6 +97,7 @@ public final class HerdStore {
         if workingCount != working { workingCount = working }
         if sourceStates[source] != update.state { sourceStates[source] = update.state }
         if statusLines[source] != update.statusLines { statusLines[source] = update.statusLines }
+        if tokenLayouts[source] != update.tokenLayout { tokenLayouts[source] = update.tokenLayout }
         if !update.transitions.isEmpty {
             lastTransitions = update.transitions
             if let log { Task { await log.append(update.transitions) } }

@@ -180,13 +180,16 @@ public struct SourceUpdate: Sendable, Equatable {
     public let statusLines: [String]
     /// Transitions observed since the previous update.
     public let transitions: [HerdTransition]
+    /// The source's own token styling (for herdr, its sidebar config), if it has any.
+    public let tokenLayout: TokenLayout?
 
     public init(agents: [HerdAgent], projects: [HerdProject] = [], state: SourceState, statusLines: [String] = [],
-                transitions: [HerdTransition] = []) {
+                transitions: [HerdTransition] = [], tokenLayout: TokenLayout? = nil) {
         self.agents = agents
         self.projects = projects
         self.state = state
         self.statusLines = statusLines
         self.transitions = transitions
+        self.tokenLayout = tokenLayout
     }
 }

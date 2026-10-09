@@ -20,29 +20,44 @@ public final class HerdrSource: AgentSource {
     private var task: Task<Void, Never>?
     /// Last known kind and project per pane, so a closed agent's transition still says what it was.
     private var known: [String: (kind: String?, project: String)] = [:]
+    /// herdr's config file, read for its sidebar token layout; nil to not read one.
+    private let configURL: URL?
+    private var configWatcher: FileWatcher?
+    private var sidebar: (layout: TokenLayout?, problems: [String]) = (nil, [])
+    /// The last update sent and its connection lines, so a change to herdr's config can be re-sent
+    /// without a new snapshot.
+    private var lastSent: (update: SourceUpdate, connectionLines: [String])?
 
     /// `history` is the transition log; it restores exact times in state across restarts.
     public init(client: HerdrClient = HerdrClient(), history: [HerdTransition] = [],
-                debounce: Duration = .milliseconds(100), activatesTerminal: Bool = true) {
+                debounce: Duration = .milliseconds(100), activatesTerminal: Bool = true,
+                configURL: URL? = HerdrSidebar.configURL()) {
         self.client = client
         self.activatesTerminal = activatesTerminal
+        self.configURL = configURL
         engine = SessionEngine(client: client, debounce: debounce, seeds: Self.seeds(from: history))
         (updates, continuation) = AsyncStream.makeStream(bufferingPolicy: .bufferingNewest(16))
     }
 
     public func start() {
         guard task == nil else { return }
+        watchConfig()
         let engine = engine
         task = Task { [weak self] in
             await engine.start()
             for await update in engine.updates {
                 guard let self else { return }
-                self.continuation.yield(self.adapt(update))
+                let lines = self.statusLines(update)
+                let adapted = self.adapt(update, connectionLines: lines)
+                self.lastSent = (adapted, lines)
+                self.continuation.yield(adapted)
             }
         }
     }
 
     public func stop() async {
+        configWatcher?.stop()
+        configWatcher = nil
         task?.cancel()
         task = nil
         await engine.stop()
@@ -73,9 +88,34 @@ public final class HerdrSource: AgentSource {
         terminal.activate()
     }
 
+    // MARK: herdr's config
+
+    private func watchConfig() {
+        guard let configURL else { return }
+        let data = try? Data(contentsOf: configURL)
+        sidebar = HerdrSidebar.read(data)
+        let watcher = FileWatcher(url: configURL) { [weak self] data in
+            Task { @MainActor in self?.configChanged(data) }
+        }
+        configWatcher = watcher
+        watcher.start(known: data)
+    }
+
+    func configChanged(_ data: Data?) {
+        let read = HerdrSidebar.read(data)
+        guard read.layout != sidebar.layout || read.problems != sidebar.problems else { return }
+        sidebar = read
+        guard let (last, lines) = lastSent else { return }
+        // Same herd, new styling; the transitions were already sent.
+        let update = SourceUpdate(agents: last.agents, projects: last.projects, state: last.state,
+                                  statusLines: lines + sidebar.problems, tokenLayout: sidebar.layout)
+        lastSent = (update, lines)
+        continuation.yield(update)
+    }
+
     // MARK: Adapting
 
-    func adapt(_ update: SessionUpdate) -> SourceUpdate {
+    func adapt(_ update: SessionUpdate, connectionLines: [String]) -> SourceUpdate {
         let snapshot = update.session.snapshot
         let projects = snapshot.workspaces.map { workspace in
             HerdProject(id: ProjectID(source: id, local: workspace.id), name: workspace.label, tokens: workspace.tokens,
@@ -102,7 +142,8 @@ public final class HerdrSource: AgentSource {
         }
         for transition in update.transitions where transition.kind == .closed { known[transition.paneID] = nil }
         return SourceUpdate(agents: agents, projects: projects, state: Self.state(update.connection),
-                            statusLines: statusLines(update), transitions: transitions)
+                            statusLines: connectionLines + sidebar.problems, transitions: transitions,
+                            tokenLayout: sidebar.layout)
     }
 
     static func status(_ status: AgentStatus) -> HerdStatus {
