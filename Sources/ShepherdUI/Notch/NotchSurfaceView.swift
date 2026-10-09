@@ -34,6 +34,7 @@ public struct NotchSurfaceView: View {
     let onExpandedHeight: (CGFloat) -> Void
 
     @State private var hovering = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// `expandedHeight` is the expanded shape's height, notch included; the view reports the
     /// height its panel wants through `onExpandedHeight`. `panelMaxHeight` makes the panel's
@@ -54,7 +55,9 @@ public struct NotchSurfaceView: View {
     public var body: some View {
         let canvas = metrics.canvas
         let body = metrics.body(mode.kind, expandedHeight: expandedHeight).offsetBy(dx: -canvas.minX, dy: 0)
-        let shape = NotchShape(frame: body, radius: metrics.bottomRadius(mode.kind))
+        let notch = NotchShape(frame: body, radius: metrics.bottomRadius(mode.kind))
+        // With Reduce Motion the shape changes at once and only the content crossfades.
+        let shape = reduceMotion ? AnyShape(Unanimated(shape: notch)) : AnyShape(notch)
         ZStack(alignment: .topLeading) {
             shape.fill(Color.black)
             content
@@ -134,5 +137,19 @@ public struct NotchSurfaceView: View {
         // Its own height, not the shape's: the shape follows the content, not the other way.
         .fixedSize()
         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { onExpandedHeight($0) }
+    }
+}
+
+/// A shape whose changes are never interpolated.
+private struct Unanimated<Base: Shape>: Shape {
+    var shape: Base
+
+    var animatableData: EmptyAnimatableData {
+        get { EmptyAnimatableData() }
+        set {}
+    }
+
+    func path(in rect: CGRect) -> Path {
+        shape.path(in: rect)
     }
 }
