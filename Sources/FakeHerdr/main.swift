@@ -6,6 +6,9 @@ import HerdrFake
 // Then: HERDR_SOCKET_PATH=<socket-path> build/Shepherd.app/Contents/MacOS/Shepherd
 // Commands on stdin: block|done|work|idle <pane>, add <pane>, remove <pane>, lost, stop, start, list, quit
 
+// Line-buffered, so output piped to a file shows up as it happens.
+setvbuf(stdout, nil, _IOLBF, 0)
+
 let path = CommandLine.arguments.dropFirst().first ?? "/tmp/shepherd-fake.sock"
 let fake = FakeHerdrServer(herd: .basic, path: path)
 try await fake.start()
@@ -26,6 +29,8 @@ while let line = readLine() {
     case "lost": await fake.sendEventsLost()
     case "stop": await fake.stop()
     case "start": try await fake.start()
+    case "focused":
+        print("agents:", await fake.focusedTargets, "workspaces:", await fake.focusedWorkspaces)
     case "list":
         for pane in await fake.herd.panes { print(pane.id, pane.agent ?? "shell", pane.status) }
     case "quit":

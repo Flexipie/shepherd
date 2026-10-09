@@ -8,6 +8,8 @@ final class AppActions: AgentActions {
     private let store: HerdStore
     private let presence: Presence
     private var observer: NSObjectProtocol?
+    /// Where the "next" hotkey went last, so repeated presses walk the queue.
+    private var lastNext: AgentID?
 
     init(store: HerdStore, presence: Presence) {
         self.store = store
@@ -21,6 +23,14 @@ final class AppActions: AgentActions {
 
     func jump(to agent: AgentID) {
         Task { try? await store.focus(agent) }
+    }
+
+    /// Jumps to the next waiting agent; with nothing waiting, does nothing.
+    func jumpToNext() {
+        updatePresence()
+        guard let agent = NextInQueue.pick(store: store, presence: presence, after: lastNext) else { return }
+        lastNext = agent.id
+        jump(to: agent.id)
     }
 
     func focusProject(_ project: ProjectID) {

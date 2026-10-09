@@ -17,6 +17,7 @@ final class AppController {
     private let registry: ModuleRegistry
     private var statusItem: StatusItemController?
     private var panel: PanelController?
+    private var hotKeys: HotKeyCenter?
     private var notch: NotchController?
 
     init() {
@@ -30,6 +31,10 @@ final class AppController {
         let panel = PanelController(store: store, registry: registry, config: config, actions: actions)
         self.panel = panel
         statusItem = StatusItemController(store: store, registry: registry, panel: panel)
+        hotKeys = HotKeyCenter(config: config) { [weak self] in
+            self?.panel?.close()
+            self?.actions.jumpToNext()
+        }
         notch = NotchController(registry: registry, actions: actions)
         Task {
             // The log restores exact times in state, so read it before the first snapshot.

@@ -26,7 +26,7 @@ struct TokenLine: View {
     var body: some View {
         tokens.indices.reduce(Text("")) { line, index in
             let token = tokens[index]
-            return line + (index == 0 ? Text("") : Text("  ")) + text(token)
+            return index == 0 ? text(token) : Text("\(line)  \(text(token))")
         }
         .font(.system(size: 11))
         .lineLimit(1)
