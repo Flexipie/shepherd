@@ -31,3 +31,9 @@ Oldest first.
   snapshot tests; the panel window under the status item (glass, keyboard navigation, closes on
   Escape, outside click, Space change or jump); the global "next" hotkey (⌃⌥⌘N). Idle with the
   panel closed: 0% CPU over 30 s; open: one wake a minute; about 65 MB, flat over ten opens.
+- The notch surface: one black shape around the notch that morphs between a paw ear (orange with
+  a count when agents need you), the needs-you pill, and the full panel on hover. Hover never
+  takes typing from the terminal; a click inside gives it the keyboard; Escape, a click elsewhere
+  or a jump folds it. The window follows the shape, so nothing transparent sits over the menu
+  bar at rest. `PanelContentSource` feeds both panels. Idle with the ear showing: 0% CPU over
+  30 s, about 62 MB.
