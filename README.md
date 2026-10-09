@@ -49,7 +49,8 @@ To try it without real agents, run a fake herdr and point the app at it:
 
 ```bash
 swift run FakeHerdr /tmp/shepherd-fake.sock      # then type: block w1:p1, done w2:p2, stop, start
-HERDR_SOCKET_PATH=/tmp/shepherd-fake.sock build/Shepherd.app/Contents/MacOS/Shepherd
+HERDR_SOCKET_PATH=/tmp/shepherd-fake.sock SHEPHERD_TRANSITION_LOG=/tmp/fake-log.jsonl \
+  build/Shepherd.app/Contents/MacOS/Shepherd
 ```
 
 Shepherd has no third-party dependencies.

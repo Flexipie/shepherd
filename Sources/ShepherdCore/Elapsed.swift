@@ -1,10 +1,9 @@
 import Foundation
-import HerdrKit
 
 /// Short, honest durations: "4m" when Shepherd saw the change, "4m+" when it only knows the
 /// state began no later than when it looked.
 public enum Elapsed {
-    public static func short(_ since: StateSince?, now: Date = Date()) -> String? {
+    public static func short(_ since: Since?, now: Date = Date()) -> String? {
         guard let since else { return nil }
         let seconds = max(0, Int(now.timeIntervalSince(since.date)))
         let text = switch seconds {

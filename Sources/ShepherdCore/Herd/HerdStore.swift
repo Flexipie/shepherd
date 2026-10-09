@@ -62,7 +62,10 @@ public final class HerdStore {
     /// Live only when every source is; otherwise the first source's problem, so the user hears
     /// about it.
     public var overallState: SourceState {
-        let states = sources.compactMap { sourceStates[$0.id] }
+        // Read the observed dictionary first: `sources` is not observed, and with no sources yet
+        // nothing else here would register a dependency, so a surface would never update.
+        let observed = sourceStates
+        let states = sources.compactMap { observed[$0.id] }
         return states.first { !$0.isLive } ?? (states.isEmpty ? .connecting : .live)
     }
 

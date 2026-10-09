@@ -1,6 +1,5 @@
 import Darwin
 import Foundation
-import HerdrKit
 import Testing
 @testable import ShepherdCore
 
@@ -33,10 +32,10 @@ import Testing
 
     @Test func elapsedIsHonestAboutPrecision() {
         let now = Date(timeIntervalSince1970: 10_000)
-        #expect(Elapsed.short(StateSince(now.addingTimeInterval(-30), .exact), now: now) == "now")
-        #expect(Elapsed.short(StateSince(now.addingTimeInterval(-300), .exact), now: now) == "5m")
-        #expect(Elapsed.short(StateSince(now.addingTimeInterval(-300), .noLaterThan), now: now) == "5m+")
-        #expect(Elapsed.short(StateSince(now.addingTimeInterval(-3_900), .exact), now: now) == "1h 5m")
+        #expect(Elapsed.short(Since(now.addingTimeInterval(-30), .exact), now: now) == "now")
+        #expect(Elapsed.short(Since(now.addingTimeInterval(-300), .exact), now: now) == "5m")
+        #expect(Elapsed.short(Since(now.addingTimeInterval(-300), .noLaterThan), now: now) == "5m+")
+        #expect(Elapsed.short(Since(now.addingTimeInterval(-3_900), .exact), now: now) == "1h 5m")
         #expect(Elapsed.short(nil) == nil)
     }
 }

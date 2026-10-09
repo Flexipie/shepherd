@@ -1,4 +1,3 @@
-import HerdrKit
 import ShepherdCore
 
 /// The menu bar glyph: a count when agents need you, nothing extra when they do not, and a
@@ -14,9 +13,9 @@ public final class StatusModule: ShepherdModule {
 
     public var status: StatusContribution? {
         let store = context.store
-        switch store.connection {
+        switch store.overallState {
         case .connecting:
-            return StatusContribution(symbol: "pawprint", emphasis: .dimmed, accessibilityLabel: "Shepherd: connecting to herdr")
+            return StatusContribution(symbol: "pawprint", emphasis: .dimmed, accessibilityLabel: "Shepherd: connecting")
         case .disconnected(let reason), .stale(let reason):
             return StatusContribution(symbol: "pawprint", emphasis: .dimmed, accessibilityLabel: "Shepherd: \(reason)")
         case .live:

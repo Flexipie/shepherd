@@ -1,5 +1,3 @@
-import HerdrKit
-
 /// A Shepherd feature. Every feature is one module in `Sources/ShepherdModules/<Name>/`, listed
 /// in `BuiltinModules.all`. A module reads the shared `ModuleContext` and offers contributions;
 /// the app decides where and how they are drawn. Contributions are read inside observation
@@ -30,7 +28,7 @@ public struct StatusContribution: Sendable, Equatable {
         case normal
         /// Something needs the user.
         case attention
-        /// The shown state is not live (herdr down, stream broken).
+        /// The shown state is not live (a source is down or its stream broke).
         case dimmed
     }
 
@@ -54,21 +52,20 @@ public struct NotchItem: Sendable, Equatable {
         case finished
     }
 
-    public let agent: AgentState
+    public let agent: HerdAgent
     public let reason: Reason
     /// Other agents also waiting, shown as "+N".
     public let others: Int
 
-    public init(agent: AgentState, reason: Reason, others: Int) {
+    public init(agent: HerdAgent, reason: Reason, others: Int) {
         self.agent = agent
         self.reason = reason
         self.others = others
     }
 
-    public var title: String { agent.agent.displayName }
+    public var title: String { agent.name }
     public var subtitle: String {
-        let label = agent.agent.stateLabels[agent.status.rawValue]
-        let reasonText = label ?? (reason == .blocked ? "needs you" : "finished")
-        return agent.workspaceLabel.isEmpty ? reasonText : "\(agent.workspaceLabel) · \(reasonText)"
+        let reasonText = agent.statusLabel ?? (reason == .blocked ? "needs you" : "finished")
+        return agent.project.isEmpty ? reasonText : "\(agent.project) · \(reasonText)"
     }
 }

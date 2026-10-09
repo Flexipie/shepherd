@@ -1,5 +1,4 @@
 import AppKit
-import HerdrKit
 import Observation
 import ShepherdCore
 
@@ -8,11 +7,11 @@ import ShepherdCore
 @MainActor
 final class StatusItemController: NSObject, NSMenuDelegate {
     private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-    private let store: SessionStore
+    private let store: HerdStore
     private let modules: [any ShepherdModule]
     private let actions: any AgentActions
 
-    init(store: SessionStore, modules: [any ShepherdModule], actions: any AgentActions) {
+    init(store: HerdStore, modules: [any ShepherdModule], actions: any AgentActions) {
         self.store = store
         self.modules = modules
         self.actions = actions
@@ -53,7 +52,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             menu.addItem(NSMenuItem(title: line, action: nil, keyEquivalent: ""))
         }
 
-        let waiting = store.connection.isLive ? store.needsYou : []
+        let waiting = store.needsYou.filter { store.sourceStates[$0.id.source]?.isLive == true }
         if !waiting.isEmpty {
             menu.addItem(.separator())
             menu.addItem(NSMenuItem.sectionHeader(title: "Needs you"))
@@ -61,8 +60,8 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             for agent in waiting {
                 let reason = agent.status == .blocked ? "needs you" : "finished"
                 let elapsed = Elapsed.short(agent.since, now: now).map { ", \($0)" } ?? ""
-                let workspace = agent.workspaceLabel.isEmpty ? "" : " · \(agent.workspaceLabel)"
-                let entry = NSMenuItem(title: "\(agent.agent.displayName)\(workspace): \(reason)\(elapsed)",
+                let project = agent.project.isEmpty ? "" : " · \(agent.project)"
+                let entry = NSMenuItem(title: "\(agent.name)\(project): \(agent.statusLabel ?? reason)\(elapsed)",
                                        action: #selector(jump(_:)), keyEquivalent: "")
                 entry.target = self
                 entry.representedObject = agent.id
@@ -73,32 +72,27 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         }
 
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "Socket: \(store.client.socketPath)", action: nil, keyEquivalent: ""))
         let quit = NSMenuItem(title: "Quit Shepherd", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         menu.addItem(quit)
     }
 
+    /// The herd's state, then each source's own lines (version, warnings).
     private func headerLines() -> [String] {
-        let snapshot = store.session.snapshot
         var lines: [String]
-        switch store.connection {
-        case .connecting: lines = ["Connecting to herdr…"]
+        switch store.overallState {
+        case .connecting: lines = ["Connecting…"]
         case .disconnected(let reason): lines = ["Not connected: \(reason). Retrying."]
         case .stale(let reason): lines = ["Reconnecting: \(reason)"]
-        case .live:
-            let working = store.workingCount
-            lines = ["herdr \(snapshot.version): \(working) working, \(store.needsYou.count) waiting"]
+        case .live: lines = ["\(store.workingCount) working, \(store.needsYou.count) waiting"]
         }
-        switch store.compatibility {
-        case .matched: break
-        case .older(let value): lines.append("herdr protocol \(value) is older than tested (\(HerdrProtocol.tested))")
-        case .newer(let value): lines.append("herdr protocol \(value) is newer than tested (\(HerdrProtocol.tested))")
+        for source in store.sources {
+            lines += store.statusLines[source.id] ?? []
         }
         return lines
     }
 
     @objc private func jump(_ sender: NSMenuItem) {
-        guard let paneID = sender.representedObject as? String else { return }
-        actions.jump(to: paneID)
+        guard let agent = sender.representedObject as? AgentID else { return }
+        actions.jump(to: agent)
     }
 }

@@ -95,7 +95,7 @@ public final class HerdrSource: AgentSource {
         }
         for transition in update.transitions where transition.kind == .closed { known[transition.paneID] = nil }
         return SourceUpdate(agents: agents, state: Self.state(update.connection),
-                            statusLines: Self.statusLines(update), transitions: transitions)
+                            statusLines: statusLines(update), transitions: transitions)
     }
 
     static func status(_ status: AgentStatus) -> HerdStatus {
@@ -121,9 +121,13 @@ public final class HerdrSource: AgentSource {
         }
     }
 
-    static func statusLines(_ update: SessionUpdate) -> [String] {
+    func statusLines(_ update: SessionUpdate) -> [String] {
         var lines: [String] = []
-        if update.connection.isLive { lines.append("herdr \(update.session.snapshot.version)") }
+        if update.connection.isLive {
+            lines.append("herdr \(update.session.snapshot.version)")
+        } else {
+            lines.append("herdr socket: \(client.socketPath)")
+        }
         switch update.compatibility {
         case .matched: break
         case .older(let value): lines.append("herdr protocol \(value) is older than tested (\(HerdrProtocol.tested))")

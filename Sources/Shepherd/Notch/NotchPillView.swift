@@ -26,7 +26,7 @@ struct NotchPillView: View {
         .onHover { hovering = $0 }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)
-        .accessibilityHint("Jumps to the agent in herdr")
+        .accessibilityHint("Jumps to the agent")
         .accessibilityAddTraits(.isButton)
     }
 

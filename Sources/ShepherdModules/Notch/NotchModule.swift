@@ -1,11 +1,11 @@
 import Foundation
-import HerdrKit
 import Observation
 import ShepherdCore
 
 /// Decides what the notch pill shows. A blocked agent stays until it is no longer blocked. A
 /// finished agent shows briefly, then the pill collapses and only the menu bar count remembers
-/// it. Nothing shows for the pane the user is already looking at, or while state is not live.
+/// it. Nothing shows for the agent the user is already looking at, or from a source that is not
+/// live.
 @MainActor
 @Observable
 public final class NotchModule: ShepherdModule {
@@ -14,7 +14,7 @@ public final class NotchModule: ShepherdModule {
 
     @ObservationIgnored private let context: ModuleContext
     /// Finished agents currently inside their brief window.
-    private(set) var brief: Set<String> = []
+    private(set) var brief: Set<AgentID> = []
 
     public init(context: ModuleContext) {
         self.context = context
@@ -23,9 +23,10 @@ public final class NotchModule: ShepherdModule {
 
     public var notch: NotchItem? {
         let store = context.store
-        guard store.connection.isLive else { return nil }
-        let lookingAt = context.presence.terminalIsFrontmost ? store.session.snapshot.focusedPaneID : nil
-        let waiting = store.needsYou.filter { $0.id != lookingAt }
+        let presence = context.presence
+        let waiting = store.needsYou.filter { agent in
+            store.sourceStates[agent.id.source]?.isLive == true && !presence.isLookingAt(agent)
+        }
         if let blocked = waiting.first(where: { $0.status == .blocked }) {
             return NotchItem(agent: blocked, reason: .blocked, others: waiting.count - 1)
         }
@@ -48,13 +49,14 @@ public final class NotchModule: ShepherdModule {
         }
     }
 
-    func startBriefWindows(for transitions: [Transition]) {
-        for transition in transitions where transition.kind == .changed && transition.to == .done {
-            let paneID = transition.paneID
-            brief.insert(paneID)
+    func startBriefWindows(for transitions: [HerdTransition]) {
+        // Only a change seen happening counts, not an agent that appeared already finished.
+        for transition in transitions where transition.from != nil && transition.to == .done {
+            let agent = transition.agent
+            brief.insert(agent)
             Task { [weak self] in
                 try? await Task.sleep(for: Self.briefDuration)
-                self?.brief.remove(paneID)
+                self?.brief.remove(agent)
             }
         }
     }
