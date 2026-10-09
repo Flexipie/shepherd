@@ -19,3 +19,7 @@ Oldest first.
   `ShepherdModule` protocol with `StatusModule` and `NotchModule`; the menu bar item; the notch
   pill with a floating fallback; jumping to an agent focuses its pane and brings the hosting
   terminal forward. Idle: 0% CPU, about 53 MB.
+- Milestone 1, the source seam: the source-neutral herd model, `AgentSource` and `HerdStore` in
+  `ShepherdCore`; `HerdrSource` as the only bridge to `HerdrKit` (its `SessionStore` removed);
+  modules and the app see only the herd model. `TransitionLog` keeps observed transitions on disk
+  (with project labels, capped at 5,000) and restores exact times in state after a restart.

@@ -23,20 +23,6 @@ session. Confirm, then record the answer in PRD "What herdr gives us" or "Data f
   not been tried on a real blocked agent yet.
 - The floating fallback bar on a display without a notch, and the pill on a second display.
 
-## Milestone 1, remaining: the source seam
-
-The rest of milestone 1 shipped (see SHIPPED.md). These two were added when Shepherd stopped
-being herdr-only, and are not built yet.
-
-- Herd model and source seam (PRD "Sources"): a small source-neutral model of agents, states,
-  transitions and capabilities in `ShepherdCore`, with herdr as the only source adapting
-  `HerdrKit` to it. Modules see the herd model, never herdr types.
-- Persist observed transitions in a small local ring buffer, so the timeline, recap and
-  attention ideas have history from day one.
-
-Done when: no module imports `HerdrKit`, and the transitions of a session are still there after
-Shepherd restarts.
-
 ## Milestone 2: the panel
 
 - Workspace cards: label, each agent's state and time in state (honouring `display_agent` and

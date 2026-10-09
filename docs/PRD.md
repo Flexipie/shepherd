@@ -59,16 +59,38 @@ their workspace or project, time in state, tokens, and the transitions Shepherd 
 - Order: herdr through public 0.1, then Claude Code directly, then cloud agents through their
   APIs (opt-in, the first network-using sources).
 
-`HerdrKit` stays a standalone herdr client. The herdr source adapts it to the herd model.
+As built:
+
+- `ShepherdCore` holds the herd model (`HerdAgent`, `HerdStatus`, `Since`, `HerdTransition`,
+  `SourceState`, `SourceCapabilities`), the `AgentSource` protocol and `HerdStore`, which merges
+  every source, orders the needs-you queue across them, and routes focus to the owning source.
+  Agent ids are namespaced by source (`herdr:w1:p1`).
+- `HerdrSource` is the only target that imports both `HerdrKit` and `ShepherdCore`. It adapts
+  herdr's session to the herd model, implements focus (`agent.focus`, then the hosting terminal
+  forward), reports the terminal as its host app, and supplies its own menu lines (version,
+  protocol warnings, the socket path while disconnected). Today it declares only `focus`.
+- `HerdrKit` stays a standalone herdr client: socket, models, `SessionEngine`, transition tracking.
+
+### Transition history
+
+`TransitionLog` appends every observed transition to
+`~/Library/Application Support/Shepherd/transitions.jsonl`: source, agent id, agent kind,
+project label, from, to, time, precision and an opaque source marker. It is written only when
+transitions happen, capped by compacting to the newest 5,000 entries, skips unreadable lines, and
+never leaves the Mac. It is the history for the timeline, recap and attention ideas, and it lets
+time in state survive a restart: herdr's marker is `<terminal id>|<state change seq>`, and when an
+agent still has both after a restart, the logged exact time is restored instead of "no later
+than". `SHEPHERD_TRANSITION_LOG` points it elsewhere for development runs.
 
 ## Layout
 
 | Target | Role |
 | --- | --- |
-| `HerdrKit` | Socket client, lenient Codable models, `SessionStore`, transition tracking. No UI. Usable on its own. |
+| `HerdrKit` | herdr socket client, lenient Codable models, `SessionEngine`, transition tracking. No UI, no Shepherd. Usable on its own. |
 | `HerdrFake` | A fake herdr on a real Unix socket: a scriptable herd or a recorded fixture, with herdr's quirks (one request per connection, subscription validation, both event spellings, `events_lost`). Also the `Sanitiser` for fixtures. Used by tests and later demo mode. No UI. |
 | `RecordFixture`, `FakeHerdr` | Dev tools: `make fixture` records a sanitised fixture; `swift run FakeHerdr` runs a fake driven from stdin. |
-| `ShepherdCore` | `ShepherdModule` protocol, module registry, config loading and reload, token style rules, the action model. |
+| `ShepherdCore` | The herd model, `AgentSource`, `HerdStore`, `TransitionLog`, the `ShepherdModule` protocol; later config, token rules and the action model. No source types. |
+| `HerdrSource` | herdr as a source: adapts `HerdrKit` to the herd model. The only target that sees both. |
 | `ShepherdModules` | Built-in features, one folder each, listed in `BuiltinModules.all`. |
 | `Shepherd` | The app: status item, panel, notch panel, palette, notifications, settings. Thin. |
 
@@ -138,8 +160,9 @@ This is the herdr source. herdr speaks newline-delimited JSON over a Unix socket
 5. **Transitions.** After each snapshot, `HerdrKit` diffs it against the previous one (status and
    seq fields) and emits transitions with the time Shepherd observed them. Time in state, the
    needs-you queue, notifications and the outcome line all read from these transitions.
-6. **Observation.** `SessionStore` publishes an immutable `Session` value through Swift
-   Observation; views read only the slices they show, so an update redraws only what changed.
+6. **Into the herd.** `SessionEngine` publishes immutable `SessionUpdate` values; `HerdrSource`
+   adapts each to a `SourceUpdate`, and `HerdStore` (main actor, Swift Observation) sets each
+   property only when its value changes, so a surface redraws only when what it shows changed.
 
 ## Surfaces
 
