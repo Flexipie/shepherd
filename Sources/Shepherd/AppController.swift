@@ -16,6 +16,7 @@ final class AppController {
     private let config = ConfigStore()
     private let registry: ModuleRegistry
     private var statusItem: StatusItemController?
+    private var panel: PanelController?
     private var notch: NotchController?
 
     init() {
@@ -26,7 +27,9 @@ final class AppController {
     }
 
     func start() {
-        statusItem = StatusItemController(store: store, registry: registry, actions: actions)
+        let panel = PanelController(store: store, registry: registry, config: config, actions: actions)
+        self.panel = panel
+        statusItem = StatusItemController(store: store, registry: registry, panel: panel)
         notch = NotchController(registry: registry, actions: actions)
         Task {
             // The log restores exact times in state, so read it before the first snapshot.

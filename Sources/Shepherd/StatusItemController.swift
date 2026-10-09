@@ -2,23 +2,29 @@ import AppKit
 import Observation
 import ShepherdCore
 
-/// The menu bar item. The button redraws only when a module's status contribution changes; the
-/// menu is built when it opens, so nothing renders while it is closed.
+/// The menu bar item. The button redraws only when a module's status contribution changes. A
+/// left click toggles the panel; a right or control click shows a small menu, built when it
+/// opens, so nothing renders while it is closed.
 @MainActor
-final class StatusItemController: NSObject, NSMenuDelegate {
+final class StatusItemController: NSObject {
     private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let store: HerdStore
     private let registry: ModuleRegistry
-    private let actions: any AgentActions
+    private let panel: PanelController
 
-    init(store: HerdStore, registry: ModuleRegistry, actions: any AgentActions) {
+    init(store: HerdStore, registry: ModuleRegistry, panel: PanelController) {
         self.store = store
         self.registry = registry
-        self.actions = actions
+        self.panel = panel
         super.init()
-        let menu = NSMenu()
-        menu.delegate = self
-        item.menu = menu
+        // No permanent `item.menu`: while one is set, the button's action never fires.
+        item.button?.target = self
+        item.button?.action = #selector(clicked(_:))
+        item.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
+        panel.onVisibilityChange = { [weak self] open in
+            // After the click's own highlight handling, so it sticks.
+            Task { @MainActor in self?.item.button?.highlight(open) }
+        }
         render()
     }
 
@@ -44,55 +50,39 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         button.toolTip = contribution.accessibilityLabel
     }
 
+    @objc private func clicked(_ sender: NSStatusBarButton) {
+        let event = NSApp.currentEvent
+        if event?.type == .rightMouseUp || event?.modifierFlags.contains(.control) == true {
+            panel.close()
+            showMenu()
+        } else {
+            togglePanel()
+        }
+    }
+
+    func togglePanel() {
+        if panel.isOpen {
+            panel.close()
+            return
+        }
+        // A click on the button first takes key from the panel, which closes it; that click must
+        // not reopen it.
+        guard Date().timeIntervalSince(panel.closedAt) > 0.3 else { return }
+        guard let button = item.button, let window = button.window, let screen = window.screen ?? NSScreen.main else { return }
+        panel.open(under: window.convertToScreen(button.convert(button.bounds, to: nil)), on: screen)
+    }
+
     // MARK: Menu
 
-    func menuNeedsUpdate(_ menu: NSMenu) {
-        menu.removeAllItems()
-        for line in headerLines() {
+    private func showMenu() {
+        let menu = NSMenu()
+        for line in HerdSummary.lines(store) {
             menu.addItem(NSMenuItem(title: line, action: nil, keyEquivalent: ""))
         }
-
-        let waiting = store.needsYou.filter { store.sourceStates[$0.id.source]?.isLive == true }
-        if !waiting.isEmpty {
-            menu.addItem(.separator())
-            menu.addItem(NSMenuItem.sectionHeader(title: "Needs you"))
-            let now = Date()
-            for agent in waiting {
-                let reason = agent.status == .blocked ? "needs you" : "finished"
-                let elapsed = Elapsed.short(agent.since, now: now).map { ", \($0)" } ?? ""
-                let project = agent.project.isEmpty ? "" : " · \(agent.project)"
-                let entry = NSMenuItem(title: "\(agent.name)\(project): \(agent.statusLabel ?? reason)\(elapsed)",
-                                       action: #selector(jump(_:)), keyEquivalent: "")
-                entry.target = self
-                entry.representedObject = agent.id
-                entry.image = NSImage(systemSymbolName: agent.status == .blocked ? "exclamationmark.circle" : "checkmark.circle",
-                                      accessibilityDescription: reason)
-                menu.addItem(entry)
-            }
-        }
-
         menu.addItem(.separator())
-        let quit = NSMenuItem(title: "Quit Shepherd", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
-        menu.addItem(quit)
-    }
-
-    /// The herd's state, then each source's own lines (version, warnings).
-    private func headerLines() -> [String] {
-        var lines: [String]
-        switch store.overallState {
-        case .connecting: lines = ["Connecting…"]
-        case .disconnected(let reason): lines = ["Not connected: \(reason). Retrying."]
-        case .stale(let reason): lines = ["Reconnecting: \(reason)"]
-        case .live: lines = ["\(store.workingCount) working, \(store.needsYou.count) waiting"]
-        }
-        for source in store.sources {
-            lines += store.statusLines[source.id] ?? []
-        }
-        return lines
-    }
-
-    @objc private func jump(_ sender: NSMenuItem) {
-        guard let agent = sender.representedObject as? AgentID else { return }
-        actions.jump(to: agent)
+        menu.addItem(NSMenuItem(title: "Quit Shepherd", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        item.menu = menu
+        item.button?.performClick(nil)
+        item.menu = nil
     }
 }
