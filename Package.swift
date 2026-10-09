@@ -24,10 +24,14 @@ let package = Package(
         .target(name: "HerdrSource", dependencies: ["HerdrKit", "ShepherdCore"]),
         // Built-in features, one folder per module.
         .target(name: "ShepherdModules", dependencies: ["ShepherdCore"]),
+        // SwiftUI views for the panel and the notch pill. Values in, no windows, no glass, so
+        // every view can be snapshot tested.
+        .target(name: "ShepherdUI", dependencies: ["ShepherdCore"]),
         // The app: menu bar item, panel, notch pill, settings.
-        .executableTarget(name: "Shepherd", dependencies: ["ShepherdModules", "ShepherdCore", "HerdrSource"]),
+        .executableTarget(name: "Shepherd", dependencies: ["ShepherdModules", "ShepherdCore", "ShepherdUI", "HerdrSource"]),
         .testTarget(name: "HerdrKitTests", dependencies: ["HerdrKit", "HerdrFake"]),
         .testTarget(name: "HerdrSourceTests", dependencies: ["HerdrSource", "HerdrKit", "HerdrFake", "ShepherdCore"]),
         .testTarget(name: "ShepherdCoreTests", dependencies: ["ShepherdCore", "ShepherdModules"]),
+        .testTarget(name: "ShepherdUITests", dependencies: ["ShepherdUI", "ShepherdCore"], exclude: ["__Snapshots__"]),
     ]
 )

@@ -78,7 +78,7 @@ final class RecordingActions: AgentActions {
 
         module.startBriefWindows(for: [HerdTransition(agent: AgentID(source: "herdr", local: "c"), from: .working, to: .done, at: Date())])
         #expect(module.notch?.reason == .finished)
-        try await Task.sleep(for: .milliseconds(300))
+        for _ in 0..<500 where module.notch != nil { try await Task.sleep(for: .milliseconds(10)) }
         #expect(module.notch == nil)
         #expect(StatusModule(context: context).status?.count == 1)
     }

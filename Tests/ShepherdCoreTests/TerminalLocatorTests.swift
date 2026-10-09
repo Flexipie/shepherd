@@ -37,5 +37,10 @@ import Testing
         #expect(Elapsed.short(Since(now.addingTimeInterval(-300), .noLaterThan), now: now) == "5m+")
         #expect(Elapsed.short(Since(now.addingTimeInterval(-3_900), .exact), now: now) == "1h 5m")
         #expect(Elapsed.short(nil) == nil)
+        #expect(Elapsed.spoken(Since(now.addingTimeInterval(-30), .exact), now: now) == "just now")
+        #expect(Elapsed.spoken(Since(now.addingTimeInterval(-60), .exact), now: now) == "1 minute")
+        #expect(Elapsed.spoken(Since(now.addingTimeInterval(-300), .noLaterThan), now: now) == "at least 5 minutes")
+        #expect(Elapsed.spoken(Since(now.addingTimeInterval(-3_900), .exact), now: now) == "1 hour 5 minutes")
+        #expect(Elapsed.spoken(Since(now.addingTimeInterval(-7_200), .exact), now: now) == "2 hours")
     }
 }

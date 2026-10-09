@@ -16,3 +16,14 @@ jobs:
         run: make build
       - name: Test
         run: make test
+      # References are compared only on the OS build they were recorded on; elsewhere the views
+      # are rendered and uploaded here so a reviewer can see them.
+      - name: Upload view renders
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: view-renders
+          path: |
+            .build/snapshot-renders
+            .build/snapshot-failures
+          if-no-files-found: ignore

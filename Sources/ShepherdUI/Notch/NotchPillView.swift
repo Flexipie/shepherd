@@ -3,20 +3,35 @@ import SwiftUI
 
 /// The pill's content: which agent, why, and how many others are waiting. The whole pill is one
 /// button that jumps to the agent.
-struct NotchPillView: View {
+public struct NotchPillView: View {
+    public enum Style: Equatable, Sendable {
+        /// Grows out of the notch; content sits below the camera, `height` points down.
+        case notch(height: CGFloat)
+        /// A capsule under the menu bar on a display without a notch.
+        case floating
+    }
+
+    public nonisolated static let contentHeight: CGFloat = 44
+
     let item: NotchItem
-    let style: NotchGeometry.Style
+    let style: Style
     let onJump: () -> Void
+
+    public init(item: NotchItem, style: Style, onJump: @escaping () -> Void) {
+        self.item = item
+        self.style = style
+        self.onJump = onJump
+    }
 
     @State private var hovering = false
 
-    var body: some View {
+    public var body: some View {
         Button(action: onJump) {
             VStack(spacing: 0) {
                 if case .notch(let height) = style { Color.clear.frame(height: height) }
                 row
                     .padding(.horizontal, 18)
-                    .frame(height: NotchGeometry.contentHeight)
+                    .frame(height: Self.contentHeight)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(background)
@@ -67,7 +82,9 @@ struct NotchPillView: View {
             UnevenRoundedRectangle(bottomLeadingRadius: 18, bottomTrailingRadius: 18)
                 .fill(Color.black)
         case .floating:
-            Capsule().fill(.regularMaterial)
+            // Solid rather than a material: materials render flat in snapshots, and the pill must
+            // read over any wallpaper.
+            Capsule().fill(Color(nsColor: .windowBackgroundColor))
                 .overlay(Capsule().strokeBorder(.separator, lineWidth: 0.5))
         }
     }

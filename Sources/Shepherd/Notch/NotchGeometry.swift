@@ -1,18 +1,16 @@
 import AppKit
+import ShepherdUI
 
 /// Where the pill goes. On a notched display it grows out of the notch: flush with the top of
 /// the screen, centred on the notch, with its content below the camera. Elsewhere it is a small
 /// floating capsule under the menu bar.
 struct NotchGeometry: Equatable {
-    enum Style: Equatable {
-        case notch(height: CGFloat)
-        case floating
-    }
+    typealias Style = NotchPillView.Style
 
     let frame: NSRect
     let style: Style
 
-    static let contentHeight: CGFloat = 44
+    static let contentHeight = NotchPillView.contentHeight
     static let minimumWidth: CGFloat = 340
 
     /// The display with a notch if there is one, otherwise the main display.

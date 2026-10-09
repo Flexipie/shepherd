@@ -1,6 +1,7 @@
 import AppKit
 import Observation
 import ShepherdCore
+import ShepherdUI
 import SwiftUI
 
 /// Shows the first notch item any module offers. The panel and its views exist only while there
