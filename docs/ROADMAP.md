@@ -22,20 +22,9 @@ session. Confirm, then record the answer in PRD "What herdr gives us" or "Data f
   `agent.focus` request is tested against the fake; the click and the terminal activation have
   not been tried on a real blocked agent yet.
 - The floating fallback bar on a display without a notch, and the pill on a second display.
-
-## Milestone 2: the panel
-
-- Workspace cards: label, each agent's state and time in state (honouring `display_agent` and
-  `state_labels`), workspace and pane tokens styled by config rules.
-- Needs-you queue at the top: blocked first, then unseen done, oldest first, one key to jump
-  through them in order.
-- Focus button (`agent.focus` or `workspace.focus`, plus activating the terminal app across
-  Spaces and displays).
-- Config file with hot reload: modules, token styles.
-- View snapshot tests (`ImageRenderer`, light and dark) for cards and the queue.
-
-Done when: someone running five agents can answer "who needs me, and for how long" from the
-panel without opening the terminal.
+- Found in milestone 2: clicking a project card (`workspace.focus`) and a blocked agent in the
+  panel on a real herdr; closing the panel with a real click outside it; token colours and rules
+  matching herdr's own sidebar side by side; VoiceOver reading the panel rows.
 
 ## Milestone 3: alerts that earn it
 
@@ -87,6 +76,12 @@ Done when: a stranger installs it from the README in a minute and it works with 
 
 Done when: someone who has never installed herdr runs three Claude Code sessions and works their
 needs-you queue from Shepherd.
+
+## Follow-ups from milestone 2
+
+- `rows_by_agent` from herdr's sidebar config (per agent kind layouts).
+- Memory: about 65 MB with the notch pill showing, above the 40 to 60 MB budget. Measure what the
+  panel's first open costs and what stays resident.
 
 ## Later
 

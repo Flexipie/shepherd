@@ -31,6 +31,8 @@ future source with no API, live only inside that source's adapter (`docs/PRD.md`
 - No third-party dependencies. Apple frameworks only. Ask before adding one.
 - Swift 6 language mode with strict concurrency. UI on the main actor; I/O off it.
 - `HerdrKit` has no UI imports and no knowledge of Shepherd. It must stay usable on its own.
+- `ShepherdUI` holds SwiftUI views only: values in, no windows, no glass or materials (they render
+  flat or invisible in `ImageRenderer`), no `Date()` (take `now`). The window supplies the glass.
 - Modules see the source-neutral herd model, never `HerdrKit` or other source types.
   `HerdrSource` is the only target that imports both `HerdrKit` and `ShepherdCore`.
 - A feature is a module under `Sources/ShepherdModules/<Name>/`, registered in
@@ -52,10 +54,21 @@ make app     # build/Shepherd.app (release, ad-hoc signed)
 make run     # app, then relaunch it
 make fixture NAME=basic SECONDS=10   # record a sanitised fixture from the running herdr
 SHEPHERD_LIVE=1 swift test --filter LiveHerdr   # read-only checks against the real herdr
-swift run FakeHerdr /tmp/shepherd-fake.sock     # fake herdr driven from stdin; point the app at it
-                                                # with HERDR_SOCKET_PATH=/tmp/shepherd-fake.sock
-                                                # and SHEPHERD_TRANSITION_LOG=/tmp/fake-log.jsonl
+swift run FakeHerdr /tmp/shepherd-fake.sock     # fake herdr driven from stdin (block, done, add,
+                                                # label, token, stop, start, focused; see its main.swift)
+SHEPHERD_RECORD_SNAPSHOTS=1 swift test --filter ShepherdUITests   # re-record view snapshots
 ```
+
+Point a dev run at the fake and away from your real files with environment variables:
+
+- `HERDR_SOCKET_PATH=/tmp/shepherd-fake.sock`: the herdr socket.
+- `SHEPHERD_TRANSITION_LOG=<path>`: the transition log, so fake runs do not mix into real history.
+- `SHEPHERD_CONFIG_PATH=<path>`: Shepherd's config (default `~/.config/shepherd/config.json`).
+- `HERDR_CONFIG_PATH=<path>`: herdr's config, read for sidebar token styling.
+
+Snapshot references are compared strictly only on the OS build in
+`Tests/ShepherdUITests/__Snapshots__/RECORDED_ON`; after an OS update, re-record and look at the
+images before committing them.
 
 Check the UI against the fake before your own herdr: it lets you block, finish, add and remove
 agents and stop herdr without touching real work. Review a recorded fixture before committing it.
