@@ -4,14 +4,15 @@ The why, the audience and the quality bar are in [VISION.md](VISION.md). This do
 
 ## What it is
 
-A native macOS companion for herdr that lives in the menu bar and the notch. herdr already knows
-the state of every workspace, pane and agent, and exposes it on a local socket. Shepherd connects
-to that socket and gives it a richer surface than a terminal can: full colour, any layout, no
-length limits, native notifications, and actions from any app.
+A native macOS app in the menu bar and the notch for running a herd of coding agents. Agents
+reach Shepherd through **sources**. herdr is the first and richest one: it already knows the
+state of every workspace, pane and agent, and exposes it on a local socket. Shepherd gives that
+state a richer surface than a terminal can: full colour, any layout, no length limits, native
+notifications, and actions from any app.
 
-Shepherd is herdr-specific but not person-specific. Anything personal (Linear tickets, PR numbers,
-review verdicts) reaches Shepherd as herdr **tokens** published by herdr plugins, and Shepherd
-renders tokens generically. Personal actions are config, not code.
+Shepherd is not person-specific. Anything personal (Linear tickets, PR numbers, review verdicts)
+reaches Shepherd as **tokens** published by plugins, and Shepherd renders tokens generically.
+Personal actions are config, not code.
 
 ## Goals
 
@@ -25,7 +26,7 @@ renders tokens generically. Personal actions are config, not code.
 
 ## Non-goals
 
-- Collecting agent state itself (hooks, terminal scraping). herdr owns that.
+- Scraping terminals. Hooks only inside a source adapter, for agents with no API (see "Sources").
 - Cross-platform, or macOS before 26. Shepherd targets macOS 26 and later so it can use the
   on-device model, `SpeechAnalyzer`, Liquid Glass and current App Intents without fallbacks for
   old systems.
@@ -38,8 +39,27 @@ renders tokens generically. Personal actions are config, not code.
 Ideas we take: the notch panel technique (borderless non-activating `NSPanel` just above the main
 menu window level, on all Spaces, mouse-transparent until hovered; notch detected via
 `NSScreen.safeAreaInsets.top`, with a top-bar fallback on Macs without one), toggleable "pills",
-and a character with personality. What we avoid: a closed enum of pills, very large files, and an
-app-owned hook server.
+and a character with personality. What we avoid: a closed enum of pills, very large files, and
+hook handling spread through the app. How Shepherd positions itself against Coucou is in
+[STRATEGY.md](STRATEGY.md).
+
+## Sources
+
+A source is where agents come from. Modules and surfaces never see a source's wire types; they
+see one **herd model**: agents with a state (`idle`, `working`, `blocked`, `done`, `unknown`),
+their workspace or project, time in state, tokens, and the transitions Shepherd observed.
+
+- Each source declares its **capabilities**: focus, read output, prompt, send keys, approve,
+  start an agent, create a worktree. Surfaces hide what a source cannot do instead of failing.
+- Each source owns its own connection, recovery and decoding. The "Data flow" rules below are
+  herdr's; another source follows the same spirit (no polling where events exist, never show
+  stale state as current).
+- Hooks are allowed only inside a source adapter, for an agent that has no API. Nothing outside
+  the adapter knows a hook exists.
+- Order: herdr through public 0.1, then Claude Code directly, then cloud agents through their
+  APIs (opt-in, the first network-using sources).
+
+`HerdrKit` stays a standalone herdr client. The herdr source adapts it to the herd model.
 
 ## Layout
 
@@ -83,7 +103,7 @@ Checked against herdr 0.9.3 (socket protocol 22, `herdr api schema` and the sock
 
 ## Data flow
 
-herdr speaks newline-delimited JSON over a Unix socket (`~/.config/herdr/herdr.sock`, or
+This is the herdr source. herdr speaks newline-delimited JSON over a Unix socket (`~/.config/herdr/herdr.sock`, or
 `HERDR_SOCKET_PATH`, or `sessions/<name>/herdr.sock` for `HERDR_SESSION`). Each request is one line
 `{"id","method","params"}`; each response echoes the `id`.
 
@@ -174,13 +194,13 @@ A module is a main-actor class conforming to `ShepherdModule`, in
 - notch content (what the pill shows, and when it should appear),
 - actions (see "Actions").
 
-Modules get a `ModuleContext`: the `SessionStore` (session, needs-you, connection state, latest
-transitions), a `Presence` (whether herdr's terminal is frontmost) and `AgentActions` (jump to an
-agent). They do not open their own herdr connections. Contributions are value types
-(`StatusContribution`, `NotchItem`) computed from observable state; the app reads them inside
-observation tracking, so a surface redraws only when what it shows changes. The protocol grew
-from the first two real modules (`StatusModule`, `NotchModule`); panel views are added in
-milestone 2.
+Modules receive the herd model (see "Sources"), its transitions and the config through a
+`ModuleContext`, plus a `Presence` (whether the agent's host app is frontmost) and actions (jump
+to an agent). They do not open their own connections or import source types such as `HerdrKit`.
+Contributions are value types (`StatusContribution`, `NotchItem`) computed from observable state;
+the app reads them inside observation tracking, so a surface redraws only when what it shows
+changes. The protocol grew from the first two real modules (`StatusModule`, `NotchModule`);
+panel views are added in milestone 2.
 
 ### Adding a module
 
