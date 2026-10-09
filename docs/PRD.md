@@ -59,15 +59,38 @@ their workspace or project, time in state, tokens, and the transitions Shepherd 
 - Order: herdr through public 0.1, then Claude Code directly, then cloud agents through their
   APIs (opt-in, the first network-using sources).
 
-`HerdrKit` stays a standalone herdr client. The herdr source adapts it to the herd model.
+As built:
+
+- `ShepherdCore` holds the herd model (`HerdAgent`, `HerdStatus`, `Since`, `HerdTransition`,
+  `SourceState`, `SourceCapabilities`), the `AgentSource` protocol and `HerdStore`, which merges
+  every source, orders the needs-you queue across them, and routes focus to the owning source.
+  Agent ids are namespaced by source (`herdr:w1:p1`).
+- `HerdrSource` is the only target that imports both `HerdrKit` and `ShepherdCore`. It adapts
+  herdr's session to the herd model, implements focus (`agent.focus`, then the hosting terminal
+  forward), reports the terminal as its host app, and supplies its own menu lines (version,
+  protocol warnings, the socket path while disconnected). Today it declares only `focus`.
+- `HerdrKit` stays a standalone herdr client: socket, models, `SessionEngine`, transition tracking.
+
+### Transition history
+
+`TransitionLog` appends every observed transition to
+`~/Library/Application Support/Shepherd/transitions.jsonl`: source, agent id, agent kind,
+project label, from, to, time, precision and an opaque source marker. It is written only when
+transitions happen, capped by compacting to the newest 5,000 entries, skips unreadable lines, and
+never leaves the Mac. It is the history for the timeline, recap and attention ideas, and it lets
+time in state survive a restart: herdr's marker is `<terminal id>|<state change seq>`, and when an
+agent still has both after a restart, the logged exact time is restored instead of "no later
+than". `SHEPHERD_TRANSITION_LOG` points it elsewhere for development runs.
 
 ## Layout
 
 | Target | Role |
 | --- | --- |
-| `HerdrKit` | Socket client, lenient Codable models, `SessionStore`, transition tracking. No UI. Usable on its own. |
-| `HerdrFake` | Planned. A fake herdr server that replays sanitised fixtures over a real Unix socket. Used by tests and by demo mode. No UI. |
-| `ShepherdCore` | `ShepherdModule` protocol, module registry, config loading and reload, token style rules, the action model. |
+| `HerdrKit` | herdr socket client, lenient Codable models, `SessionEngine`, transition tracking. No UI, no Shepherd. Usable on its own. |
+| `HerdrFake` | A fake herdr on a real Unix socket: a scriptable herd or a recorded fixture, with herdr's quirks (one request per connection, subscription validation, both event spellings, `events_lost`). Also the `Sanitiser` for fixtures. Used by tests and later demo mode. No UI. |
+| `RecordFixture`, `FakeHerdr` | Dev tools: `make fixture` records a sanitised fixture; `swift run FakeHerdr` runs a fake driven from stdin. |
+| `ShepherdCore` | The herd model, `AgentSource`, `HerdStore`, `TransitionLog`, the `ShepherdModule` protocol; later config, token rules and the action model. No source types. |
+| `HerdrSource` | herdr as a source: adapts `HerdrKit` to the herd model. The only target that sees both. |
 | `ShepherdModules` | Built-in features, one folder each, listed in `BuiltinModules.all`. |
 | `Shepherd` | The app: status item, panel, notch panel, palette, notifications, settings. Thin. |
 
@@ -106,13 +129,23 @@ This is the herdr source. herdr speaks newline-delimited JSON over a Unix socket
 `HERDR_SOCKET_PATH`, or `sessions/<name>/herdr.sock` for `HERDR_SESSION`). Each request is one line
 `{"id","method","params"}`; each response echoes the `id`.
 
-1. **Subscription connection.** One long-lived connection sends `events.subscribe` for the
-   workspace, tab, pane lifecycle and `pane.agent_status_changed` events, without pane filters (a
-   filter naming a missing pane makes herdr reject the whole request and close the connection).
-   Wait for `subscription_started`; later lines are pushed events. There is no general output
-   stream to subscribe to (only `pane.output_matched` for a pattern), and that is fine: a surface
-   that shows output (hover peek, the notch pill) reads it on demand while visible.
-2. **Request connection.** A separate connection for request/response calls.
+1. **Subscription connection.** One long-lived connection sends `events.subscribe` with every
+   workspace, worktree, tab and pane lifecycle type, plus one `pane.agent_status_changed` entry
+   per pane: herdr requires a `pane_id` for status changes, and lifecycle events alone do not
+   report them. One unknown pane makes herdr reject the whole request (`pane_not_found`) and close
+   the connection, so the pane set always comes from the latest snapshot. With nothing open,
+   Shepherd starts a global-only subscription (it cannot fail on a pane), then upgrades to the
+   full set. When panes change it starts the new subscription before closing the old one, so
+   there is no window without events; a rejected upgrade keeps the old one and refreshes. All of
+   this lives in `SubscriptionPlanner`, a pure reducer. Wait for `subscription_started`; later
+   lines are pushed events. Lifecycle events arrive as `workspace_focused` (underscores, with
+   `data.type`), per-pane ones as `pane.agent_status_changed` (dots); Shepherd normalises both.
+   There is no general output stream to subscribe to (only `pane.output_matched` for a pattern),
+   and that is fine: a surface that shows output (hover peek, the notch pill) reads it on demand
+   while visible.
+2. **Requests.** herdr serves one request per connection (a second request on the same connection
+   gets EOF). Every call connects, writes one line, reads one line and closes, so calls can run in
+   parallel and there is no shared request connection to manage.
 3. **Events are invalidation, not state.** herdr gives no shared sequence between snapshots and
    events, and orders events only within one subscription entry. Shepherd does not patch its cache
    from event payloads. An event marks state dirty; a coalesced (about 100 ms) `session.snapshot`
@@ -120,13 +153,16 @@ This is the herdr source. herdr speaks newline-delimited JSON over a Unix socket
 4. **Recovery.** If the subscriber falls behind, herdr sends an error with the subscription's
    request id and `error.code: "events_lost"`, then closes that connection. On that, or on any
    dropped connection: mark state stale, resubscribe, wait for `subscription_started`, take a
-   fresh snapshot. If herdr is not running, show a disconnected state and retry with backoff
-   (no faster than the idle budget allows once it has been gone a while).
+   fresh snapshot. If herdr is not running, show a disconnected state, watch the socket's folder
+   so a returning herdr is picked up at once, and retry with backoff (0.5 s growing to a 60 s
+   cap). Retries faster than once a minute in the first minute after a disconnect are the one
+   documented exception to the idle budget.
 5. **Transitions.** After each snapshot, `HerdrKit` diffs it against the previous one (status and
    seq fields) and emits transitions with the time Shepherd observed them. Time in state, the
    needs-you queue, notifications and the outcome line all read from these transitions.
-6. **Observation.** `SessionStore` publishes an immutable `Session` value through Swift
-   Observation; views read only the slices they show, so an update redraws only what changed.
+6. **Into the herd.** `SessionEngine` publishes immutable `SessionUpdate` values; `HerdrSource`
+   adapts each to a `SourceUpdate`, and `HerdStore` (main actor, Swift Observation) sets each
+   property only when its value changes, so a surface redraws only when what it shows changed.
 
 ## Surfaces
 
@@ -181,9 +217,13 @@ A module is a main-actor class conforming to `ShepherdModule`, in
 - notch content (what the pill shows, and when it should appear),
 - actions (see "Actions").
 
-Modules receive the herd model (see "Sources"), its transitions and the config; they do not open
-their own connections or import source types such as `HerdrKit`. The protocol is settled in milestone 1 by building the first two real modules
-(menu bar status and notch), not designed ahead of them.
+Modules receive the herd model (see "Sources"), its transitions and the config through a
+`ModuleContext`, plus a `Presence` (whether the agent's host app is frontmost) and actions (jump
+to an agent). They do not open their own connections or import source types such as `HerdrKit`.
+Contributions are value types (`StatusContribution`, `NotchItem`) computed from observable state;
+the app reads them inside observation tracking, so a surface redraws only when what it shows
+changes. The protocol grew from the first two real modules (`StatusModule`, `NotchModule`);
+panel views are added in milestone 2.
 
 ### Adding a module
 

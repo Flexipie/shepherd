@@ -1,0 +1,682 @@
+{
+  "events" : [
+
+  ],
+  "snapshot" : {
+    "agents" : [
+      {
+        "agent" : "claude",
+        "agent_session" : {
+          "agent" : "claude",
+          "kind" : "id",
+          "source" : "source-1",
+          "value" : "value-1"
+        },
+        "agent_status" : "done",
+        "completion_seq" : 1132,
+        "cwd" : "\/tmp\/project-1",
+        "focused" : false,
+        "foreground_cwd" : "\/tmp\/project-1",
+        "pane_id" : "p1",
+        "revision" : 13,
+        "state_change_seq" : 1132,
+        "tab_id" : "t2",
+        "terminal_id" : "term1",
+        "terminal_title" : "terminal_title-1",
+        "terminal_title_stripped" : "terminal_title_stripped-1",
+        "workspace_id" : "w1"
+      },
+      {
+        "agent" : "claude",
+        "agent_session" : {
+          "agent" : "claude",
+          "kind" : "id",
+          "source" : "source-1",
+          "value" : "value-2"
+        },
+        "agent_status" : "working",
+        "cwd" : "\/tmp\/project-2",
+        "focused" : false,
+        "foreground_cwd" : "\/tmp\/project-2",
+        "pane_id" : "p2",
+        "revision" : 17,
+        "state_change_seq" : 1123,
+        "tab_id" : "t3",
+        "terminal_id" : "term2",
+        "terminal_title" : "terminal_title-2",
+        "terminal_title_stripped" : "terminal_title_stripped-2",
+        "workspace_id" : "w2"
+      },
+      {
+        "agent" : "claude",
+        "agent_session" : {
+          "agent" : "claude",
+          "kind" : "id",
+          "source" : "source-1",
+          "value" : "value-3"
+        },
+        "agent_status" : "idle",
+        "completion_seq" : 1044,
+        "cwd" : "\/tmp\/project-3",
+        "focused" : false,
+        "foreground_cwd" : "\/tmp\/project-3",
+        "pane_id" : "p3",
+        "revision" : 4,
+        "state_change_seq" : 1044,
+        "tab_id" : "t4",
+        "terminal_id" : "term3",
+        "terminal_title" : "terminal_title-3",
+        "terminal_title_stripped" : "terminal_title_stripped-3",
+        "workspace_id" : "w3"
+      },
+      {
+        "agent" : "claude",
+        "agent_session" : {
+          "agent" : "claude",
+          "kind" : "id",
+          "source" : "source-1",
+          "value" : "value-4"
+        },
+        "agent_status" : "working",
+        "cwd" : "\/tmp\/project-4",
+        "focused" : false,
+        "foreground_cwd" : "\/tmp\/project-4",
+        "pane_id" : "p4",
+        "revision" : 5,
+        "state_change_seq" : 1104,
+        "tab_id" : "t5",
+        "terminal_id" : "term4",
+        "terminal_title" : "terminal_title-4",
+        "terminal_title_stripped" : "terminal_title_stripped-4",
+        "workspace_id" : "w4"
+      },
+      {
+        "agent" : "claude",
+        "agent_session" : {
+          "agent" : "claude",
+          "kind" : "id",
+          "source" : "source-1",
+          "value" : "value-5"
+        },
+        "agent_status" : "idle",
+        "completion_seq" : 995,
+        "cwd" : "\/tmp\/project-5",
+        "focused" : false,
+        "foreground_cwd" : "\/tmp\/project-5",
+        "pane_id" : "p5",
+        "revision" : 5,
+        "state_change_seq" : 995,
+        "tab_id" : "t6",
+        "terminal_id" : "term5",
+        "terminal_title" : "terminal_title-5",
+        "terminal_title_stripped" : "terminal_title_stripped-5",
+        "workspace_id" : "w5"
+      },
+      {
+        "agent" : "claude",
+        "agent_session" : {
+          "agent" : "claude",
+          "kind" : "id",
+          "source" : "source-1",
+          "value" : "value-6"
+        },
+        "agent_status" : "idle",
+        "completion_seq" : 1121,
+        "cwd" : "\/tmp\/project-6",
+        "focused" : true,
+        "foreground_cwd" : "\/tmp\/project-6",
+        "pane_id" : "p6",
+        "revision" : 4,
+        "state_change_seq" : 1121,
+        "tab_id" : "t1",
+        "terminal_id" : "term6",
+        "terminal_title" : "terminal_title-6",
+        "terminal_title_stripped" : "terminal_title_stripped-6",
+        "workspace_id" : "w6"
+      }
+    ],
+    "focused_pane_id" : "p6",
+    "focused_tab_id" : "t1",
+    "focused_workspace_id" : "w6",
+    "layouts" : [
+      {
+        "area" : {
+          "height" : 47,
+          "width" : 141,
+          "x" : 0,
+          "y" : 0
+        },
+        "focused_pane_id" : "p7",
+        "panes" : [
+          {
+            "focused" : true,
+            "pane_id" : "p7",
+            "rect" : {
+              "height" : 47,
+              "width" : 141,
+              "x" : 0,
+              "y" : 0
+            }
+          }
+        ],
+        "splits" : [
+
+        ],
+        "tab_id" : "t7",
+        "workspace_id" : "w7",
+        "zoomed" : false
+      },
+      {
+        "area" : {
+          "height" : 47,
+          "width" : 141,
+          "x" : 0,
+          "y" : 0
+        },
+        "focused_pane_id" : "p1",
+        "panes" : [
+          {
+            "focused" : true,
+            "pane_id" : "p1",
+            "rect" : {
+              "height" : 47,
+              "width" : 141,
+              "x" : 0,
+              "y" : 0
+            }
+          }
+        ],
+        "splits" : [
+
+        ],
+        "tab_id" : "t2",
+        "workspace_id" : "w1",
+        "zoomed" : false
+      },
+      {
+        "area" : {
+          "height" : 47,
+          "width" : 141,
+          "x" : 0,
+          "y" : 0
+        },
+        "focused_pane_id" : "p2",
+        "panes" : [
+          {
+            "focused" : true,
+            "pane_id" : "p2",
+            "rect" : {
+              "height" : 47,
+              "width" : 141,
+              "x" : 0,
+              "y" : 0
+            }
+          }
+        ],
+        "splits" : [
+
+        ],
+        "tab_id" : "t3",
+        "workspace_id" : "w2",
+        "zoomed" : false
+      },
+      {
+        "area" : {
+          "height" : 47,
+          "width" : 141,
+          "x" : 0,
+          "y" : 0
+        },
+        "focused_pane_id" : "p3",
+        "panes" : [
+          {
+            "focused" : true,
+            "pane_id" : "p3",
+            "rect" : {
+              "height" : 47,
+              "width" : 141,
+              "x" : 0,
+              "y" : 0
+            }
+          }
+        ],
+        "splits" : [
+
+        ],
+        "tab_id" : "t4",
+        "workspace_id" : "w3",
+        "zoomed" : false
+      },
+      {
+        "area" : {
+          "height" : 47,
+          "width" : 141,
+          "x" : 0,
+          "y" : 0
+        },
+        "focused_pane_id" : "p4",
+        "panes" : [
+          {
+            "focused" : true,
+            "pane_id" : "p4",
+            "rect" : {
+              "height" : 47,
+              "width" : 141,
+              "x" : 0,
+              "y" : 0
+            }
+          }
+        ],
+        "splits" : [
+
+        ],
+        "tab_id" : "t5",
+        "workspace_id" : "w4",
+        "zoomed" : false
+      },
+      {
+        "area" : {
+          "height" : 47,
+          "width" : 141,
+          "x" : 0,
+          "y" : 0
+        },
+        "focused_pane_id" : "p5",
+        "panes" : [
+          {
+            "focused" : true,
+            "pane_id" : "p5",
+            "rect" : {
+              "height" : 47,
+              "width" : 141,
+              "x" : 0,
+              "y" : 0
+            }
+          }
+        ],
+        "splits" : [
+
+        ],
+        "tab_id" : "t6",
+        "workspace_id" : "w5",
+        "zoomed" : false
+      },
+      {
+        "area" : {
+          "height" : 47,
+          "width" : 141,
+          "x" : 0,
+          "y" : 0
+        },
+        "focused_pane_id" : "p6",
+        "panes" : [
+          {
+            "focused" : true,
+            "pane_id" : "p6",
+            "rect" : {
+              "height" : 47,
+              "width" : 141,
+              "x" : 0,
+              "y" : 0
+            }
+          }
+        ],
+        "splits" : [
+
+        ],
+        "tab_id" : "t1",
+        "workspace_id" : "w6",
+        "zoomed" : false
+      }
+    ],
+    "panes" : [
+      {
+        "agent_status" : "unknown",
+        "cwd" : "\/tmp\/project-7",
+        "focused" : false,
+        "foreground_cwd" : "\/tmp\/project-7",
+        "pane_id" : "p7",
+        "revision" : 20,
+        "scroll" : {
+          "max_offset_from_bottom" : 0,
+          "offset_from_bottom" : 0,
+          "viewport_rows" : 47
+        },
+        "tab_id" : "t7",
+        "terminal_id" : "term7",
+        "workspace_id" : "w7"
+      },
+      {
+        "agent" : "claude",
+        "agent_session" : {
+          "agent" : "claude",
+          "kind" : "id",
+          "source" : "source-1",
+          "value" : "value-1"
+        },
+        "agent_status" : "done",
+        "cwd" : "\/tmp\/project-1",
+        "focused" : false,
+        "foreground_cwd" : "\/tmp\/project-1",
+        "pane_id" : "p1",
+        "revision" : 13,
+        "scroll" : {
+          "max_offset_from_bottom" : 336,
+          "offset_from_bottom" : 0,
+          "viewport_rows" : 47
+        },
+        "tab_id" : "t2",
+        "terminal_id" : "term1",
+        "terminal_title" : "terminal_title-1",
+        "terminal_title_stripped" : "terminal_title_stripped-1",
+        "workspace_id" : "w1"
+      },
+      {
+        "agent" : "claude",
+        "agent_session" : {
+          "agent" : "claude",
+          "kind" : "id",
+          "source" : "source-1",
+          "value" : "value-2"
+        },
+        "agent_status" : "working",
+        "cwd" : "\/tmp\/project-2",
+        "focused" : false,
+        "foreground_cwd" : "\/tmp\/project-2",
+        "pane_id" : "p2",
+        "revision" : 17,
+        "scroll" : {
+          "max_offset_from_bottom" : 8144,
+          "offset_from_bottom" : 0,
+          "viewport_rows" : 47
+        },
+        "tab_id" : "t3",
+        "terminal_id" : "term2",
+        "terminal_title" : "terminal_title-2",
+        "terminal_title_stripped" : "terminal_title_stripped-2",
+        "workspace_id" : "w2"
+      },
+      {
+        "agent" : "claude",
+        "agent_session" : {
+          "agent" : "claude",
+          "kind" : "id",
+          "source" : "source-1",
+          "value" : "value-3"
+        },
+        "agent_status" : "idle",
+        "cwd" : "\/tmp\/project-3",
+        "focused" : false,
+        "foreground_cwd" : "\/tmp\/project-3",
+        "pane_id" : "p3",
+        "revision" : 4,
+        "scroll" : {
+          "max_offset_from_bottom" : 8042,
+          "offset_from_bottom" : 0,
+          "viewport_rows" : 47
+        },
+        "tab_id" : "t4",
+        "terminal_id" : "term3",
+        "terminal_title" : "terminal_title-3",
+        "terminal_title_stripped" : "terminal_title_stripped-3",
+        "workspace_id" : "w3"
+      },
+      {
+        "agent" : "claude",
+        "agent_session" : {
+          "agent" : "claude",
+          "kind" : "id",
+          "source" : "source-1",
+          "value" : "value-4"
+        },
+        "agent_status" : "working",
+        "cwd" : "\/tmp\/project-4",
+        "focused" : false,
+        "foreground_cwd" : "\/tmp\/project-4",
+        "pane_id" : "p4",
+        "revision" : 5,
+        "scroll" : {
+          "max_offset_from_bottom" : 3956,
+          "offset_from_bottom" : 0,
+          "viewport_rows" : 47
+        },
+        "tab_id" : "t5",
+        "terminal_id" : "term4",
+        "terminal_title" : "terminal_title-4",
+        "terminal_title_stripped" : "terminal_title_stripped-4",
+        "workspace_id" : "w4"
+      },
+      {
+        "agent" : "claude",
+        "agent_session" : {
+          "agent" : "claude",
+          "kind" : "id",
+          "source" : "source-1",
+          "value" : "value-5"
+        },
+        "agent_status" : "idle",
+        "cwd" : "\/tmp\/project-5",
+        "focused" : false,
+        "foreground_cwd" : "\/tmp\/project-5",
+        "pane_id" : "p5",
+        "revision" : 5,
+        "scroll" : {
+          "max_offset_from_bottom" : 7861,
+          "offset_from_bottom" : 0,
+          "viewport_rows" : 47
+        },
+        "tab_id" : "t6",
+        "terminal_id" : "term5",
+        "terminal_title" : "terminal_title-5",
+        "terminal_title_stripped" : "terminal_title_stripped-5",
+        "workspace_id" : "w5"
+      },
+      {
+        "agent" : "claude",
+        "agent_session" : {
+          "agent" : "claude",
+          "kind" : "id",
+          "source" : "source-1",
+          "value" : "value-6"
+        },
+        "agent_status" : "idle",
+        "cwd" : "\/tmp\/project-6",
+        "focused" : true,
+        "foreground_cwd" : "\/tmp\/project-6",
+        "pane_id" : "p6",
+        "revision" : 4,
+        "scroll" : {
+          "max_offset_from_bottom" : 1970,
+          "offset_from_bottom" : 0,
+          "viewport_rows" : 47
+        },
+        "tab_id" : "t1",
+        "terminal_id" : "term6",
+        "terminal_title" : "terminal_title-6",
+        "terminal_title_stripped" : "terminal_title_stripped-6",
+        "workspace_id" : "w6"
+      }
+    ],
+    "protocol" : 22,
+    "tabs" : [
+      {
+        "agent_status" : "unknown",
+        "focused" : false,
+        "label" : "label-1",
+        "number" : 1,
+        "pane_count" : 1,
+        "tab_id" : "t7",
+        "workspace_id" : "w7"
+      },
+      {
+        "agent_status" : "done",
+        "focused" : false,
+        "label" : "label-1",
+        "number" : 1,
+        "pane_count" : 1,
+        "tab_id" : "t2",
+        "workspace_id" : "w1"
+      },
+      {
+        "agent_status" : "working",
+        "focused" : false,
+        "label" : "label-1",
+        "number" : 1,
+        "pane_count" : 1,
+        "tab_id" : "t3",
+        "workspace_id" : "w2"
+      },
+      {
+        "agent_status" : "idle",
+        "focused" : false,
+        "label" : "label-1",
+        "number" : 1,
+        "pane_count" : 1,
+        "tab_id" : "t4",
+        "workspace_id" : "w3"
+      },
+      {
+        "agent_status" : "working",
+        "focused" : false,
+        "label" : "label-1",
+        "number" : 1,
+        "pane_count" : 1,
+        "tab_id" : "t5",
+        "workspace_id" : "w4"
+      },
+      {
+        "agent_status" : "idle",
+        "focused" : false,
+        "label" : "label-1",
+        "number" : 1,
+        "pane_count" : 1,
+        "tab_id" : "t6",
+        "workspace_id" : "w5"
+      },
+      {
+        "agent_status" : "idle",
+        "focused" : true,
+        "label" : "label-1",
+        "number" : 1,
+        "pane_count" : 1,
+        "tab_id" : "t1",
+        "workspace_id" : "w6"
+      }
+    ],
+    "version" : "0.9.3",
+    "workspaces" : [
+      {
+        "active_tab_id" : "t7",
+        "agent_status" : "unknown",
+        "focused" : false,
+        "label" : "label-2",
+        "number" : 1,
+        "pane_count" : 1,
+        "tab_count" : 1,
+        "workspace_id" : "w7"
+      },
+      {
+        "active_tab_id" : "t2",
+        "agent_status" : "done",
+        "focused" : false,
+        "label" : "label-3",
+        "number" : 2,
+        "pane_count" : 1,
+        "tab_count" : 1,
+        "tokens" : {
+          "diff_add" : "tokens-1",
+          "diff_del" : "tokens-2",
+          "diff_files" : "tokens-3"
+        },
+        "workspace_id" : "w1",
+        "worktree" : {
+          "checkout_path" : "checkout_path-1",
+          "is_linked_worktree" : false,
+          "repo_key" : "repo_key-1",
+          "repo_name" : "repo_name-1",
+          "repo_root" : "\/tmp\/project-1"
+        }
+      },
+      {
+        "active_tab_id" : "t3",
+        "agent_status" : "working",
+        "focused" : false,
+        "label" : "label-4",
+        "number" : 3,
+        "pane_count" : 1,
+        "tab_count" : 1,
+        "workspace_id" : "w2"
+      },
+      {
+        "active_tab_id" : "t4",
+        "agent_status" : "idle",
+        "focused" : false,
+        "label" : "label-5",
+        "number" : 4,
+        "pane_count" : 1,
+        "tab_count" : 1,
+        "workspace_id" : "w3"
+      },
+      {
+        "active_tab_id" : "t5",
+        "agent_status" : "working",
+        "focused" : false,
+        "label" : "label-6",
+        "number" : 5,
+        "pane_count" : 1,
+        "tab_count" : 1,
+        "workspace_id" : "w4"
+      },
+      {
+        "active_tab_id" : "t6",
+        "agent_status" : "idle",
+        "focused" : false,
+        "label" : "label-7",
+        "number" : 6,
+        "pane_count" : 1,
+        "tab_count" : 1,
+        "tokens" : {
+          "diff_add" : "tokens-4",
+          "diff_del" : "tokens-9",
+          "diff_files" : "tokens-7",
+          "pr" : "tokens-5",
+          "review" : "tokens-8",
+          "ticket_state" : "tokens-6"
+        },
+        "workspace_id" : "w5",
+        "worktree" : {
+          "checkout_path" : "checkout_path-2",
+          "is_linked_worktree" : true,
+          "repo_key" : "repo_key-1",
+          "repo_name" : "repo_name-1",
+          "repo_root" : "\/tmp\/project-1"
+        }
+      },
+      {
+        "active_tab_id" : "t1",
+        "agent_status" : "idle",
+        "focused" : true,
+        "label" : "label-8",
+        "number" : 7,
+        "pane_count" : 1,
+        "tab_count" : 1,
+        "tokens" : {
+          "diff_add" : "tokens-10",
+          "diff_del" : "tokens-14",
+          "diff_files" : "tokens-11",
+          "pr" : "tokens-12",
+          "review" : "tokens-13",
+          "ticket_state" : "tokens-6"
+        },
+        "workspace_id" : "w6",
+        "worktree" : {
+          "checkout_path" : "checkout_path-3",
+          "is_linked_worktree" : true,
+          "repo_key" : "repo_key-1",
+          "repo_name" : "repo_name-1",
+          "repo_root" : "\/tmp\/project-1"
+        }
+      }
+    ]
+  }
+}
