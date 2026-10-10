@@ -53,7 +53,8 @@ import Testing
         await fake.setStatus("w2:p2", "blocked")
         try await until(store) { !$0.needsYou.isEmpty }
         #expect(store.needsYou.first?.status == .blocked)
-        #expect(store.lastTransitions.first?.marker == "term-w2:p2|2")
+        // herdr's counter is shared by all agents: the basic herd is at 3, so this change is 4.
+        #expect(store.lastTransitions.first?.marker == "term-w2:p2|4")
         await store.stop()
         await fake.stop()
     }

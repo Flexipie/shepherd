@@ -37,17 +37,16 @@ public struct Transition: Sendable, Equatable {
     public let from: AgentStatus?
     public let to: AgentStatus?
     public let observedAt: Date
-    /// Transitions herdr made between the two snapshots that Shepherd did not see.
-    public let missedChanges: UInt64
-    /// Working turns completed between the two snapshots.
-    public let completedTurns: UInt64
+    /// A working turn completed between the two snapshots. herdr's counters are shared by every
+    /// agent, so how many turns, or how many changes Shepherd missed, cannot be told.
+    public let completedTurn: Bool
     /// The pane's terminal and change counter after the transition, so a later run can tell
     /// whether the agent is still in this state.
     public let terminalID: String?
     public let stateChangeSeq: UInt64
 
     package init(paneID: String, kind: Kind, from: AgentStatus?, to: AgentStatus?, observedAt: Date,
-                 missedChanges: UInt64 = 0, completedTurns: UInt64 = 0, terminalID: String? = nil, stateChangeSeq: UInt64 = 0) {
+                 completedTurn: Bool = false, terminalID: String? = nil, stateChangeSeq: UInt64 = 0) {
         self.terminalID = terminalID
         self.stateChangeSeq = stateChangeSeq
         self.paneID = paneID
@@ -55,7 +54,6 @@ public struct Transition: Sendable, Equatable {
         self.from = from
         self.to = to
         self.observedAt = observedAt
-        self.missedChanges = missedChanges
-        self.completedTurns = completedTurns
+        self.completedTurn = completedTurn
     }
 }

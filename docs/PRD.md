@@ -102,30 +102,49 @@ than". `SHEPHERD_TRANSITION_LOG` points it elsewhere for development runs.
 
 ## What herdr gives us
 
-Checked against herdr 0.9.3 (socket protocol 22, `herdr api schema` and the socket API docs).
+Checked against herdr 0.9.3 (socket protocol 22, `herdr api schema`, the socket API docs, its
+source at github.com/herdrdev/herdr, and experiments on a throwaway `herdr --session`).
 
 - **Resources.** `session.snapshot` returns workspaces, tabs, panes, agents and layouts in one
   read, plus `protocol` and `version`. Shepherd checks `protocol` and says clearly when herdr is
   older or newer than it was tested with, instead of failing on a decode.
-- **Agent states.** `idle`, `working`, `blocked`, `done`, `unknown`. `done` means "idle and not
-  yet seen". Focusing a pane through the API marks it seen; reading it does not. `blocked` means
-  herdr recognised an approval or question UI. `unknown` is not proof of completion.
+- **Agent states.** `idle`, `working`, `blocked`, `done`, `unknown`. `done` is not a state of its
+  own but "idle and not yet seen", and seen is one flag for the whole server. A pane is seen when
+  its tab becomes the active tab of the focused workspace, however that happens: `agent.focus`,
+  `workspace.focus`, `tab.focus`, or the user moving around in herdr's own UI. Reading a pane does
+  not mark it seen. An agent that finishes in the tab on screen goes straight to `idle` and never
+  shows `done`; one in a hidden tab of the focused workspace still does. `blocked` means herdr
+  recognised an approval or question UI. `unknown` is not proof of completion.
+- **Focus moves everyone.** A successful focus call moves every attached herdr client to the
+  target, not one of them. Nothing in herdr brings the terminal app forward; Shepherd does that.
 - **Needs you** is Shepherd's term for `blocked` plus `done`. Blocked always ranks first.
-- **No timestamps.** The snapshot says what state an agent is in, not since when. Each agent has
-  `state_change_seq` (bumps on every transition) and `completion_seq` (bumps when a working turn
-  completes). Shepherd derives time in state itself from the transitions it observes, and after
-  a launch or reconnect it shows "since Shepherd saw it" rather than inventing a precise time.
-  Comparing seq values between two snapshots reveals transitions that happened in between, even
-  when the visible state is the same.
+- **No timestamps.** The snapshot says what state an agent is in, not since when. herdr keeps one
+  change counter for the whole server: when an agent's underlying state (idle, working, blocked,
+  unknown) changes, it takes the next value as its `state_change_seq`, and a finished working turn
+  also sets `completion_seq` to it. `done` clearing to `idle` changes neither. Shepherd derives
+  time in state itself from the transitions it observes, and after a launch or reconnect it shows
+  "since Shepherd saw it" rather than inventing a precise time. A higher seq between two snapshots
+  means the agent changed even if its state looks the same; because the counter is shared, the
+  gap does not say how many times.
 - **Tokens** live on workspaces and on panes (`workspace.report_metadata`, `pane.report_metadata`):
   at most 32 keys each, names `[A-Za-z0-9_-]{1,32}`, values up to 80 characters, optional TTL. They
   are not restored after a herdr restart, so an empty token map is normal and never an error.
 - **Presentation fields.** Pane metadata can override the title, `display_agent` and per-state
   `state_labels`. Shepherd honours them the way herdr's own sidebar does.
-- **herdr already alerts.** `[ui.toast]` and `[ui.sound]` in herdr's config can notify and play
-  sounds. Shepherd must not double-alert; see "Surfaces".
-- **Useful calls beyond the basics:** `agent.read` (last lines), `agent.explain` (why herdr chose a
-  state), `agent.prompt` (refuses blocked agents), `agent.send_keys`, `agent.focus`,
+- **herdr already alerts.** `ui.toast.delivery` (`off`, `herdr`, `terminal`, `system`; default
+  `off`) and `ui.sound.enabled` (default on, with per-agent overrides under `ui.sound.agents`) in
+  herdr's config. There is no API to read them, so Shepherd reads `config.toml` as it does for
+  token styling. `notification.show` reports `disabled` when delivery is off. Shepherd must not
+  double-alert; see "Surfaces".
+- **What subscriptions cost herdr.** There is no cap on subscription entries or connections
+  (10,000 entries and 300 connections were accepted). The cost is elsewhere: herdr checks every
+  `pane.agent_status_changed` entry every 100 ms on its main thread, changes or not. Measured
+  herdr CPU: 0.1% with no subscriber, 0.7% with 5 pane entries, 2.1% with 30, 10.6% with 200.
+  `pane.output_matched` works the same way. So Shepherd names only agent panes, and never uses
+  output matching for a feature that is always on. herdr keeps a 512-event history; a subscriber
+  that falls further behind gets `events_lost`.
+- **Useful calls beyond the basics:** `agent.read` (up to 1000 lines, 80 by default, read on
+  demand; herdr never pushes output changes), `agent.explain` (why herdr chose a state), `agent.prompt` (refuses blocked agents), `agent.send_keys`, `agent.focus`,
   `workspace.focus`, `worktree.create`, `agent.start`, `plugin.action.list` and
   `plugin.action.invoke`.
 
@@ -137,8 +156,11 @@ This is the herdr source. herdr speaks newline-delimited JSON over a Unix socket
 
 1. **Subscription connection.** One long-lived connection sends `events.subscribe` with every
    workspace, worktree, tab and pane lifecycle type, plus one `pane.agent_status_changed` entry
-   per pane: herdr requires a `pane_id` for status changes, and lifecycle events alone do not
-   report them. One unknown pane makes herdr reject the whole request (`pane_not_found`) and close
+   per agent pane: herdr requires a `pane_id` for status changes, and lifecycle events alone do not
+   report them. Plain shells are left out (each entry costs herdr a check every 100 ms); a shell
+   that starts an agent sends the global `pane.agent_detected`, which brings a snapshot and a new
+   set. A pane that closes while subscribed does not end the stream: herdr sends `pane_closed`
+   and that entry goes quiet. One unknown pane makes herdr reject the whole request (`pane_not_found`) and close
    the connection, so the pane set always comes from the latest snapshot. With nothing open,
    Shepherd starts a global-only subscription (it cannot fail on a pane), then upgrades to the
    full set. When panes change it starts the new subscription before closing the old one, so
@@ -162,7 +184,10 @@ This is the herdr source. herdr speaks newline-delimited JSON over a Unix socket
    fresh snapshot. If herdr is not running, show a disconnected state, watch the socket's folder
    so a returning herdr is picked up at once, and retry with backoff (0.5 s growing to a 60 s
    cap). Retries faster than once a minute in the first minute after a disconnect are the one
-   documented exception to the idle budget.
+   documented exception to the idle budget. herdr listens as soon as its socket file exists (no
+   refused connection was seen in repeated cold starts), but it restores its session after it
+   starts listening, so early requests can wait up to 5 s or fail with `server_unavailable`; the
+   normal retry covers that.
 5. **Transitions.** After each snapshot, `HerdrKit` diffs it against the previous one (status and
    seq fields) and emits transitions with the time Shepherd observed them. Time in state, the
    needs-you queue, notifications and the outcome line all read from these transitions.
