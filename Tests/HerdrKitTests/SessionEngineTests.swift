@@ -20,10 +20,10 @@ import Testing
             return Harness(fake: fake, engine: engine, log: log)
         }
 
-        /// Live with the full pane set subscribed and nothing else in flight.
+        /// Live with every agent pane subscribed and nothing else in flight.
         func settled() async throws {
             _ = try await withTimeout { try await log.wait { $0.connection == .live } }
-            let paneIDs = await Set(fake.herd.panes.map(\.id))
+            let paneIDs = await Set(fake.herd.panes.filter { $0.agent != nil }.map(\.id))
             try await withTimeout {
                 while await fake.subscribedPaneSets != [paneIDs] { try await Task.sleep(for: .milliseconds(5)) }
             }
@@ -35,9 +35,11 @@ import Testing
         }
     }
 
-    @Test func startsLiveAndSubscribesToEveryPane() async throws {
+    @Test func startsLiveAndSubscribesToEveryAgentPane() async throws {
         let h = try await Harness.make()
         try await h.settled()
+        // The shell pane is left out: each subscribed pane costs herdr a check every 100 ms.
+        #expect(await h.fake.subscribedPaneSets.first?.contains("w1:p2") == false)
         let update = try #require(await h.log.latest)
         #expect(update.session.agents.count == 3)
         #expect(update.session.workingCount == 2)
@@ -97,6 +99,16 @@ import Testing
         await h.fake.removePane("w1:p2")
         try await h.settled()
         #expect(await h.fake.subscriberLowWater == 1)
+        await h.finish()
+    }
+
+    @Test func aShellPaneThatGainsAnAgentIsSubscribed() async throws {
+        let h = try await Harness.make()
+        try await h.settled()
+        await h.fake.detectAgent("w1:p2", kind: "codex")
+        try await h.settled()
+        await h.fake.setStatus("w1:p2", "blocked")
+        _ = try await withTimeout { try await h.log.wait { $0.status("w1:p2") == .blocked } }
         await h.finish()
     }
 

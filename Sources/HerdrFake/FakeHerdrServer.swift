@@ -98,9 +98,15 @@ public actor FakeHerdrServer {
     /// Changes a pane's status and pushes `pane.agent_status_changed` to subscribers of that pane.
     public func setStatus(_ paneID: String, _ status: String) {
         herd.setStatus(paneID, status)
+        pushStatus(paneID)
+    }
+
+    /// herdr notices a status change on a subscribed pane (including `done` clearing on focus,
+    /// which it finds by checking each subscribed pane) and pushes it.
+    private func pushStatus(_ paneID: String) {
         guard let pane = herd.panes.first(where: { $0.id == paneID }) else { return }
         let event: [String: Any] = ["event": "pane.agent_status_changed",
-                                    "data": ["pane_id": paneID, "workspace_id": pane.workspaceID, "agent_status": status]]
+                                    "data": ["pane_id": paneID, "workspace_id": pane.workspaceID, "agent_status": pane.status]]
         for subscriber in subscribers.values where subscriber.paneIDs.contains(paneID) {
             try? subscriber.connection.write(Self.line(event))
         }
@@ -112,6 +118,15 @@ public actor FakeHerdrServer {
         payload["type"] = kind
         let event: [String: Any] = ["event": kind, "data": payload]
         for subscriber in subscribers.values { try? subscriber.connection.write(Self.line(event)) }
+    }
+
+    /// A shell pane starts running an agent, as herdr's detection reports it.
+    public func detectAgent(_ paneID: String, kind: String, status: String = "working") {
+        guard let index = herd.panes.firstIndex(where: { $0.id == paneID }) else { return }
+        herd.panes[index].agent = kind
+        herd.panes[index].status = "unknown"
+        herd.setStatus(paneID, status)
+        emit("pane_agent_detected", data: ["pane_id": paneID, "workspace_id": herd.panes[index].workspaceID, "agent": kind])
     }
 
     public func addPane(_ pane: FakeHerd.Pane) {
@@ -198,10 +213,15 @@ public actor FakeHerdrServer {
         case "agent.focus":
             let target = params["target"] as? String ?? ""
             focusedTargets.append(target)
-            herd.focusedPaneID = target
-            if let workspace = herd.panes.first(where: { $0.id == target })?.workspaceID { herd.focusedWorkspaceID = workspace }
-            if herd.status(of: target) == "done" { setStatus(target, "idle") }
+            guard let workspace = herd.panes.first(where: { $0.id == target })?.workspaceID else {
+                replyError(connection, requestID, code: "pane_not_found", message: "pane not found")
+                return
+            }
+            let seen = herd.focus(workspace: workspace, pane: target)
             reply(connection, requestID, ["type": "ok"])
+            emit("workspace_focused", data: ["workspace_id": workspace])
+            emit("pane_focused", data: ["pane_id": target, "workspace_id": workspace])
+            seen.forEach(pushStatus)
         case "workspace.focus":
             let workspace = params["workspace_id"] as? String ?? ""
             guard herd.workspaces.contains(where: { $0.id == workspace }) else {
@@ -209,9 +229,10 @@ public actor FakeHerdrServer {
                 return
             }
             focusedWorkspaces.append(workspace)
-            herd.focusedWorkspaceID = workspace
+            let seen = herd.focus(workspace: workspace)
             reply(connection, requestID, ["type": "ok"])
             emit("workspace_focused", data: ["workspace_id": workspace])
+            seen.forEach(pushStatus)
         case "events.subscribe":
             let entries = params["subscriptions"] as? [[String: Any]] ?? []
             let paneIDs = Set(entries.compactMap { $0["pane_id"] as? String })

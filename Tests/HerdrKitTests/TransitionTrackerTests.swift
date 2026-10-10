@@ -27,16 +27,26 @@ import Testing
         #expect(transitions.map(\.kind) == [.changed])
         #expect(transitions.first?.from == .working)
         #expect(transitions.first?.to == .blocked)
-        #expect(transitions.first?.missedChanges == 0)
+        #expect(transitions.first?.completedTurn == false)
         #expect(tracker.since("w1:p1") == StateSince(t1, .exact))
     }
 
-    @Test func seqJumpRevealsMissedChangesWithSameStatus() {
+    @Test func higherSeqRevealsAChangeWithSameStatus() {
+        // herdr's counter is shared: this agent finished a turn (completion 4) and started
+        // another (seq 9) while other agents moved the counter in between.
         var tracker = TransitionTracker()
         _ = tracker.apply(snap(agent(.working, seq: 3, completion: 1)), at: t0, continuity: .continuous)
-        let transitions = tracker.apply(snap(agent(.working, seq: 5, completion: 2)), at: t1, continuity: .continuous)
-        #expect(transitions.first?.missedChanges == 1)
-        #expect(transitions.first?.completedTurns == 1)
+        let transitions = tracker.apply(snap(agent(.working, seq: 9, completion: 4)), at: t1, continuity: .continuous)
+        #expect(transitions.map(\.kind) == [.changed])
+        #expect(transitions.first?.completedTurn == true)
+    }
+
+    @Test func doneClearingOnceSeenIsAChangeWithoutSeq() {
+        var tracker = TransitionTracker()
+        _ = tracker.apply(snap(agent(.done, seq: 5)), at: t0, continuity: .continuous)
+        let transitions = tracker.apply(snap(agent(.idle, seq: 5)), at: t1, continuity: .continuous)
+        #expect(transitions.first?.from == .done)
+        #expect(transitions.first?.to == .idle)
     }
 
     @Test func changeAfterGapIsOnlyNoLaterThan() {

@@ -47,29 +47,61 @@ public struct FakeHerd: Sendable, Equatable {
     public var panes: [Pane]
     public var focusedPaneID: String?
     public var focusedWorkspaceID: String?
+    /// herdr's one change counter for the whole server: a change takes the next value as its
+    /// agent's `state_change_seq`, so seq gaps say nothing about one agent's missed changes.
+    public private(set) var changeCounter: UInt64
 
     public init(workspaces: [Workspace] = [], panes: [Pane] = []) {
         self.workspaces = workspaces
         self.panes = panes
+        changeCounter = panes.map(\.stateChangeSeq).max() ?? 0
     }
 
     /// Two workspaces with three agents and a shell pane.
     public static let basic = FakeHerd(
         workspaces: [Workspace(id: "w1", label: "workspace 1"), Workspace(id: "w2", label: "workspace 2")],
         panes: [
-            Pane(id: "w1:p1", workspaceID: "w1", status: "working"),
-            Pane(id: "w1:p2", workspaceID: "w1", agent: nil),
-            Pane(id: "w2:p1", workspaceID: "w2", agent: "codex", status: "idle"),
-            Pane(id: "w2:p2", workspaceID: "w2", status: "working"),
+            Pane(id: "w1:p1", workspaceID: "w1", status: "working", stateChangeSeq: 1),
+            Pane(id: "w1:p2", workspaceID: "w1", agent: nil, stateChangeSeq: 0),
+            Pane(id: "w2:p1", workspaceID: "w2", agent: "codex", status: "idle", stateChangeSeq: 2),
+            Pane(id: "w2:p2", workspaceID: "w2", status: "working", stateChangeSeq: 3),
         ])
 
-    /// Changes a pane's status the way herdr does: every change bumps `state_change_seq`, and
-    /// leaving `working` completes a turn.
+    /// Changes a pane's status the way herdr 0.9.3 does. `done` is not a state of its own but
+    /// "idle and not yet seen": an agent that finishes where the user is looking goes straight to
+    /// `idle`. Only a change of the underlying state (idle, working, blocked, unknown) takes the
+    /// next counter value; finishing a working turn also sets `completion_seq` to it.
     public mutating func setStatus(_ paneID: String, _ status: String) {
-        guard let index = panes.firstIndex(where: { $0.id == paneID }), panes[index].status != status else { return }
-        if panes[index].status == "working" { panes[index].completionSeq = (panes[index].completionSeq ?? 0) + 1 }
-        panes[index].status = status
-        panes[index].stateChangeSeq += 1
+        guard let index = panes.firstIndex(where: { $0.id == paneID }) else { return }
+        let old = panes[index].status
+        let shown = status == "done" && isVisible(panes[index]) ? "idle" : status
+        guard shown != old else { return }
+        if Self.underlying(old) != Self.underlying(shown) {
+            changeCounter += 1
+            panes[index].stateChangeSeq = changeCounter
+            if old == "working", Self.underlying(shown) == "idle" { panes[index].completionSeq = changeCounter }
+        }
+        panes[index].status = shown
+    }
+
+    /// Focuses a workspace (and a pane in it), as `workspace.focus` and `agent.focus` do. Its
+    /// finished agents are now seen: `done` becomes `idle` without a counter change. Returns them.
+    @discardableResult
+    public mutating func focus(workspace: String, pane: String? = nil) -> [String] {
+        focusedWorkspaceID = workspace
+        if let pane { focusedPaneID = pane }
+        let seen = panes.filter { $0.workspaceID == workspace && $0.status == "done" }.map(\.id)
+        for id in seen { setStatus(id, "idle") }
+        return seen
+    }
+
+    /// One tab per workspace here, so a pane is on screen when its workspace is focused.
+    func isVisible(_ pane: Pane) -> Bool {
+        pane.workspaceID == focusedWorkspaceID
+    }
+
+    private static func underlying(_ status: String) -> String {
+        status == "done" ? "idle" : status
     }
 
     public func status(of paneID: String) -> String? {

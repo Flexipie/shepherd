@@ -1,8 +1,10 @@
 import Foundation
 
 /// What Shepherd subscribes to: every lifecycle event type, plus agent status changes for each
-/// pane it knows about. herdr requires a `pane_id` for agent status subscriptions and rejects the
+/// pane with an agent. herdr requires a `pane_id` for agent status subscriptions and rejects the
 /// whole request if any named pane is gone, so the pane set always comes from a recent snapshot.
+/// Each named pane costs herdr a check every 100 ms, so plain shells are left out; one that gains
+/// an agent sends `pane.agent_detected`, which brings a new snapshot and a new set.
 public struct SubscriptionSet: Sendable, Hashable {
     public var paneIDs: Set<String>
 

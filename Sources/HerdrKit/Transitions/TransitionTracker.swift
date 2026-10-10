@@ -79,12 +79,13 @@ public struct TransitionTracker: Sendable {
                 continue
             }
 
+            // The counter only moves when this agent's state does, so a higher value means it
+            // changed even if it is back in the same state. `done` clearing to `idle` once seen
+            // keeps the value, so a status difference counts on its own.
             guard agent.stateChangeSeq > old.stateChangeSeq || agent.status != old.status else { continue }
-            let seqDelta = agent.stateChangeSeq - old.stateChangeSeq
             transitions.append(Transition(
                 paneID: agent.id, kind: .changed, from: old.status, to: agent.status, observedAt: now,
-                missedChanges: seqDelta > 1 ? seqDelta - 1 : 0,
-                completedTurns: completion > old.completionSeq ? completion - old.completionSeq : 0,
+                completedTurn: completion > old.completionSeq,
                 terminalID: agent.terminalID, stateChangeSeq: agent.stateChangeSeq))
             records[agent.id] = fresh
         }

@@ -26,7 +26,7 @@ struct LiveHerdrTests {
         // Give the upgrade to per-pane subscriptions time to be accepted; a rejection would go stale.
         try await Task.sleep(for: .seconds(1))
         #expect(await log.latest?.connection == .live)
-        #expect(await engine.planner.active?.set.paneIDs == Set(expected.panes.map(\.id)))
+        #expect(await engine.planner.active?.set.paneIDs == Set(expected.agents.map(\.id)))
         await engine.stop()
     }
 }

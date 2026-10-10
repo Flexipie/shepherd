@@ -95,7 +95,9 @@ public actor SessionEngine {
             session = Session(snapshot: snapshot, tracker: tracker)
             if subscribedAtStart, planner.active != nil { connection = .live }
             publish(transitions)
-            perform(planner.handle(.desired(SubscriptionSet(paneIDs: Set(snapshot.panes.map(\.id))))))
+            // Agent panes only: herdr checks every subscribed pane each 100 ms, and a shell pane
+            // that gains an agent announces it with the global `pane.agent_detected`.
+            perform(planner.handle(.desired(SubscriptionSet(paneIDs: Set(snapshot.agents.map(\.id))))))
         } catch {
             guard !stopped, planner.active != nil else { return }
             // Subscribed but the read failed: try again shortly rather than show stale state as live.
