@@ -5,19 +5,11 @@ Open work only. When something ships, move it to the end of [SHIPPED.md](SHIPPED
 Each milestone ends with something usable and a "done when" check. Ideas that are not decided
 stay in [IDEAS.md](IDEAS.md).
 
-## To confirm against a real herdr
+## To check by hand
 
-Found while building milestone 1 and not yet checked, because each needs changes to a live
-session. Confirm, then record the answer in PRD "What herdr gives us" or "Data flow".
+herdr's own behaviour is confirmed and recorded in PRD "What herdr gives us" and "Data flow".
+These need a person, real agents or other hardware:
 
-- Does closing a subscribed pane end the whole subscription? If so, treat an EOF within about a
-  second of `pane_closed` as a routine resubscribe, without flashing "stale".
-- Does `agent.focus` bump `state_change_seq`?
-- Is there a limit on subscription entries (try 200+ panes)?
-- Does herdr create its socket file before it listens? If so, retry `ECONNREFUSED` once after
-  250 ms instead of waiting for the backoff.
-- When the user looks at a finished pane in herdr's own UI, does the API's `done` clear, or only
-  after `agent.focus`? herdr tracks "seen" per client, so the menu bar count could lag.
 - Clicking the pill or a menu entry: herdr focuses the pane and the terminal comes forward. The
   `agent.focus` request is tested against the fake; the click and the terminal activation have
   not been tried on a real blocked agent yet.
@@ -78,6 +70,10 @@ Done when: someone who has never installed herdr runs three Claude Code sessions
 needs-you queue from Shepherd.
 
 ## Follow-ups from milestone 2
+
+- Ask herdr upstream for a global, event-driven agent status subscription (no `pane_id`).
+  Today each subscribed pane costs herdr a check every 100 ms (PRD "What subscriptions cost
+  herdr"); with a global event Shepherd's cost inside herdr would be near zero.
 
 - `rows_by_agent` from herdr's sidebar config (per agent kind layouts).
 - Memory: about 65 MB with the notch pill showing, above the 40 to 60 MB budget. Measure what the
