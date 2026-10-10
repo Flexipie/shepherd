@@ -18,7 +18,7 @@ final class AppController {
     private var statusItem: StatusItemController?
     private var panel: PanelController?
     private var hotKeys: HotKeyCenter?
-    private var notch: NotchController?
+    private var notch: NotchSurfaceController?
 
     init() {
         store = HerdStore(log: log)
@@ -28,14 +28,16 @@ final class AppController {
     }
 
     func start() {
-        let panel = PanelController(store: store, registry: registry, config: config, actions: actions)
+        let content = PanelContentSource(store: store, registry: registry, config: config)
+        let panel = PanelController(content: content, actions: actions)
         self.panel = panel
         statusItem = StatusItemController(store: store, registry: registry, panel: panel)
         hotKeys = HotKeyCenter(config: config) { [weak self] in
             self?.panel?.close()
+            self?.notch?.collapse()
             self?.actions.jumpToNext()
         }
-        notch = NotchController(registry: registry, actions: actions)
+        notch = NotchSurfaceController(registry: registry, content: content, actions: actions)
         Task {
             // The log restores exact times in state, so read it before the first snapshot.
             let history = await log.load()

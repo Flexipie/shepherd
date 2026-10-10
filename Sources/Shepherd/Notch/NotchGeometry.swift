@@ -1,17 +1,20 @@
 import AppKit
 import ShepherdUI
 
-/// Where the pill goes. On a notched display it grows out of the notch: flush with the top of
-/// the screen, centred on the notch, with its content below the camera. Elsewhere it is a small
-/// floating capsule under the menu bar.
+/// Where the notch surface goes. On a notched display it is drawn around the notch, flush with
+/// the top of the screen; `metrics` place each state relative to the notch. Elsewhere there is no
+/// ear and no hover panel, only the pill as a small floating capsule under the menu bar.
 struct NotchGeometry: Equatable {
-    typealias Style = NotchPillView.Style
+    /// nil on a display without a notch.
+    let metrics: NotchMetrics?
+    /// The notch's top-left corner, in screen coordinates.
+    let notchOrigin: NSPoint
+    /// The floating pill's frame on a display without a notch.
+    let floatingFrame: NSRect
 
-    let frame: NSRect
-    let style: Style
-
-    static let contentHeight = NotchPillView.contentHeight
-    static let minimumWidth: CGFloat = 340
+    static let floatingWidth: CGFloat = 340
+    /// Room the panel's footer needs below its scrolling sections.
+    static let footerAllowance: CGFloat = 80
 
     /// The display with a notch if there is one, otherwise the main display.
     @MainActor
@@ -24,18 +27,27 @@ struct NotchGeometry: Equatable {
     @MainActor
     static func make(for screen: NSScreen) -> NotchGeometry {
         let full = screen.frame
-        let notchHeight = screen.safeAreaInsets.top
-        if notchHeight > 0, let left = screen.auxiliaryTopLeftArea, let right = screen.auxiliaryTopRightArea {
-            let notchWidth = max(0, full.width - left.width - right.width)
-            let width = max(minimumWidth, notchWidth + 120)
-            let height = notchHeight + contentHeight
-            let midX = full.minX + left.width + notchWidth / 2
-            return NotchGeometry(frame: NSRect(x: midX - width / 2, y: full.maxY - height, width: width, height: height),
-                                 style: .notch(height: notchHeight))
-        }
-        let width = minimumWidth
+        let height = NotchPillView.contentHeight
         let top = screen.visibleFrame.maxY - 8
-        return NotchGeometry(frame: NSRect(x: full.midX - width / 2, y: top - contentHeight, width: width, height: contentHeight),
-                             style: .floating)
+        let floating = NSRect(x: full.midX - floatingWidth / 2, y: top - height, width: floatingWidth, height: height)
+        let notchHeight = screen.safeAreaInsets.top
+        guard notchHeight > 0, let left = screen.auxiliaryTopLeftArea, let right = screen.auxiliaryTopRightArea else {
+            return NotchGeometry(metrics: nil, notchOrigin: .zero, floatingFrame: floating)
+        }
+        let notchWidth = max(0, full.width - left.width - right.width)
+        // The expanded panel stops at 70% of the screen.
+        let metrics = NotchMetrics(notchWidth: notchWidth, notchHeight: notchHeight, maxExpandedHeight: full.height * 0.7)
+        return NotchGeometry(metrics: metrics, notchOrigin: NSPoint(x: full.minX + left.width, y: full.maxY),
+                             floatingFrame: floating)
+    }
+
+    /// A rect in notch coordinates (y down from the top of the screen) in screen coordinates.
+    func screenRect(_ rect: CGRect) -> NSRect {
+        NSRect(x: notchOrigin.x + rect.minX, y: notchOrigin.y - rect.maxY, width: rect.width, height: rect.height)
+    }
+
+    /// The expanded panel's sections scroll past this height.
+    var panelMaxHeight: CGFloat? {
+        metrics.map { $0.maxExpandedHeight - $0.notchHeight - Self.footerAllowance }
     }
 }

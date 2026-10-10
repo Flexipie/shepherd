@@ -9,9 +9,7 @@ import SwiftUI
 /// a Space change, or after a jump.
 @MainActor
 final class PanelController: NSObject, NSWindowDelegate {
-    private let store: HerdStore
-    private let registry: ModuleRegistry
-    private let config: ConfigStore
+    private let content: PanelContentSource
     private let actions: any AgentActions
     private var panel: ShepherdPanel?
     private var hosting: PanelHostingView<PanelView>?
@@ -26,10 +24,8 @@ final class PanelController: NSObject, NSWindowDelegate {
 
     var isOpen: Bool { panel != nil }
 
-    init(store: HerdStore, registry: ModuleRegistry, config: ConfigStore, actions: any AgentActions) {
-        self.store = store
-        self.registry = registry
-        self.config = config
+    init(content: PanelContentSource, actions: any AgentActions) {
+        self.content = content
         self.actions = actions
     }
 
@@ -42,7 +38,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         let panel = ShepherdPanel()
         panel.delegate = self
         panel.onCancel = { [weak self] in self?.close() }
-        let hosting = PanelHostingView(rootView: view(currentContent()))
+        let hosting = PanelHostingView(rootView: view(content.current()))
         hosting.sizingOptions = [.intrinsicContentSize]
         hosting.onSizeChange = { [weak self] in
             // Resize after SwiftUI finishes the pass that changed the size.
@@ -75,11 +71,6 @@ final class PanelController: NSObject, NSWindowDelegate {
 
     // MARK: Content
 
-    private func currentContent() -> PanelContent {
-        PanelContent(sections: registry.modules.compactMap(\.panel), statusLines: HerdSummary.lines(store),
-                     problems: config.problems)
-    }
-
     private func view(_ content: PanelContent) -> PanelView {
         PanelView(content: content, maxHeight: maxSectionsHeight) { [weak self] action in
             self?.perform(action)
@@ -90,7 +81,7 @@ final class PanelController: NSObject, NSWindowDelegate {
     private func render(_ opening: Int) {
         guard opening == generation, let hosting else { return }
         let content = withObservationTracking {
-            currentContent()
+            self.content.current()
         } onChange: { [weak self] in
             Task { @MainActor in self?.render(opening) }
         }
@@ -145,24 +136,5 @@ final class PanelController: NSObject, NSWindowDelegate {
 
     func windowDidResignKey(_ notification: Notification) {
         close()
-    }
-}
-
-/// The herd's state in a line, then each source's own lines: shared by the panel footer and the
-/// status item's menu.
-@MainActor
-enum HerdSummary {
-    static func lines(_ store: HerdStore) -> [String] {
-        var lines: [String]
-        switch store.overallState {
-        case .connecting: lines = ["Connecting…"]
-        case .disconnected(let reason): lines = ["Not connected: \(reason). Retrying."]
-        case .stale(let reason): lines = ["Reconnecting: \(reason)"]
-        case .live: lines = ["\(store.workingCount) working, \(store.needsYou.count) waiting"]
-        }
-        for source in store.sources {
-            lines += store.statusLines[source.id] ?? []
-        }
-        return lines
     }
 }

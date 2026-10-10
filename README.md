@@ -1,13 +1,13 @@
 # 🐑 Shepherd
 
-A small native macOS companion for [herdr](https://herdr.dev): a menu bar item and a notch pill
-that keep an eye on your herd of coding agents.
+A small native macOS companion for [herdr](https://herdr.dev): a menu bar item and a piece of the
+notch that keep an eye on your herd of coding agents.
 
 Shepherd reads everything from herdr's local socket API. It shows what herdr knows (workspaces,
 agents and their state) plus whatever your herdr plugins publish as workspace tokens (a ticket, a
 PR number, a diff, a review verdict), and lets you act on it without switching to the terminal.
 
-> Status: early. The live connection, menu bar item, notch pill, panel and "next" hotkey work;
+> Status: early. The live connection, menu bar item, notch surface, panel and "next" hotkey work;
 > see [docs/ROADMAP.md](docs/ROADMAP.md) for what is next.
 
 ## What it does today
@@ -19,6 +19,10 @@ PR number, a diff, a review verdict), and lets you act on it without switching t
   Right-click the icon for a small menu with the connection state and Quit.
 - **"Next" hotkey.** ⌃⌥⌘N from any app jumps to the next agent that needs you; press again to
   walk the queue. Nothing waiting, nothing happens.
+- **The notch.** A small paw sticks out to the left of the notch, part of it; it turns orange with
+  a count when agents need you. Hover it and the panel grows out of the notch; move away and it
+  folds back. Hovering does not take your typing; click inside to use the arrow keys and Return,
+  Escape to fold it.
 - **Notch pill** (a small floating bar on Macs without a notch). A blocked agent stays until it is
   handled; a finished one shows for a few seconds. Nothing shows for the pane you are already
   looking at. Click to focus the pane in herdr and bring your terminal forward.
@@ -29,8 +33,8 @@ PR number, a diff, a review verdict), and lets you act on it without switching t
   known state dimmed, and recovers on its own. Times are "4m" when Shepherd saw the change and
   "4m+" when it only knows an upper bound.
 
-A tip for MacBooks with a full menu bar: items can hide behind the notch. Cmd-drag the paw icon
-somewhere visible; the notch pill and the hotkey work either way.
+A tip for MacBooks with a full menu bar: items can hide behind the notch. The notch panel and the
+hotkey work either way; to see the menu bar icon too, Cmd-drag it somewhere visible.
 
 ## Config
 

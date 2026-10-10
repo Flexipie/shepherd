@@ -97,8 +97,8 @@ than". `SHEPHERD_TRANSITION_LOG` points it elsewhere for development runs.
 | `ShepherdCore` | The herd model, `AgentSource`, `HerdStore`, `TransitionLog`, the `ShepherdModule` protocol and `ModuleRegistry`, config (`ConfigStore`, `FileWatcher`), token layouts and the styler, panel values; later the action model. No source types. |
 | `HerdrSource` | herdr as a source: adapts `HerdrKit` to the herd model. The only target that sees both. |
 | `ShepherdModules` | Built-in features, one folder each, listed in `BuiltinModules.all`. |
-| `ShepherdUI` | SwiftUI views for the panel and the notch pill. Values in, no windows, no glass, so every view can be snapshot tested. |
-| `Shepherd` | The app: status item, panel window, notch window, hotkey, later notifications and the palette. Thin. |
+| `ShepherdUI` | SwiftUI views for the panel and the notch surface. Values in, no windows, no glass, so every view can be snapshot tested. |
+| `Shepherd` | The app: status item, panel window, notch surface window, hotkey, later notifications and the palette. Thin. |
 
 ## What herdr gives us
 
@@ -175,9 +175,31 @@ This is the herdr source. herdr speaks newline-delimited JSON over a Unix socket
 Every surface is optional and degrades on its own.
 
 - **Menu bar.** Counts (working, needs you) and a disconnected state. On a MacBook a crowded menu
-  bar can hide the item behind the notch, which is one more reason the notch pill exists.
-- **Notch pill** (top-bar fallback without a notch). Appears only when something needs you. Shows
-  which agent, why, and its outcome line or last output lines. Click jumps there.
+  bar can hide the item behind the notch, which is one more reason the notch surface exists.
+- **Notch surface.** One black shape around the notch, flush with the top of the screen, with
+  concave top corners like the hardware notch, so it reads as part of it in either appearance. It
+  has three states and morphs between them with a spring (Reduce Motion: the shape changes at once
+  and the content crossfades):
+  - **Ear**, when nothing is in the pill: a paw sticking out 40 pt to the left of the notch,
+    orange with a count when agents need you, dimmed when the state is not live.
+  - **Alert**, while a module offers a notch item: the pill below the notch with which agent, why,
+    and how many others wait. Click jumps there.
+  - **Expanded**, while hovered: the same panel as under the menu bar item (both read
+    `PanelContentSource`), centred on the notch, up to 70% of the screen tall.
+
+  Hovering expands after 120 ms of rest and collapses 300 ms after the mouse leaves; an AppKit
+  tracking area on the shape reports it, so nothing wakes while the mouse is elsewhere. Hovering
+  never makes the window key, so typing stays in the terminal. A click inside makes it key
+  without activating Shepherd (a non-activating `NSPanel` that can become key), then arrows and
+  Return work; while it is key, leaving does not collapse it. Escape, a click elsewhere or a jump
+  collapses it and hands key back to the app the user was in.
+
+  The SwiftUI view spans a fixed canvas (every state at its largest) that never moves on screen;
+  the window is only as large as the current shape. Before a morph the window grows to cover both
+  shapes, and once the animation ends it shrinks to the new one. So nothing relies on clicks
+  passing through transparent pixels: at rest the only transparent parts are the flared corners.
+  On a display without a notch there is no ear and no hover panel; the alert is a small floating
+  capsule under the menu bar.
 - **Panel.** Click the status item: an `NSPanel` under it with the needs-you queue, then one card
   per project (name, project tokens, each agent with state, time in state and agent tokens), then
   status lines and config problems. It is non-activating but takes key focus, so arrows and
@@ -307,5 +329,6 @@ against the panel is darkened until it reads. `rows_by_agent` is not read yet.
 
 - Idle: no timers firing faster than once a minute, no polling.
 - Event bursts coalesced into one snapshot read.
-- Only visible surfaces render; the panel and notch tear down their views when hidden.
+- Only visible surfaces render; the panel tears down its views when closed, and the notch
+  surface renders the panel only while expanded (the ear redraws only when the status changes).
 - Model calls, output reads and sounds happen on transitions, never on a timer.
