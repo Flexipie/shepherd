@@ -25,9 +25,13 @@ PR number, a diff, a review verdict), and lets you act on it without switching t
   sideways when there are many. Move away and it folds back. Hovering does not take your typing;
   click inside to use the arrow keys (left and right between columns) and Return, Escape to fold
   it.
-- **Answer from the notch.** Click an agent in the needs-you list to see its last lines right in
-  the bar. For an approval prompt (Claude Code, Codex) its choices are buttons: click one or press
-  its digit. Otherwise use Return, Escape, or type a reply. Escape goes back.
+- **Answer and prompt from the notch.** Click any agent in the bar to see its last lines right
+  there. For an approval prompt (Claude Code, Codex) its choices are buttons: click one or press
+  its digit. Otherwise use Return, Escape, or type a reply. An agent that is idle or finished gets
+  a prompt field instead. Escape goes back.
+- **New task.** The "+" after the project columns: pick a project, an agent and a prompt
+  (a branch name is optional). Shepherd creates a git worktree from that project's repo, starts
+  the agent in it and sends the prompt, then shows you the new agent.
 - **Notch pill** (a small floating bar on Macs without a notch). A blocked agent stays until it is
   handled; a finished one shows for a few seconds. Nothing shows for the pane you are already
   looking at. Click to focus the pane in herdr and bring your terminal forward.
@@ -53,7 +57,8 @@ can be left out:
     "projects": [[{ "token": "pr", "fg": "#94e2d5", "rules": [{ "contains": "draft", "dim": true }] }, "ticket_state"]],
     "agents": [["summary"]]
   },
-  "hotkeys": { "next": "ctrl+option+cmd+n" }
+  "hotkeys": { "next": "ctrl+option+cmd+n" },
+  "agents": { "claude": { "args": [] } }
 }
 ```
 
@@ -66,6 +71,11 @@ can be left out:
   every token shows unstyled.
 - `hotkeys.next`: modifiers (`ctrl`, `option`, `cmd`, `shift`) and one key (a-z, 0-9, `space`,
   `return`, `tab`, `f1`-`f12`); `null` turns it off.
+- `agents.<kind>.args`: extra arguments when a new task starts that agent, for example
+  `"claude": { "args": ["--dangerously-skip-permissions"] }`. That flag lets Claude Code run every
+  tool and command without asking you first, so nothing will block for approval; use it only
+  where that is safe (a worktree you can throw away, a machine without secrets). Off unless you set
+  it.
 
 A mistake never breaks the app: the panel footer says what is wrong, and a file that is not valid
 JSON keeps the last good config.

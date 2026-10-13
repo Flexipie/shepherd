@@ -12,12 +12,24 @@ public struct ShepherdConfig: Sendable, Equatable {
     public var tokens: TokenLayout
     /// The global "next" hotkey; nil turns it off.
     public var nextHotkey: String?
+    /// Per agent kind ("claude", "codex"), how Shepherd starts it for a new task.
+    public var agents: [String: AgentConfig]
+
+    public struct AgentConfig: Sendable, Equatable {
+        /// Arguments after the agent's command, such as `--dangerously-skip-permissions`.
+        public var args: [String]
+
+        public init(args: [String] = []) {
+            self.args = args
+        }
+    }
 
     public init(modules: [String]? = nil, tokens: TokenLayout = TokenLayout(),
-                nextHotkey: String? = ShepherdConfig.defaultNextHotkey) {
+                nextHotkey: String? = ShepherdConfig.defaultNextHotkey, agents: [String: AgentConfig] = [:]) {
         self.modules = modules
         self.tokens = tokens
         self.nextHotkey = nextHotkey
+        self.agents = agents
     }
 
     public static let defaults = ShepherdConfig()
@@ -41,7 +53,7 @@ public struct ShepherdConfig: Sendable, Equatable {
 
         var config = ShepherdConfig()
         var problems: [String] = []
-        for key in table.keys.sorted() where !["modules", "tokens", "hotkeys"].contains(key) {
+        for key in table.keys.sorted() where !["modules", "tokens", "hotkeys", "agents"].contains(key) {
             problems.append("config: unknown key \"\(key)\"")
         }
         if let modules = table["modules"] {
@@ -85,6 +97,29 @@ public struct ShepherdConfig: Sendable, Equatable {
                 }
             } else {
                 problems.append("config: hotkeys must be an object")
+            }
+        }
+        if let agents = table["agents"] {
+            if case .table(let kinds) = agents {
+                for kind in kinds.keys.sorted() {
+                    guard case .table(let settings) = kinds[kind] else {
+                        problems.append("config: agents.\(kind) must be an object")
+                        continue
+                    }
+                    for key in settings.keys.sorted() where key != "args" {
+                        problems.append("config: unknown key \"agents.\(kind).\(key)\"")
+                    }
+                    guard let args = settings["args"] else { continue }
+                    let items = if case .array(let items) = args { items } else { [ConfigValue]() }
+                    let strings = items.compactMap { item -> String? in if case .string(let arg) = item { arg } else { nil } }
+                    if case .array = args, strings.count == items.count {
+                        config.agents[kind] = AgentConfig(args: strings)
+                    } else {
+                        problems.append("config: agents.\(kind).args must be a list of strings")
+                    }
+                }
+            } else {
+                problems.append("config: agents must be an object of agent kinds")
             }
         }
         return (config, problems)

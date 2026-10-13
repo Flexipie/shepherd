@@ -9,6 +9,12 @@ public struct HerdrClient: Sendable {
         public var ping: Duration = .seconds(1)
         public var snapshot: Duration = .seconds(2)
         public var action: Duration = .seconds(5)
+        /// herdr types a prompt, waits a moment, then presses Enter before it answers.
+        public var prompt: Duration = .seconds(10)
+        /// `git worktree add` and opening its workspace.
+        public var worktree: Duration = .seconds(30)
+        /// herdr answers `agent.start` once the agent is ready, waiting up to 30 seconds itself.
+        public var start: Duration = .seconds(40)
 
         public init() {}
     }
@@ -57,6 +63,36 @@ public struct HerdrClient: Sendable {
     public func sendInput(paneID: String, text: String, keys: [String]) async throws {
         _ = try await call("pane.send_input", params: SendInputParams(paneID: paneID, text: text, keys: keys),
                            as: IgnoredResult.self, timeout: timeouts.action)
+    }
+
+    /// Submits a prompt to the agent (`agent.prompt`). herdr refuses a blocked agent
+    /// (`agent_blocked`); answer those with keys or input instead.
+    public func promptAgent(paneID: String, text: String) async throws {
+        _ = try await call("agent.prompt", params: ["target": paneID, "text": text], as: IgnoredResult.self,
+                           timeout: timeouts.prompt)
+    }
+
+    /// A checkout made by `worktree.create`: its workspace, the shell pane in it, and its branch.
+    public struct CreatedWorktree: Sendable, Equatable {
+        public let workspaceID: String
+        public let rootPaneID: String
+        public let branch: String?
+    }
+
+    /// Creates a git worktree from the workspace's repo and opens it as a new workspace
+    /// (`worktree.create`). A nil branch lets herdr make one up.
+    public func createWorktree(workspaceID: String, branch: String?) async throws -> CreatedWorktree {
+        let params = WorktreeParams(workspaceID: workspaceID, branch: branch)
+        let result = try await call("worktree.create", params: params, as: WorktreeResult.self, timeout: timeouts.worktree)
+        return CreatedWorktree(workspaceID: result.workspace.workspaceID, rootPaneID: result.rootPane.paneID,
+                               branch: result.worktree.branch)
+    }
+
+    /// Starts an agent in a shell pane (`agent.start`). herdr answers once the agent is ready
+    /// for input. `name` must be unique, lowercase letters, digits, `-` and `_`.
+    public func startAgent(name: String, kind: String, paneID: String, args: [String]) async throws {
+        let params = StartParams(name: name, kind: kind, paneID: paneID, args: args)
+        _ = try await call("agent.start", params: params, as: IgnoredResult.self, timeout: timeouts.start)
     }
 
     /// Sends one request and decodes its `result`.
@@ -110,6 +146,53 @@ public struct HerdrClient: Sendable {
         }
 
         let read: Read
+    }
+
+    private struct WorktreeParams: Encodable, Sendable {
+        let workspaceID: String
+        let branch: String?
+
+        enum CodingKeys: String, CodingKey {
+            case workspaceID = "workspace_id"
+            case branch
+        }
+    }
+
+    private struct WorktreeResult: Decodable, Sendable {
+        struct Workspace: Decodable, Sendable {
+            let workspaceID: String
+            enum CodingKeys: String, CodingKey { case workspaceID = "workspace_id" }
+        }
+
+        struct Pane: Decodable, Sendable {
+            let paneID: String
+            enum CodingKeys: String, CodingKey { case paneID = "pane_id" }
+        }
+
+        struct Worktree: Decodable, Sendable {
+            let branch: String?
+        }
+
+        let workspace: Workspace
+        let rootPane: Pane
+        let worktree: Worktree
+
+        enum CodingKeys: String, CodingKey {
+            case workspace, worktree
+            case rootPane = "root_pane"
+        }
+    }
+
+    private struct StartParams: Encodable, Sendable {
+        let name: String
+        let kind: String
+        let paneID: String
+        let args: [String]
+
+        enum CodingKeys: String, CodingKey {
+            case name, kind, args
+            case paneID = "pane_id"
+        }
     }
 
     private struct SendKeysParams: Encodable, Sendable {

@@ -58,6 +58,13 @@ public protocol AgentActions: AnyObject {
 
     /// Types text into the agent and presses Return.
     func sendText(_ agent: AgentID, _ text: String) async throws
+
+    /// Submits a prompt to an agent that is not waiting on a question.
+    func prompt(_ agent: AgentID, _ text: String) async throws
+
+    /// Starts a task (a checkout, an agent, its prompt) with the agent's args from config, and
+    /// returns the new agent.
+    func startTask(_ task: NewTask) async throws -> AgentID
 }
 
 extension AgentActions {

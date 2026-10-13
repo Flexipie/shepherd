@@ -22,7 +22,7 @@ final class AppController {
 
     init() {
         store = HerdStore(log: log)
-        actions = AppActions(store: store, presence: presence)
+        actions = AppActions(store: store, presence: presence, config: config)
         let context = ModuleContext(store: store, presence: presence, actions: actions, config: config)
         registry = ModuleRegistry(available: BuiltinModules.all, context: context)
     }

@@ -3,7 +3,8 @@ import SwiftUI
 
 /// The right side of the notch bar while an agent is open: its row, its last visible lines, and
 /// beside them the ways to answer it (its choices with their digits, or Return and Escape when
-/// none were found, and a reply field). Disabled while a send is on its way.
+/// none were found, and a reply field), or a prompt field when it is not waiting on a question.
+/// Disabled while a send is on its way.
 struct StageView: View {
     let stage: AgentStage
     let now: Date
@@ -92,7 +93,7 @@ struct StageView: View {
                 reply.padding(.top, 2)
             }
             if !stage.canSendKeys && !stage.canReply {
-                Text("Not waiting on you")
+                Text("Nothing can be sent to this agent")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 4)
@@ -124,14 +125,14 @@ struct StageView: View {
 
     private var reply: some View {
         HStack(spacing: 6) {
-            TextField("Reply", text: $draft)
+            TextField(stage.prompts ? "Prompt \(stage.row.agent.name)" : "Reply", text: $draft)
                 .textFieldStyle(.plain)
                 .font(.system(size: 12))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 5)
                 .background(RoundedRectangle(cornerRadius: 7).fill(Color.primary.opacity(0.08)))
                 .onSubmit(send)
-            Button("Send", action: send)
+            Button(stage.prompts ? "Prompt" : "Send", action: send)
                 .buttonStyle(StageButtonStyle())
                 .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         }

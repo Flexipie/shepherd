@@ -33,6 +33,15 @@ public protocol AgentSource: AnyObject {
     /// `.sendText`.
     func sendText(_ agent: AgentID, _ text: String) async throws
 
+    /// Starts a new turn: submits `text` as a prompt to an agent that is not waiting on a
+    /// question. Only called when `capabilities` contains `.prompt`.
+    func prompt(_ agent: AgentID, _ text: String) async throws
+
+    /// Makes a checkout for the task, starts its agent there with `args`, sends its prompt, and
+    /// returns the new agent. Only called when `capabilities` contains `.createWorktree` and
+    /// `.startAgent`. A step that fails after an earlier one worked says what was left behind.
+    func startTask(_ task: NewTask, args: [String]) async throws -> AgentID
+
     /// Pids of the apps the source's agents live in (for herdr, the terminal hosting it). Used to
     /// tell whether the user is already looking at an agent.
     func hostApplicationPIDs() -> [pid_t]
@@ -53,6 +62,14 @@ extension AgentSource {
 
     public func sendText(_ agent: AgentID, _ text: String) async throws {
         throw AgentSourceError.unsupported(.sendText)
+    }
+
+    public func prompt(_ agent: AgentID, _ text: String) async throws {
+        throw AgentSourceError.unsupported(.prompt)
+    }
+
+    public func startTask(_ task: NewTask, args: [String]) async throws -> AgentID {
+        throw AgentSourceError.unsupported(.startAgent)
     }
 }
 

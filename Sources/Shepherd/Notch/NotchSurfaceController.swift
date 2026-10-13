@@ -21,7 +21,7 @@ final class NotchSurfaceController: NSObject, NSWindowDelegate {
     private let content: PanelContentSource
     private let actions: any AgentActions
     private let model = NotchSurfaceModel()
-    private let stage: AgentStageModel
+    private let stage: StageModel
     private let floating = FloatingPill()
     private var geometry: NotchGeometry?
     private var panel: NotchSurfacePanel?
@@ -38,7 +38,7 @@ final class NotchSurfaceController: NSObject, NSWindowDelegate {
         self.registry = registry
         self.content = content
         self.actions = actions
-        stage = AgentStageModel(store: content.store, actions: actions)
+        stage = StageModel(store: content.store, actions: actions, config: content.config)
         super.init()
         screenObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
@@ -145,7 +145,7 @@ final class NotchSurfaceController: NSObject, NSWindowDelegate {
     private func currentMode() -> NotchSurfaceMode {
         if expanded {
             let content = content.current()
-            return .expanded(content, stage: stage.stage(in: content))
+            return .expanded(content, stage: stage.stage(in: content), offersNewTask: !stage.taskProjects.isEmpty)
         }
         if let item = registry.modules.lazy.compactMap(\.notch).first { return .alert(item) }
         return .ear(registry.modules.lazy.compactMap(\.status).first
@@ -271,8 +271,10 @@ final class NotchSurfaceController: NSObject, NSWindowDelegate {
         switch action {
         case .open(let agent):
             if stage.canOpen(agent) { stage.open(agent) } else { perform(.jump(agent)) }
+        case .newTask: stage.openNewTask()
         case .close: stage.close()
         case .keys, .reply: stage.send(action)
+        case .startTask(let task): stage.start(task)
         }
     }
 

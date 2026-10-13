@@ -57,6 +57,9 @@ while let line = readLine() {
     case "sent":
         for sent in await fake.sentKeys { print(sent.pane, "keys", sent.keys) }
         for sent in await fake.sentInput { print(sent.pane, "input", sent.text, sent.keys) }
+        for sent in await fake.sentPrompts { print(sent.pane, "prompt", sent.text) }
+        for created in await fake.createdWorktrees { print("worktree", created.branch, "from", created.workspace) }
+        for started in await fake.startedAgents { print("started", started.name, started.kind, "in", started.pane, started.args) }
     case "list":
         for pane in await fake.herd.panes { print(pane.id, pane.agent ?? "shell", pane.status) }
     case "quit":

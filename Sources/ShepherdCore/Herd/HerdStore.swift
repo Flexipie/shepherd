@@ -90,6 +90,23 @@ public final class HerdStore {
         try await source(for: agent, needing: .sendText).sendText(agent, text)
     }
 
+    /// Submits a prompt to an agent that is not waiting on a question.
+    public func prompt(_ agent: AgentID, _ text: String) async throws {
+        try await source(for: agent, needing: .prompt).prompt(agent, text)
+    }
+
+    /// Whether the project's source can start tasks in it.
+    public func canStartTask(in project: ProjectID) -> Bool {
+        source(project.source)?.capabilities.isSuperset(of: [.createWorktree, .startAgent]) == true
+    }
+
+    /// Starts a task: a checkout, an agent in it, its prompt. Returns the new agent.
+    public func startTask(_ task: NewTask, args: [String]) async throws -> AgentID {
+        guard let source = source(task.project.source) else { throw AgentSourceError.unknownSource(task.project.source) }
+        guard canStartTask(in: task.project) else { throw AgentSourceError.unsupported(.startAgent) }
+        return try await source.startTask(task, args: args)
+    }
+
     private func source(for agent: AgentID, needing capability: SourceCapabilities) throws -> any AgentSource {
         guard let source = source(agent.source) else { throw AgentSourceError.unknownSource(agent.source) }
         guard source.capabilities.contains(capability) else { throw AgentSourceError.unsupported(capability) }

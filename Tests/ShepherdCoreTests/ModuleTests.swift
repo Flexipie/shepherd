@@ -14,6 +14,8 @@ final class RecordingActions: AgentActions {
     func read(_ agent: AgentID, lines: Int) async throws -> String { "" }
     func sendKeys(_ agent: AgentID, _ keys: [String]) async throws {}
     func sendText(_ agent: AgentID, _ text: String) async throws {}
+    func prompt(_ agent: AgentID, _ text: String) async throws {}
+    func startTask(_ task: NewTask) async throws -> AgentID { AgentID(source: "herdr", local: "new") }
 }
 
 @MainActor

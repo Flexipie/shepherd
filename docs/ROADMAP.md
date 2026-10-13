@@ -19,10 +19,6 @@ These need a person, real agents or other hardware:
 
 Each its own PR, in this order.
 
-- **Prompt and new task.** A prompt field on the stage of an idle or finished agent
-  (`agent.prompt`). A "+" after the project columns: pick a workspace, branch, agent kind and
-  prompt; `worktree.create`, `agent.start` (with `agents.<kind>.args` from config), then
-  `agent.prompt`. Errors are shown in the stage.
 - **Notifications.** A `notifications` module: blocked (and optionally done) while you are not
   looking posts a notification with Jump and Reply. Quiet when herdr's own toasts are on unless
   `"notifications": "on"`. Spike first: notifications from the ad-hoc signed bundle.

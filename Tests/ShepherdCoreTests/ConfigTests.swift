@@ -28,6 +28,18 @@ import Testing
         #expect(config.nextHotkey == "ctrl+option+cmd+j")
     }
 
+    @Test func agentArgs() throws {
+        let (config, problems) = try read(#"""
+        {"agents": {"claude": {"args": ["--dangerously-skip-permissions"]}, "codex": {"args": ["-m", 5], "model": "x"},
+                    "pi": "fast"}}
+        """#)
+        #expect(config.agents["claude"]?.args == ["--dangerously-skip-permissions"])
+        #expect(config.agents["codex"] == nil)
+        #expect(problems == ["config: unknown key \"agents.codex.model\"", "config: agents.codex.args must be a list of strings",
+                             "config: agents.pi must be an object"])
+        #expect(try read(#"{"agents": []}"#).problems == ["config: agents must be an object of agent kinds"])
+    }
+
     @Test func nullTurnsTheHotkeyOff() throws {
         #expect(try read(#"{"hotkeys": {"next": null}}"#).config.nextHotkey == nil)
     }

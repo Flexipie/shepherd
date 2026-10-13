@@ -47,3 +47,8 @@ Oldest first.
   and digits (`agent.send_keys`), Return and Escape as a fallback, and a reply field
   (`pane.send_input`). Sources gained `read`, `sendKeys` and `sendText`, through `HerdStore` and
   `AgentActions`; herdr's errors reach the stage in words. FakeHerdr answers all three.
+- Prompt and new task: every agent row in the bar opens its stage; an agent that is not blocked
+  gets a prompt field (`agent.prompt`). A "+" after the project columns opens a new task form
+  (project, agent, optional branch, prompt): `worktree.create`, `agent.start` with
+  `agents.<kind>.args` from config, then `agent.prompt`, and the new agent's stage opens. A
+  failed step says what earlier steps left behind. FakeHerdr answers all of it.

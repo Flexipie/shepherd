@@ -2,14 +2,15 @@ import Foundation
 import HerdrKit
 
 /// A fake herdr on a real Unix socket. It answers `ping`, `session.snapshot`, `agent.focus`,
-/// `workspace.focus`, `events.subscribe`, and `agent.read`, `agent.send_keys` and
-/// `pane.send_input` (see `FakeHerdrServer+Input.swift`) the way herdr 0.9.3 does: one request per connection, subscriptions
+/// `workspace.focus`, `events.subscribe`, and `agent.read`, `agent.send_keys`,
+/// `pane.send_input` and `agent.prompt` (see `FakeHerdrServer+Input.swift`), `worktree.create`
+/// and `agent.start` (`FakeHerdrServer+Tasks.swift`) the way herdr 0.9.3 does: one request per connection, subscriptions
 /// validated against the current panes, both event name spellings, `events_lost` as an error
 /// carrying the subscribe id. Tests drive it and observe what the client did; demo mode will
 /// reuse it.
 public actor FakeHerdrServer {
     public nonisolated let path: String
-    public private(set) var herd: FakeHerd
+    public internal(set) var herd: FakeHerd
 
     /// Delay before answering a snapshot.
     public var snapshotDelay: Duration = .zero
@@ -26,6 +27,10 @@ public actor FakeHerdrServer {
     /// Keys and input sent to panes, in order.
     public internal(set) var sentKeys: [(pane: String, keys: [String])] = []
     public internal(set) var sentInput: [(pane: String, text: String, keys: [String])] = []
+    public internal(set) var sentPrompts: [(pane: String, text: String)] = []
+    /// Worktrees created (from which workspace, on which branch) and agents started.
+    public internal(set) var createdWorktrees: [(workspace: String, branch: String)] = []
+    public internal(set) var startedAgents: [(name: String, kind: String, pane: String, args: [String])] = []
     /// What `agent.read` returns for a pane; without one, a screen made up from its kind and status.
     public var screens: [String: String] = [:]
     /// The fewest live subscribers seen since the first one started; nil before that.
@@ -251,8 +256,10 @@ public actor FakeHerdrServer {
             subscribersChanged()
             while (try? await lines.next()) != nil {}
             return
-        case "agent.read", "agent.send_keys", "pane.send_input":
+        case "agent.read", "agent.send_keys", "pane.send_input", "agent.prompt":
             serveInput(method, params, connection, requestID)
+        case "worktree.create", "agent.start":
+            serveTask(method, params, connection, requestID)
         default:
             replyError(connection, requestID, code: "invalid_request", message: "unknown method \(method)")
         }

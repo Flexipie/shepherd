@@ -42,13 +42,14 @@ import Testing
     }
 
     /// The bar at its natural height, as the app sizes it.
-    func checkExpanded(_ name: String, _ content: PanelContent, stage: AgentStage? = nil,
+    func checkExpanded(_ name: String, _ content: PanelContent, stage: BarStage? = nil, offersNewTask: Bool = false,
                        sourceLocation: SourceLocation = #_sourceLocation) throws {
         let width = metrics.body(.expanded, expandedHeight: 0).width
         let bar = NotchBarView(content: content, clock: .fixed(SampleHerd.now), width: width, stage: stage,
-                               perform: { _ in }, onStage: { _ in })
+                               offersNewTask: offersNewTask, perform: { _ in }, onStage: { _ in })
         let height = NSHostingView(rootView: bar.environment(\.colorScheme, .dark)).fittingSize.height + 32
-        try check(name, .expanded(content, stage: stage), height: height + 8, expandedHeight: height, sourceLocation: sourceLocation)
+        try check(name, .expanded(content, stage: stage, offersNewTask: offersNewTask), height: height + 8,
+                  expandedHeight: height, sourceLocation: sourceLocation)
     }
 
     // ImageRenderer cannot draw the reply field (an AppKit text field): it shows as a yellow
@@ -69,7 +70,7 @@ import Testing
         """
         let stage = AgentStage(row: SampleHerd.row(SampleHerd.blockedCodex), lines: text.components(separatedBy: "\n"),
                                choices: ChoiceParser.choices(in: text), canSendKeys: true, canReply: true)
-        try checkExpanded("notch-stage-choices", SampleHerd.content, stage: stage)
+        try checkExpanded("notch-stage-choices", SampleHerd.content, stage: .agent(stage))
     }
 
     @Test func stageWithAQuestion() throws {
@@ -77,13 +78,31 @@ import Testing
                                lines: ["Two ways to store sessions:", "  a) in memory, lost on restart", "  b) in the database",
                                        "", "Which one should I use?"],
                                canSendKeys: true, canReply: true)
-        try checkExpanded("notch-stage-question", SampleHerd.content, stage: stage)
+        try checkExpanded("notch-stage-question", SampleHerd.content, stage: .agent(stage))
     }
 
     @Test func stageReadingWithAnError() throws {
         let stage = AgentStage(row: SampleHerd.row(SampleHerd.finished), lines: nil,
                                error: "Could not read: herdr did not answer in time")
-        try checkExpanded("notch-stage-error", SampleHerd.content, stage: stage)
+        try checkExpanded("notch-stage-error", SampleHerd.content, stage: .agent(stage))
+    }
+
+    @Test func stageForAPrompt() throws {
+        let stage = AgentStage(row: SampleHerd.row(SampleHerd.idle), lines: ["Updated the README.", "", "> "],
+                               canReply: true, prompts: true)
+        try checkExpanded("notch-stage-prompt", SampleHerd.content, stage: .agent(stage))
+    }
+
+    @Test func newTaskButton() throws {
+        let projects = PanelSection(id: "projects", title: "Projects", items: [.project(SampleHerd.apiCard)], emptyText: "No projects")
+        let content = PanelContent(sections: [SampleHerd.queue, projects], statusLines: ["2 working, 3 waiting"])
+        try checkExpanded("notch-bar-new-task-button", content, offersNewTask: true)
+    }
+
+    @Test func newTaskForm() throws {
+        let stage = NewTaskStage(projects: [SampleHerd.api, SampleHerd.web], suggestedProject: SampleHerd.web.id,
+                                 kinds: ["claude", "codex"], error: "Could not start the task: herdr: unsupported agent kind x")
+        try checkExpanded("notch-new-task", SampleHerd.content, stage: .newTask(stage))
     }
 
     @Test func expanded() throws {
