@@ -86,6 +86,28 @@ import Testing
         await fake.stop()
     }
 
+    @Test func answeringABlockedAgent() async throws {
+        let fake = FakeHerdrServer()
+        try await fake.start()
+        let (store, _) = running(fake)
+        await fake.setStatus("w1:p1", "blocked")
+        try await until(store) { $0.needsYou.count == 1 }
+        let agent = AgentID(source: "herdr", local: "w1:p1")
+        #expect(store.capabilities(of: agent).isSuperset(of: [.readOutput, .sendKeys, .sendText]))
+        let text = try await store.read(agent, lines: 30)
+        #expect(ChoiceParser.choices(in: text).map(\.key) == ["1", "2", "3"])
+        try await store.sendKeys(agent, ["1"])
+        try await until(store) { $0.needsYou.isEmpty }
+        await fake.setStatus("w1:p1", "blocked")
+        try await until(store) { $0.needsYou.count == 1 }
+        try await store.sendText(agent, "use the second one")
+        try await until(store) { $0.needsYou.isEmpty }
+        #expect(await fake.sentKeys.map(\.keys) == [["1"]])
+        #expect(await fake.sentInput.map(\.keys) == [["enter"]])
+        await store.stop()
+        await fake.stop()
+    }
+
     @Test func sidebarLayoutFollowsHerdrsConfig() async throws {
         let directory = FileManager.default.temporaryDirectory.appending(path: "shepherd-herdr-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: directory) }

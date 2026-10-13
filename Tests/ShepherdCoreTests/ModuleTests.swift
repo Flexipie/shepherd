@@ -10,6 +10,10 @@ final class RecordingActions: AgentActions {
     var projects: [ProjectID] = []
     func jump(to agent: AgentID) { jumps.append(agent) }
     func focusProject(_ project: ProjectID) { projects.append(project) }
+    func capabilities(of agent: AgentID) -> SourceCapabilities { [.focus] }
+    func read(_ agent: AgentID, lines: Int) async throws -> String { "" }
+    func sendKeys(_ agent: AgentID, _ keys: [String]) async throws {}
+    func sendText(_ agent: AgentID, _ text: String) async throws {}
 }
 
 @MainActor

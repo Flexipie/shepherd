@@ -25,6 +25,9 @@ PR number, a diff, a review verdict), and lets you act on it without switching t
   sideways when there are many. Move away and it folds back. Hovering does not take your typing;
   click inside to use the arrow keys (left and right between columns) and Return, Escape to fold
   it.
+- **Answer from the notch.** Click an agent in the needs-you list to see its last lines right in
+  the bar. For an approval prompt (Claude Code, Codex) its choices are buttons: click one or press
+  its digit. Otherwise use Return, Escape, or type a reply. Escape goes back.
 - **Notch pill** (a small floating bar on Macs without a notch). A blocked agent stays until it is
   handled; a finished one shows for a few seconds. Nothing shows for the pane you are already
   looking at. Click to focus the pane in herdr and bring your terminal forward.

@@ -39,6 +39,26 @@ public struct HerdrClient: Sendable {
         _ = try await call("workspace.focus", params: ["workspace_id": id], as: IgnoredResult.self, timeout: timeouts.action)
     }
 
+    /// The agent's visible screen as plain text, its last `lines` lines (`agent.read`).
+    public func readAgent(paneID: String, lines: Int) async throws -> String {
+        let params = ReadParams(target: paneID, source: "visible", lines: lines, stripAnsi: true)
+        return try await call("agent.read", params: params, as: ReadResult.self, timeout: timeouts.action).read.text
+    }
+
+    /// Presses keys in the agent's pane (`agent.send_keys`), using herdr's key names such as
+    /// `"1"`, `"enter"` or `"esc"`. herdr refuses a pane that is not running a known agent.
+    public func sendKeys(paneID: String, keys: [String]) async throws {
+        _ = try await call("agent.send_keys", params: SendKeysParams(target: paneID, keys: keys), as: IgnoredResult.self,
+                           timeout: timeouts.action)
+    }
+
+    /// Types `text` into the pane, then presses `keys` (`pane.send_input`). herdr pastes the text
+    /// as one bracketed paste when the program asked for that, so it arrives whole.
+    public func sendInput(paneID: String, text: String, keys: [String]) async throws {
+        _ = try await call("pane.send_input", params: SendInputParams(paneID: paneID, text: text, keys: keys),
+                           as: IgnoredResult.self, timeout: timeouts.action)
+    }
+
     /// Sends one request and decodes its `result`.
     public func call<Params: Encodable & Sendable, Result: Decodable & Sendable>(
         _ method: String, params: Params, as type: Result.Type, timeout: Duration
@@ -70,6 +90,42 @@ public struct HerdrClient: Sendable {
 
     private struct SnapshotResult: Decodable, Sendable {
         let snapshot: SessionSnapshot
+    }
+
+    private struct ReadParams: Encodable, Sendable {
+        let target: String
+        let source: String
+        let lines: Int
+        let stripAnsi: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case target, source, lines
+            case stripAnsi = "strip_ansi"
+        }
+    }
+
+    private struct ReadResult: Decodable, Sendable {
+        struct Read: Decodable, Sendable {
+            let text: String
+        }
+
+        let read: Read
+    }
+
+    private struct SendKeysParams: Encodable, Sendable {
+        let target: String
+        let keys: [String]
+    }
+
+    private struct SendInputParams: Encodable, Sendable {
+        let paneID: String
+        let text: String
+        let keys: [String]
+
+        enum CodingKeys: String, CodingKey {
+            case paneID = "pane_id"
+            case text, keys
+        }
     }
 }
 

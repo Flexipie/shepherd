@@ -6,12 +6,17 @@ import SwiftUI
 /// sideways when there are many; each column scrolls on its own past `maxHeight`. Status lines
 /// and config problems share one quiet line along the bottom. Arrows move across the grid,
 /// Return chooses, hovering selects.
+///
+/// With `onStage`, choosing a queue row opens that agent's stage in place of the project columns
+/// instead of jumping; Escape or Left goes back, a digit picks one of its choices.
 public struct NotchBarView: View {
     let content: PanelContent
     let clock: PanelClock
     let width: CGFloat
     let maxHeight: CGFloat?
+    let stage: AgentStage?
     let perform: (PanelAction) -> Void
+    let onStage: ((StageAction) -> Void)?
 
     @State private var selection: PanelTarget.ID?
     /// Set by the keyboard only, so hovering never scrolls the row under the mouse.
@@ -27,12 +32,15 @@ public struct NotchBarView: View {
     /// `maxHeight` makes each column scroll past that height; nil lets the columns grow (and,
     /// for snapshots, cuts off the columns that do not fit instead of scrolling them).
     public init(content: PanelContent, clock: PanelClock = .live, width: CGFloat, maxHeight: CGFloat? = nil,
-                selection: PanelTarget.ID? = nil, perform: @escaping (PanelAction) -> Void) {
+                stage: AgentStage? = nil, selection: PanelTarget.ID? = nil, perform: @escaping (PanelAction) -> Void,
+                onStage: ((StageAction) -> Void)? = nil) {
         self.content = content
         self.clock = clock
         self.width = width
         self.maxHeight = maxHeight
+        self.stage = stage
         self.perform = perform
+        self.onStage = onStage
         _selection = State(initialValue: selection)
     }
 
@@ -50,8 +58,10 @@ public struct NotchBarView: View {
         .onAppear { focused = true }
         .onKeyPress(.downArrow) { move(.down) }
         .onKeyPress(.upArrow) { move(.up) }
-        .onKeyPress(.leftArrow) { move(.left) }
-        .onKeyPress(.rightArrow) { move(.right) }
+        .onKeyPress(.leftArrow) { stage == nil ? move(.left) : closeStage() }
+        .onKeyPress(.rightArrow) { stage == nil ? move(.right) : .handled }
+        .onKeyPress(.escape) { stage == nil ? .ignored : closeStage() }
+        .onKeyPress(characters: .decimalDigits) { press in pick(press.characters) }
         .onKeyPress(.return) { choose() }
         .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: content)
     }
@@ -65,12 +75,16 @@ public struct NotchBarView: View {
         return VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top, spacing: Self.spacing) {
                 if let pinned {
-                    column(pinned, now: now)
+                    column(pinned, now: now, perform: queuePerform)
                 }
-                if pinned != nil, !rest.isEmpty {
+                if pinned != nil, stage != nil || !rest.isEmpty {
                     Divider()
                 }
-                if !rest.isEmpty {
+                if let stage, let onStage {
+                    StageView(stage: stage, now: now, linesHeight: maxHeight.map { max(60, $0 - Self.stageChrome) },
+                              perform: perform, onStage: onStage)
+                        .id(stage.agent)
+                } else if !rest.isEmpty {
                     scrolling(rest, now: now)
                 }
             }
@@ -85,7 +99,7 @@ public struct NotchBarView: View {
     private func scrolling(_ columns: [BarColumn], now: Date) -> some View {
         let row = HStack(alignment: .top, spacing: Self.spacing) {
             ForEach(columns) { column in
-                self.column(column, now: now).id(column.id)
+                self.column(column, now: now, perform: perform).id(column.id)
             }
         }
         if let maxHeight {
@@ -104,8 +118,8 @@ public struct NotchBarView: View {
     }
 
     @ViewBuilder
-    private func column(_ column: BarColumn, now: Date) -> some View {
-        let items = columnItems(column, now: now)
+    private func column(_ column: BarColumn, now: Date, perform: @escaping (PanelAction) -> Void) -> some View {
+        let items = columnItems(column, now: now, perform: perform)
             .frame(width: column.isQueue ? Self.queueWidth : Self.columnWidth, alignment: .topLeading)
         if let maxHeight {
             ScrollViewReader { proxy in
@@ -125,12 +139,24 @@ public struct NotchBarView: View {
     }
 
     @ViewBuilder
-    private func columnItems(_ column: BarColumn, now: Date) -> some View {
+    private func columnItems(_ column: BarColumn, now: Date, perform: @escaping (PanelAction) -> Void) -> some View {
         if column.isCard, let item = column.items.first {
             PanelItemView(item: item, sectionID: column.section.id, now: now, selection: selection,
                           perform: perform) { selection = $0 }
         } else {
             PanelSectionView(section: column.section, now: now, selection: selection, perform: perform) { selection = $0 }
+        }
+    }
+
+    /// Room the stage needs around its lines: its header and an error line.
+    static let stageChrome: CGFloat = 58
+
+    /// Queue rows open their agent's stage when there is one to open, and jump otherwise.
+    private func queuePerform(_ action: PanelAction) {
+        if let onStage, case .jump(let agent) = action {
+            onStage(.open(agent))
+        } else {
+            perform(action)
         }
     }
 
@@ -169,8 +195,25 @@ public struct NotchBarView: View {
     }
 
     private func choose() -> KeyPress.Result {
+        let columns = self.columns
         guard let target = PanelTarget.all(in: columns).first(where: { $0.id == selection }) else { return .ignored }
-        perform(target.action)
+        if columns.first?.isQueue == true, target.column == 0 {
+            queuePerform(target.action)
+        } else {
+            perform(target.action)
+        }
+        return .handled
+    }
+
+    private func closeStage() -> KeyPress.Result {
+        onStage?(.close)
+        return .handled
+    }
+
+    /// A digit picks the staged agent's choice with that key.
+    private func pick(_ key: String) -> KeyPress.Result {
+        guard let stage, stage.canSendKeys, !stage.isSending, stage.choices.contains(where: { $0.key == key }) else { return .ignored }
+        onStage?(.keys([key]))
         return .handled
     }
 }

@@ -21,6 +21,7 @@ final class NotchSurfaceController: NSObject, NSWindowDelegate {
     private let content: PanelContentSource
     private let actions: any AgentActions
     private let model = NotchSurfaceModel()
+    private let stage: AgentStageModel
     private let floating = FloatingPill()
     private var geometry: NotchGeometry?
     private var panel: NotchSurfacePanel?
@@ -37,6 +38,7 @@ final class NotchSurfaceController: NSObject, NSWindowDelegate {
         self.registry = registry
         self.content = content
         self.actions = actions
+        stage = AgentStageModel(store: content.store, actions: actions)
         super.init()
         screenObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
@@ -51,6 +53,7 @@ final class NotchSurfaceController: NSObject, NSWindowDelegate {
         cancelHover()
         guard expanded else { return }
         expanded = false
+        stage.close()
         if let panel, panel.isKeyWindow {
             // Hands key back to the app the user was in, which stayed active throughout.
             panel.orderOut(nil)
@@ -85,6 +88,7 @@ final class NotchSurfaceController: NSObject, NSWindowDelegate {
         let root = NotchSurfaceRoot(
             model: model, metrics: metrics, barMaxHeight: barMaxHeight,
             perform: { [weak self] action in self?.perform(action) },
+            onStage: { [weak self] action in self?.stageAction(action) },
             onExpand: { [weak self] in self?.expand() },
             onExpandedHeight: { [weak self] height in
                 // After the layout pass that measured it.
@@ -139,7 +143,10 @@ final class NotchSurfaceController: NSObject, NSWindowDelegate {
     }
 
     private func currentMode() -> NotchSurfaceMode {
-        if expanded { return .expanded(content.current()) }
+        if expanded {
+            let content = content.current()
+            return .expanded(content, stage: stage.stage(in: content))
+        }
         if let item = registry.modules.lazy.compactMap(\.notch).first { return .alert(item) }
         return .ear(registry.modules.lazy.compactMap(\.status).first
             ?? StatusContribution(symbol: "pawprint", accessibilityLabel: "Shepherd"))
@@ -258,6 +265,15 @@ final class NotchSurfaceController: NSObject, NSWindowDelegate {
     private func perform(_ action: PanelAction) {
         collapse()
         actions.perform(action)
+    }
+
+    private func stageAction(_ action: StageAction) {
+        switch action {
+        case .open(let agent):
+            if stage.canOpen(agent) { stage.open(agent) } else { perform(.jump(agent)) }
+        case .close: stage.close()
+        case .keys, .reply: stage.send(action)
+        }
     }
 
     func windowDidResignKey(_ notification: Notification) {

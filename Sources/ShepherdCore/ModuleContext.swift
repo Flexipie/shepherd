@@ -46,6 +46,18 @@ public protocol AgentActions: AnyObject {
 
     /// Shows the project in its source and brings the source's app forward.
     func focusProject(_ project: ProjectID)
+
+    /// What the agent's source can do, so a surface offers only what works.
+    func capabilities(of agent: AgentID) -> SourceCapabilities
+
+    /// The agent's last visible lines, read once per call. Surfaces call it only while shown.
+    func read(_ agent: AgentID, lines: Int) async throws -> String
+
+    /// Presses keys in the agent, such as `["1"]` to pick a choice.
+    func sendKeys(_ agent: AgentID, _ keys: [String]) async throws
+
+    /// Types text into the agent and presses Return.
+    func sendText(_ agent: AgentID, _ text: String) async throws
 }
 
 extension AgentActions {

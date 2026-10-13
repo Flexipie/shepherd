@@ -49,7 +49,7 @@ A source is where agents come from. Modules and surfaces never see a source's wi
 see one **herd model**: agents with a state (`idle`, `working`, `blocked`, `done`, `unknown`),
 their workspace or project, time in state, tokens, and the transitions Shepherd observed.
 
-- Each source declares its **capabilities**: focus, read output, prompt, send keys, approve,
+- Each source declares its **capabilities**: focus, read output, prompt, send keys, send text, approve,
   start an agent, create a worktree. Surfaces hide what a source cannot do instead of failing.
 - Each source owns its own connection, recovery and decoding. The "Data flow" rules below are
   herdr's; another source follows the same spirit (no polling where events exist, never show
@@ -218,6 +218,17 @@ Every surface is optional and degrades on its own.
     column scrolls on its own past the height cap. Status lines and config problems share one
     line along the bottom. Up and down move within a column, left and right to the nearest row
     of the next column.
+  - **Stage**, inside the bar: choosing a needs-you row (click or Return) swaps the project
+    columns for that agent's stage, when its source can read output (otherwise it jumps). The
+    stage shows the agent's last visible lines (`agent.read`, `source: "visible"`, read once on
+    open and again only when the agent's status changes while it is open; nothing while
+    closed), the choices `ChoiceParser` finds in them (a run of options numbered from 1 with
+    the agent's cursor on one, as Claude Code and Codex draw approval prompts) as buttons with
+    their digit, Return and Escape when none parse, and a reply field. A digit or a choice
+    sends `agent.send_keys`; a reply sends `pane.send_input` (the text as one bracketed paste,
+    then Enter). Escape or Left goes back to the columns; Jump shows the agent in its
+    terminal. Typing needs the bar to be key, which a click in the field gives it; while key,
+    leaving with the mouse does not fold it. Errors are shown in the stage, never silent.
 
   Hovering expands after 120 ms of rest and collapses 300 ms after the mouse leaves; an AppKit
   tracking area on the shape reports it, so nothing wakes while the mouse is elsewhere. Hovering

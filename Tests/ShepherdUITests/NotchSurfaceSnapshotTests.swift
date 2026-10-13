@@ -14,7 +14,8 @@ import Testing
                sourceLocation: SourceLocation = #_sourceLocation) throws {
         let canvas = metrics.canvas
         try Snapshot.check(name, width: canvas.width, sourceLocation: sourceLocation) {
-            NotchSurfaceView(mode: mode, metrics: metrics, expandedHeight: expandedHeight, clock: .fixed(SampleHerd.now))
+            NotchSurfaceView(mode: mode, metrics: metrics, expandedHeight: expandedHeight, clock: .fixed(SampleHerd.now),
+                             onStage: { _ in })
                 // Only the top of the canvas, where the shape is.
                 .frame(width: canvas.width, height: height, alignment: .top)
                 .clipped()
@@ -41,11 +42,48 @@ import Testing
     }
 
     /// The bar at its natural height, as the app sizes it.
-    func checkExpanded(_ name: String, _ content: PanelContent, sourceLocation: SourceLocation = #_sourceLocation) throws {
+    func checkExpanded(_ name: String, _ content: PanelContent, stage: AgentStage? = nil,
+                       sourceLocation: SourceLocation = #_sourceLocation) throws {
         let width = metrics.body(.expanded, expandedHeight: 0).width
-        let bar = NotchBarView(content: content, clock: .fixed(SampleHerd.now), width: width) { _ in }
+        let bar = NotchBarView(content: content, clock: .fixed(SampleHerd.now), width: width, stage: stage,
+                               perform: { _ in }, onStage: { _ in })
         let height = NSHostingView(rootView: bar.environment(\.colorScheme, .dark)).fittingSize.height + 32
-        try check(name, .expanded(content), height: height + 8, expandedHeight: height, sourceLocation: sourceLocation)
+        try check(name, .expanded(content, stage: stage), height: height + 8, expandedHeight: height, sourceLocation: sourceLocation)
+    }
+
+    // ImageRenderer cannot draw the reply field (an AppKit text field): it shows as a yellow
+    // placeholder in these references.
+    @Test func stageWithChoices() throws {
+        let text = """
+        ⏺ I'll run the migration.
+
+         Bash command
+
+           make migrate
+           Apply the schema change
+
+         Do you want to proceed?
+         ❯ 1. Yes
+           2. Yes, and don't ask again for make commands in /work/api
+           3. No, and tell Claude what to do differently (esc)
+        """
+        let stage = AgentStage(row: SampleHerd.row(SampleHerd.blockedCodex), lines: text.components(separatedBy: "\n"),
+                               choices: ChoiceParser.choices(in: text), canSendKeys: true, canReply: true)
+        try checkExpanded("notch-stage-choices", SampleHerd.content, stage: stage)
+    }
+
+    @Test func stageWithAQuestion() throws {
+        let stage = AgentStage(row: SampleHerd.row(SampleHerd.blockedClaude),
+                               lines: ["Two ways to store sessions:", "  a) in memory, lost on restart", "  b) in the database",
+                                       "", "Which one should I use?"],
+                               canSendKeys: true, canReply: true)
+        try checkExpanded("notch-stage-question", SampleHerd.content, stage: stage)
+    }
+
+    @Test func stageReadingWithAnError() throws {
+        let stage = AgentStage(row: SampleHerd.row(SampleHerd.finished), lines: nil,
+                               error: "Could not read: herdr did not answer in time")
+        try checkExpanded("notch-stage-error", SampleHerd.content, stage: stage)
     }
 
     @Test func expanded() throws {

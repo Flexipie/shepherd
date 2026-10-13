@@ -10,7 +10,7 @@ public final class HerdrSource: AgentSource {
 
     public let id = HerdrSource.sourceID
     public let displayName = "herdr"
-    public let capabilities: SourceCapabilities = [.focus, .focusProject]
+    public let capabilities: SourceCapabilities = [.focus, .focusProject, .readOutput, .sendKeys, .sendText]
     public let updates: AsyncStream<SourceUpdate>
 
     private let continuation: AsyncStream<SourceUpdate>.Continuation
@@ -72,6 +72,38 @@ public final class HerdrSource: AgentSource {
     public func focusProject(_ project: ProjectID) async throws {
         try await client.focusWorkspace(id: project.local)
         if activatesTerminal { activateTerminal() }
+    }
+
+    public func read(_ agent: AgentID, lines: Int) async throws -> String {
+        try await readable { try await client.readAgent(paneID: agent.local, lines: lines) }
+    }
+
+    public func sendKeys(_ agent: AgentID, _ keys: [String]) async throws {
+        try await readable { try await client.sendKeys(paneID: agent.local, keys: keys) }
+    }
+
+    public func sendText(_ agent: AgentID, _ text: String) async throws {
+        try await readable { try await client.sendInput(paneID: agent.local, text: text, keys: ["enter"]) }
+    }
+
+    /// Runs a call, turning herdr's errors into words for the surface that shows them.
+    private func readable<T>(_ call: () async throws -> T) async throws -> T {
+        do {
+            return try await call()
+        } catch let error as HerdrError {
+            throw AgentSourceError.failed(Self.describe(error))
+        }
+    }
+
+    static func describe(_ error: HerdrError) -> String {
+        switch error {
+        case .notRunning: "herdr is not running"
+        case .permissionDenied: "no permission to use herdr's socket"
+        case .timeout: "herdr did not answer in time"
+        case .disconnected: "herdr closed the connection"
+        case .server(_, let message): "herdr: \(message)"
+        case .socketPathTooLong, .lineTooLong, .io, .unexpectedResponse: "herdr: \(error)"
+        }
     }
 
     /// The terminal apps hosting an attached herdr client.

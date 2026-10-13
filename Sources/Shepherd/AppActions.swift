@@ -37,6 +37,22 @@ final class AppActions: AgentActions {
         Task { try? await store.focusProject(project) }
     }
 
+    func capabilities(of agent: AgentID) -> SourceCapabilities {
+        store.capabilities(of: agent)
+    }
+
+    func read(_ agent: AgentID, lines: Int) async throws -> String {
+        try await store.read(agent, lines: lines)
+    }
+
+    func sendKeys(_ agent: AgentID, _ keys: [String]) async throws {
+        try await store.sendKeys(agent, keys)
+    }
+
+    func sendText(_ agent: AgentID, _ text: String) async throws {
+        try await store.sendText(agent, text)
+    }
+
     func updatePresence() {
         guard let front = NSWorkspace.shared.frontmostApplication?.processIdentifier else { return }
         let frontmost = Set(store.sources.filter { $0.hostApplicationPIDs().contains(front) }.map(\.id))
