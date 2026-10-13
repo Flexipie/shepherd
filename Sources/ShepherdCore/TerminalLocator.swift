@@ -38,11 +38,13 @@ public enum TerminalLocator {
         }
     }
 
-    /// The parent pid, or nil if the process is gone.
+    /// The parent pid, or nil if the process is gone. Uses the short BSD info: the full one is
+    /// refused for another user's process, and terminals start the shell through `login`, which
+    /// runs as root, so the walk from herdr up to the terminal would stop there.
     public static func parent(of pid: pid_t) -> pid_t? {
-        var info = proc_bsdinfo()
-        let size = Int32(MemoryLayout<proc_bsdinfo>.size)
-        guard proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, &info, size) == size else { return nil }
-        return pid_t(info.pbi_ppid)
+        var info = proc_bsdshortinfo()
+        let size = Int32(MemoryLayout<proc_bsdshortinfo>.size)
+        guard proc_pidinfo(pid, PROC_PIDT_SHORTBSDINFO, 0, &info, size) == size else { return nil }
+        return pid_t(info.pbsi_ppid)
     }
 }

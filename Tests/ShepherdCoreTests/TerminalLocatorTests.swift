@@ -23,6 +23,9 @@ import Testing
 
     @Test func liveProcessTableIsReadable() {
         #expect(TerminalLocator.parent(of: getpid()) == getppid())
+        // A root process's parent must be readable too: terminals start the shell through `login`,
+        // which runs as root. launchd (pid 1) is root and has no parent.
+        #expect(TerminalLocator.parent(of: 1) == 0)
         // Only the user's own processes can be named, which is all herdr needs.
         var buffer = [UInt8](repeating: 0, count: 256)
         let length = proc_name(getpid(), &buffer, UInt32(buffer.count))
