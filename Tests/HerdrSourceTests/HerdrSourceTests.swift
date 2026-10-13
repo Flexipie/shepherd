@@ -108,6 +108,53 @@ import Testing
         await fake.stop()
     }
 
+    @Test func promptingAnIdleAgent() async throws {
+        let fake = FakeHerdrServer()
+        try await fake.start()
+        let (store, _) = running(fake)
+        try await until(store) { $0.overallState == .live }
+        let agent = AgentID(source: "herdr", local: "w2:p1")
+        try await store.prompt(agent, "write the docs")
+        try await until(store) { $0.agents.first { $0.id == agent }?.status == .working }
+        await fake.setStatus("w2:p1", "blocked")
+        try await until(store) { $0.needsYou.count == 1 }
+        await #expect(throws: AgentSourceError.failed("herdr: agent w2:p1 is blocked and requires interactive input")) {
+            try await store.prompt(agent, "again")
+        }
+        await store.stop()
+        await fake.stop()
+    }
+
+    @Test func startingATask() async throws {
+        let fake = FakeHerdrServer()
+        try await fake.start()
+        let (store, _) = running(fake)
+        try await until(store) { $0.overallState == .live }
+        let task = NewTask(project: ProjectID(source: "herdr", local: "w1"), branch: "feature/a", kind: "codex", prompt: "add a test")
+        #expect(store.canStartTask(in: task.project))
+        let agent = try await store.startTask(task, args: ["--full-auto"])
+        #expect(agent == AgentID(source: "herdr", local: "w3:p1"))
+        try await until(store) { $0.agents.contains { $0.id == agent && $0.kind == "codex" } }
+        #expect(await fake.createdWorktrees.map(\.branch) == ["feature/a"])
+        #expect(await fake.startedAgents.first?.args == ["--full-auto"])
+        #expect(await fake.sentPrompts.map(\.text) == ["add a test"])
+        // A failed start says what was left behind.
+        let bad = NewTask(project: task.project, branch: "feature/b", kind: "nope", prompt: "")
+        await #expect(throws: AgentSourceError.failed("Created worktree feature/b, but nope did not start: herdr: unsupported agent kind nope")) {
+            _ = try await store.startTask(bad, args: [])
+        }
+        await store.stop()
+        await fake.stop()
+    }
+
+    @Test func agentNamesFollowHerdrsRules() {
+        let name = HerdrSource.agentName(kind: "claude")
+        #expect(name.hasPrefix("claude-"))
+        #expect(name.count <= 32)
+        #expect(name.allSatisfy { ($0.isASCII && ($0.isLowercase || $0.isNumber)) || $0 == "-" })
+        #expect(HerdrSource.agentName(kind: "1Weird Kind!").hasPrefix("agent-"))
+    }
+
     @Test func sidebarLayoutFollowsHerdrsConfig() async throws {
         let directory = FileManager.default.temporaryDirectory.appending(path: "shepherd-herdr-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: directory) }

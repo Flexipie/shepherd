@@ -11,9 +11,12 @@ final class AppActions: AgentActions {
     /// Where the "next" hotkey went last, so repeated presses walk the queue.
     private var lastNext: AgentID?
 
-    init(store: HerdStore, presence: Presence) {
+    private let config: ConfigStore
+
+    init(store: HerdStore, presence: Presence, config: ConfigStore) {
         self.store = store
         self.presence = presence
+        self.config = config
         observer = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
         ) { [weak self] _ in
@@ -51,6 +54,14 @@ final class AppActions: AgentActions {
 
     func sendText(_ agent: AgentID, _ text: String) async throws {
         try await store.sendText(agent, text)
+    }
+
+    func prompt(_ agent: AgentID, _ text: String) async throws {
+        try await store.prompt(agent, text)
+    }
+
+    func startTask(_ task: NewTask) async throws -> AgentID {
+        try await store.startTask(task, args: config.config.agents[task.kind]?.args ?? [])
     }
 
     func updatePresence() {

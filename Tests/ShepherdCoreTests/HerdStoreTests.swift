@@ -87,6 +87,10 @@ import Testing
         await #expect(throws: AgentSourceError.unsupported(.readOutput)) { _ = try await store.read(agent, lines: 10) }
         await #expect(throws: AgentSourceError.unsupported(.sendKeys)) { try await store.sendKeys(agent, ["1"]) }
         await #expect(throws: AgentSourceError.unsupported(.sendText)) { try await store.sendText(agent, "hi") }
+        await #expect(throws: AgentSourceError.unsupported(.prompt)) { try await store.prompt(agent, "hi") }
+        let task = NewTask(project: ProjectID(source: "herdr", local: "p1"), kind: "claude", prompt: "hi")
+        #expect(!store.canStartTask(in: task.project))
+        await #expect(throws: AgentSourceError.unsupported(.startAgent)) { _ = try await store.startTask(task, args: []) }
         await #expect(throws: AgentSourceError.unknownSource("nope")) { try await store.sendKeys(AgentID(source: "nope", local: "a"), ["1"]) }
     }
 

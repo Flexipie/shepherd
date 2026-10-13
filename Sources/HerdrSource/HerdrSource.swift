@@ -10,7 +10,8 @@ public final class HerdrSource: AgentSource {
 
     public let id = HerdrSource.sourceID
     public let displayName = "herdr"
-    public let capabilities: SourceCapabilities = [.focus, .focusProject, .readOutput, .sendKeys, .sendText]
+    public let capabilities: SourceCapabilities = [.focus, .focusProject, .readOutput, .sendKeys, .sendText, .prompt,
+                                                       .createWorktree, .startAgent]
     public let updates: AsyncStream<SourceUpdate>
 
     private let continuation: AsyncStream<SourceUpdate>.Continuation
@@ -84,6 +85,38 @@ public final class HerdrSource: AgentSource {
 
     public func sendText(_ agent: AgentID, _ text: String) async throws {
         try await readable { try await client.sendInput(paneID: agent.local, text: text, keys: ["enter"]) }
+    }
+
+    public func prompt(_ agent: AgentID, _ text: String) async throws {
+        try await readable { try await client.promptAgent(paneID: agent.local, text: text) }
+    }
+
+    /// `worktree.create` from the project's workspace, `agent.start` in its shell pane, then
+    /// `agent.prompt`. A later step that fails says what the earlier ones left behind, so the
+    /// user can clean up or carry on in herdr.
+    public func startTask(_ task: NewTask, args: [String]) async throws -> AgentID {
+        let created = try await readable { try await client.createWorktree(workspaceID: task.project.local, branch: task.branch) }
+        let place = created.branch.map { "worktree \($0)" } ?? "the new worktree"
+        do {
+            try await client.startAgent(name: Self.agentName(kind: task.kind), kind: task.kind, paneID: created.rootPaneID, args: args)
+        } catch let error as HerdrError {
+            throw AgentSourceError.failed("Created \(place), but \(task.kind) did not start: \(Self.describe(error))")
+        }
+        let agent = AgentID(source: id, local: created.rootPaneID)
+        guard !task.prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return agent }
+        do {
+            try await client.promptAgent(paneID: created.rootPaneID, text: task.prompt)
+        } catch let error as HerdrError {
+            throw AgentSourceError.failed("Started \(task.kind) in \(place), but the prompt did not go through: \(Self.describe(error))")
+        }
+        return agent
+    }
+
+    /// A unique name in herdr's rules: lowercase, starting with a letter, at most 32 characters.
+    static func agentName(kind: String) -> String {
+        let base = String(kind.lowercased().filter { $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-") }.prefix(20))
+        let suffix = String(UInt32.random(in: 0..<UInt32.max), radix: 36)
+        return (base.first?.isLetter == true ? base : "agent") + "-" + suffix
     }
 
     /// Runs a call, turning herdr's errors into words for the surface that shows them.

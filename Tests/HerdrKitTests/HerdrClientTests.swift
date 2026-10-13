@@ -75,6 +75,38 @@ import Testing
         await #expect(throws: HerdrError.self) { try await client.sendKeys(paneID: "w1:p1", keys: ["not-a-key"]) }
     }
 
+    @Test func promptRefusesBlockedAgents() async throws {
+        let fake = try await startedFake()
+        defer { Task { await fake.stop() } }
+        let client = HerdrClient(socketPath: fake.path)
+        try await client.promptAgent(paneID: "w2:p1", text: "add a test")
+        #expect(await fake.sentPrompts.map(\.text) == ["add a test"])
+        await fake.setStatus("w2:p1", "blocked")
+        await #expect(throws: HerdrError.server(ServerErrorCode(rawValue: "agent_blocked"),
+                                                message: "agent w2:p1 is blocked and requires interactive input")) {
+            try await client.promptAgent(paneID: "w2:p1", text: "again")
+        }
+    }
+
+    @Test func worktreeThenAgent() async throws {
+        let fake = try await startedFake()
+        defer { Task { await fake.stop() } }
+        let client = HerdrClient(socketPath: fake.path)
+        let created = try await client.createWorktree(workspaceID: "w1", branch: "feature/a")
+        #expect(created == HerdrClient.CreatedWorktree(workspaceID: "w3", rootPaneID: "w3:p1", branch: "feature/a"))
+        try await client.startAgent(name: "claude-1", kind: "claude", paneID: created.rootPaneID, args: ["--flag"])
+        #expect(await fake.startedAgents.map(\.args) == [["--flag"]])
+        // The pane runs an agent now, and the name is taken.
+        await #expect(throws: HerdrError.self) {
+            try await client.startAgent(name: "claude-2", kind: "claude", paneID: created.rootPaneID, args: [])
+        }
+        let other = try await client.createWorktree(workspaceID: "w1", branch: nil)
+        await #expect(throws: HerdrError.self) {
+            try await client.startAgent(name: "claude-1", kind: "claude", paneID: other.rootPaneID, args: [])
+        }
+        await #expect(throws: HerdrError.self) { _ = try await client.createWorktree(workspaceID: "nope", branch: nil) }
+    }
+
     @Test func focusMarksFinishedAgentSeen() async throws {
         let fake = try await startedFake()
         defer { Task { await fake.stop() } }

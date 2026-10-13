@@ -7,14 +7,16 @@ import SwiftUI
 /// and config problems share one quiet line along the bottom. Arrows move across the grid,
 /// Return chooses, hovering selects.
 ///
-/// With `onStage`, choosing a queue row opens that agent's stage in place of the project columns
-/// instead of jumping; Escape or Left goes back, a digit picks one of its choices.
+/// With `onStage`, choosing an agent's row opens its stage in place of the project columns
+/// instead of jumping, and `offersNewTask` adds a "+" after the columns for the new task form.
+/// Escape or Left goes back, a digit picks one of a stage's choices.
 public struct NotchBarView: View {
     let content: PanelContent
     let clock: PanelClock
     let width: CGFloat
     let maxHeight: CGFloat?
-    let stage: AgentStage?
+    let stage: BarStage?
+    let offersNewTask: Bool
     let perform: (PanelAction) -> Void
     let onStage: ((StageAction) -> Void)?
 
@@ -32,13 +34,14 @@ public struct NotchBarView: View {
     /// `maxHeight` makes each column scroll past that height; nil lets the columns grow (and,
     /// for snapshots, cuts off the columns that do not fit instead of scrolling them).
     public init(content: PanelContent, clock: PanelClock = .live, width: CGFloat, maxHeight: CGFloat? = nil,
-                stage: AgentStage? = nil, selection: PanelTarget.ID? = nil, perform: @escaping (PanelAction) -> Void,
-                onStage: ((StageAction) -> Void)? = nil) {
+                stage: BarStage? = nil, offersNewTask: Bool = false, selection: PanelTarget.ID? = nil,
+                perform: @escaping (PanelAction) -> Void, onStage: ((StageAction) -> Void)? = nil) {
         self.content = content
         self.clock = clock
         self.width = width
         self.maxHeight = maxHeight
         self.stage = stage
+        self.offersNewTask = offersNewTask
         self.perform = perform
         self.onStage = onStage
         _selection = State(initialValue: selection)
@@ -75,17 +78,20 @@ public struct NotchBarView: View {
         return VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top, spacing: Self.spacing) {
                 if let pinned {
-                    column(pinned, now: now, perform: queuePerform)
+                    column(pinned, now: now)
                 }
-                if pinned != nil, stage != nil || !rest.isEmpty {
+                if pinned != nil, stage != nil || !rest.isEmpty || newTaskButton {
                     Divider()
                 }
-                if let stage, let onStage {
+                switch (stage, onStage) {
+                case (.agent(let stage)?, let onStage?):
                     StageView(stage: stage, now: now, linesHeight: maxHeight.map { max(60, $0 - Self.stageChrome) },
                               perform: perform, onStage: onStage)
                         .id(stage.agent)
-                } else if !rest.isEmpty {
-                    scrolling(rest, now: now)
+                case (.newTask(let stage)?, let onStage?):
+                    NewTaskView(stage: stage, onStage: onStage)
+                default:
+                    if !rest.isEmpty || newTaskButton { scrolling(rest, now: now) }
                 }
             }
             .fixedSize(horizontal: false, vertical: true)
@@ -99,14 +105,17 @@ public struct NotchBarView: View {
     private func scrolling(_ columns: [BarColumn], now: Date) -> some View {
         let row = HStack(alignment: .top, spacing: Self.spacing) {
             ForEach(columns) { column in
-                self.column(column, now: now, perform: perform).id(column.id)
+                self.column(column, now: now).id(column.id)
+            }
+            if newTaskButton {
+                NewTaskButton { onStage?(.newTask) }
             }
         }
         if let maxHeight {
             ScrollViewReader { proxy in
                 ScrollView(.horizontal) { row }
                     .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
-                    .frame(height: min(columns.compactMap { heights[$0.id] }.max() ?? 0, maxHeight))
+                    .frame(height: min(max(columns.compactMap { heights[$0.id] }.max() ?? 0, newTaskButton ? 64 : 0), maxHeight))
                     .onChange(of: scrollTarget) { _, target in
                         guard let target, let column = columns.first(where: { contains($0, target) }) else { return }
                         withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { proxy.scrollTo(column.id) }
@@ -118,8 +127,8 @@ public struct NotchBarView: View {
     }
 
     @ViewBuilder
-    private func column(_ column: BarColumn, now: Date, perform: @escaping (PanelAction) -> Void) -> some View {
-        let items = columnItems(column, now: now, perform: perform)
+    private func column(_ column: BarColumn, now: Date) -> some View {
+        let items = columnItems(column, now: now)
             .frame(width: column.isQueue ? Self.queueWidth : Self.columnWidth, alignment: .topLeading)
         if let maxHeight {
             ScrollViewReader { proxy in
@@ -139,20 +148,23 @@ public struct NotchBarView: View {
     }
 
     @ViewBuilder
-    private func columnItems(_ column: BarColumn, now: Date, perform: @escaping (PanelAction) -> Void) -> some View {
+    private func columnItems(_ column: BarColumn, now: Date) -> some View {
         if column.isCard, let item = column.items.first {
             PanelItemView(item: item, sectionID: column.section.id, now: now, selection: selection,
-                          perform: perform) { selection = $0 }
+                          perform: barPerform) { selection = $0 }
         } else {
-            PanelSectionView(section: column.section, now: now, selection: selection, perform: perform) { selection = $0 }
+            PanelSectionView(section: column.section, now: now, selection: selection, perform: barPerform) { selection = $0 }
         }
     }
 
     /// Room the stage needs around its lines: its header and an error line.
     static let stageChrome: CGFloat = 58
 
-    /// Queue rows open their agent's stage when there is one to open, and jump otherwise.
-    private func queuePerform(_ action: PanelAction) {
+    private var newTaskButton: Bool { offersNewTask && onStage != nil }
+
+    /// Agent rows open their stage when there is one to open; anything else, such as a project
+    /// header, does what it always does.
+    private func barPerform(_ action: PanelAction) {
         if let onStage, case .jump(let agent) = action {
             onStage(.open(agent))
         } else {
@@ -195,13 +207,8 @@ public struct NotchBarView: View {
     }
 
     private func choose() -> KeyPress.Result {
-        let columns = self.columns
         guard let target = PanelTarget.all(in: columns).first(where: { $0.id == selection }) else { return .ignored }
-        if columns.first?.isQueue == true, target.column == 0 {
-            queuePerform(target.action)
-        } else {
-            perform(target.action)
-        }
+        barPerform(target.action)
         return .handled
     }
 
@@ -212,7 +219,7 @@ public struct NotchBarView: View {
 
     /// A digit picks the staged agent's choice with that key.
     private func pick(_ key: String) -> KeyPress.Result {
-        guard let stage, stage.canSendKeys, !stage.isSending, stage.choices.contains(where: { $0.key == key }) else { return .ignored }
+        guard case .agent(let stage)? = stage, stage.canSendKeys, !stage.isSending, stage.choices.contains(where: { $0.key == key }) else { return .ignored }
         onStage?(.keys([key]))
         return .handled
     }

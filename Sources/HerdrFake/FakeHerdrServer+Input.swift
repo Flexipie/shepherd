@@ -33,6 +33,21 @@ extension FakeHerdrServer {
             sentKeys.append((target, keys))
             reply(connection, requestID, ["type": "ok"])
             answer(pane, keys)
+        case "agent.prompt":
+            let text = params["text"] as? String ?? ""
+            guard pane.agent != nil else {
+                return replyError(connection, requestID, code: "agent_not_ready", message: "agent \(target) is not an active named agent")
+            }
+            guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                return replyError(connection, requestID, code: "empty_agent_prompt", message: "agent prompt must not be empty")
+            }
+            guard pane.status != "blocked" else {
+                return replyError(connection, requestID, code: "agent_blocked",
+                                  message: "agent \(target) is blocked and requires interactive input")
+            }
+            sentPrompts.append((target, text))
+            reply(connection, requestID, ["type": "agent_prompted", "agent": ["pane_id": target]])
+            setStatus(target, "working")
         default:
             let keys = params["keys"] as? [String] ?? []
             sentInput.append((target, params["text"] as? String ?? "", keys))

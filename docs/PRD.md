@@ -218,17 +218,26 @@ Every surface is optional and degrades on its own.
     column scrolls on its own past the height cap. Status lines and config problems share one
     line along the bottom. Up and down move within a column, left and right to the nearest row
     of the next column.
-  - **Stage**, inside the bar: choosing a needs-you row (click or Return) swaps the project
-    columns for that agent's stage, when its source can read output (otherwise it jumps). The
+  - **Stage**, inside the bar: choosing an agent's row anywhere in the bar (click or Return)
+    swaps the project columns for that agent's stage, when its source can read output
+    (otherwise it jumps). The
     stage shows the agent's last visible lines (`agent.read`, `source: "visible"`, read once on
     open and again only when the agent's status changes while it is open; nothing while
     closed), the choices `ChoiceParser` finds in them (a run of options numbered from 1 with
     the agent's cursor on one, as Claude Code and Codex draw approval prompts) as buttons with
     their digit, Return and Escape when none parse, and a reply field. A digit or a choice
     sends `agent.send_keys`; a reply sends `pane.send_input` (the text as one bracketed paste,
-    then Enter). Escape or Left goes back to the columns; Jump shows the agent in its
+    then Enter). An agent that is not blocked gets a prompt field instead, sent with
+    `agent.prompt` (which herdr refuses for a blocked agent). Escape or Left goes back to the columns; Jump shows the agent in its
     terminal. Typing needs the bar to be key, which a click in the field gives it; while key,
     leaving with the mouse does not fold it. Errors are shown in the stage, never silent.
+  - **New task**, a "+" after the project columns when a source can start tasks: a form with
+    the project (whose repo the checkout comes from), an agent kind, an optional branch and a
+    prompt. Start runs `worktree.create` (`workspace_id`, `branch`, herdr names the branch when
+    it is left out), `agent.start` in the new workspace's root pane (a unique name, the kind,
+    and `agents.<kind>.args` from config), then `agent.prompt`, and opens the new agent's stage.
+    A step that fails after an earlier one worked says what was left behind ("Created worktree
+    x, but claude did not start: ...").
 
   Hovering expands after 120 ms of rest and collapses 300 ms after the mouse leaves; an AppKit
   tracking area on the shape reports it, so nothing wakes while the mouse is elsewhere. Hovering
