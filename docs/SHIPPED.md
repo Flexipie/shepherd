@@ -37,3 +37,8 @@ Oldest first.
   or a jump folds it. The window follows the shape, so nothing transparent sits over the menu
   bar at rest. `PanelContentSource` feeds both panels. Idle with the ear showing: 0% CPU over
   30 s, about 62 MB.
+- The notch bar: hovering the notch grows a wide, short bar along the top of the screen instead
+  of a tall panel. The needs-you queue is pinned on the left, then one column per project
+  (`BarColumn`, shared by the view and keyboard navigation), scrolling sideways when there are
+  many; arrows move across the grid. The menu bar panel stays vertical. Idle with the ear
+  showing: 0% CPU over 30 s, about 54 MB.

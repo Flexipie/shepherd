@@ -116,6 +116,9 @@ Local first; see PRD "Intelligence" for the rules every idea here follows.
 - **Liquid Glass.** Use the system glass material for the notch pill and panel so
   Shepherd looks like part of the system.
 - **Haptic nudge.** A light trackpad haptic when hovering the notch while something needs you.
+- **Small apps in one place.** The notch bar has room for more than agents: small tools (a
+  timer, a clipboard shelf, a scratch note) as modules whose sections become columns. To discuss
+  before it goes anywhere near the roadmap: it must not dilute "your herd at a glance".
 
 ## Personality
 

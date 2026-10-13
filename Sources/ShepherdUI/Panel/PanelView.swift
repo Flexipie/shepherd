@@ -85,59 +85,12 @@ public struct PanelView: View {
     private func sections(now: Date) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             ForEach(content.sections) { section in
-                sectionView(section, now: now)
+                PanelSectionView(section: section, now: now, selection: selection, perform: perform) { selection = $0 }
             }
         }
         .padding(.horizontal, 10)
         .padding(.top, 12)
         .padding(.bottom, 10)
-    }
-
-    private func sectionView(_ section: PanelSection, now: Date) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(section.title)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                    .accessibilityAddTraits(.isHeader)
-                if section.id == "queue", !section.items.isEmpty {
-                    Text("\(section.items.count)")
-                        .font(.system(size: 11, weight: .semibold).monospacedDigit())
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .padding(.horizontal, 8)
-            if section.items.isEmpty {
-                Text(section.emptyText)
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-            }
-            ForEach(section.items.indices, id: \.self) { index in
-                item(section.items[index], section: section.id, now: now)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func item(_ item: PanelItem, section: String, now: Date) -> some View {
-        switch item {
-        case .agent(let row):
-            let id = row.action.map { PanelTarget.id(section: section, action: $0) }
-            AgentRow(row: row, now: now, showsProject: true, isSelected: id != nil && id == selection)
-                .onTapGesture { if let action = row.action { perform(action) } }
-                .onHover { inside in if inside, let id { selection = id } }
-        case .project(let card):
-            ProjectCard(card: card, now: now, selection: selection, sectionID: section, perform: perform) { id in
-                if let id { selection = id }
-            }
-        case .notice(let text):
-            Text(text)
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 8)
-        }
     }
 
     @ViewBuilder

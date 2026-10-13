@@ -40,13 +40,8 @@ import Testing
     }
 
     @Test func emptyAndDisconnectedPanel() throws {
-        let content = PanelContent(
-            sections: [PanelSection(id: "queue", title: "Needs you", items: [], emptyText: "Nothing needs you"),
-                       PanelSection(id: "projects", title: "Projects", items: [], emptyText: "No projects")],
-            statusLines: ["Not connected: herdr is not running. Retrying.", "herdr socket: ~/.config/herdr/herdr.sock"],
-            problems: ["config: tokens.projects[0][0].fg: must be #RGB or #RRGGBB"])
         try Snapshot.check("panel-disconnected", width: PanelView.width) {
-            PanelView(content: content, clock: .fixed(SampleHerd.now)) { _ in }
+            PanelView(content: SampleHerd.disconnected, clock: .fixed(SampleHerd.now)) { _ in }
         }
     }
 
@@ -76,5 +71,66 @@ import Testing
         #expect(PanelTarget.move(from: targets[0].id, by: 1, in: targets) == targets[1].id)
         #expect(PanelTarget.move(from: targets.last?.id, by: 1, in: targets) == targets.last?.id)
         #expect(PanelTarget.move(from: "gone", by: 1, in: []) == nil)
+    }
+}
+
+@Suite struct BarNavigationTests {
+    let columns = BarColumn.layout(SampleHerd.content.sections)
+    var targets: [PanelTarget] { PanelTarget.all(in: columns) }
+
+    func target(_ column: Int, _ row: Int) -> PanelTarget.ID {
+        targets.first { $0.column == column && $0.row == row }!.id
+    }
+
+    @Test func queueIsPinnedFirstAndEachCardIsAColumn() {
+        #expect(columns.map(\.id) == ["queue", "projects/herdr:w1", "projects/herdr:w2", "projects/herdr:w3"])
+        #expect(columns[0].isQueue)
+        #expect(columns.dropFirst().allSatisfy { $0.isCard })
+        // Config order does not move the queue off the left.
+        let reordered = BarColumn.layout(SampleHerd.content.sections.reversed())
+        #expect(reordered.first?.isQueue == true)
+        // Any other section is one column, so a new module's section just appears.
+        let other = PanelSection(id: "other", title: "Other", items: [.notice("hello")], emptyText: "")
+        #expect(BarColumn.layout([other]).map(\.id) == ["other"])
+        // An empty projects section is one column, to show its empty text.
+        #expect(BarColumn.layout(SampleHerd.disconnected.sections).map(\.id) == ["queue", "projects"])
+    }
+
+    @Test func targetsAreLaidOutByColumn() {
+        // Queue: three agents. Cards: header plus agents (2, 2, 1).
+        #expect(targets.map(\.column) == [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3])
+        #expect(targets.map(\.row) == [0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1])
+        #expect(Set(targets.map(\.id)) == Set(PanelTarget.all(in: SampleHerd.content.sections).map(\.id)))
+    }
+
+    @Test func upAndDownStayInTheColumn() {
+        #expect(PanelTarget.move(from: target(1, 0), .down, in: targets) == target(1, 1))
+        #expect(PanelTarget.move(from: target(1, 2), .down, in: targets) == target(1, 2))
+        #expect(PanelTarget.move(from: target(1, 0), .up, in: targets) == target(1, 0))
+    }
+
+    @Test func leftAndRightGoToTheNearestRow() {
+        #expect(PanelTarget.move(from: target(0, 2), .right, in: targets) == target(1, 2))
+        #expect(PanelTarget.move(from: target(2, 2), .right, in: targets) == target(3, 1))
+        #expect(PanelTarget.move(from: target(3, 1), .right, in: targets) == target(3, 1))
+        #expect(PanelTarget.move(from: target(1, 1), .left, in: targets) == target(0, 1))
+        #expect(PanelTarget.move(from: target(0, 0), .left, in: targets) == target(0, 0))
+    }
+
+    @Test func emptyColumnsAreSkipped() {
+        let empty = PanelSection(id: "middle", title: "Middle", items: [], emptyText: "nothing")
+        let columns = BarColumn.layout([SampleHerd.queue, empty, SampleHerd.projects])
+        let targets = PanelTarget.all(in: columns)
+        let firstCard = targets.first { $0.column == 2 }!.id
+        #expect(PanelTarget.move(from: targets[0].id, .right, in: targets) == firstCard)
+        #expect(PanelTarget.move(from: firstCard, .left, in: targets) == targets[0].id)
+    }
+
+    @Test func withNothingSelected() {
+        #expect(PanelTarget.move(from: nil, .down, in: targets) == targets.first?.id)
+        #expect(PanelTarget.move(from: nil, .right, in: targets) == targets.first?.id)
+        #expect(PanelTarget.move(from: nil, .up, in: targets) == targets.last?.id)
+        #expect(PanelTarget.move(from: nil, .left, in: targets) == targets.last?.id)
+        #expect(PanelTarget.move(from: "gone", .down, in: []) == nil)
     }
 }

@@ -9,7 +9,7 @@ public struct NotchMetrics: Equatable, Sendable {
         case ear
         /// The needs-you pill below the notch.
         case alert
-        /// The panel, grown out of the notch.
+        /// The bar, grown out of the notch.
         case expanded
     }
 
@@ -17,18 +17,21 @@ public struct NotchMetrics: Equatable, Sendable {
     public let notchHeight: CGFloat
     /// The tallest the expanded shape may grow, notch included.
     public let maxExpandedHeight: CGFloat
+    /// The expanded shape's width: a wide, short bar along the top of the screen.
+    public let maxExpandedWidth: CGFloat
 
     /// How far the ear sticks out to the left of the notch.
     public static let earWidth: CGFloat = 40
     /// How far the concave top corners reach into the menu bar on each side.
     public static let flare: CGFloat = 6
     static let alertMinWidth: CGFloat = 340
-    static let expandedMinWidth: CGFloat = 380
 
-    public init(notchWidth: CGFloat, notchHeight: CGFloat, maxExpandedHeight: CGFloat) {
+    /// `maxExpandedWidth` is at least the notch and an ear on each side.
+    public init(notchWidth: CGFloat, notchHeight: CGFloat, maxExpandedHeight: CGFloat, maxExpandedWidth: CGFloat) {
         self.notchWidth = notchWidth
         self.notchHeight = notchHeight
         self.maxExpandedHeight = max(maxExpandedHeight, notchHeight + NotchPillView.contentHeight)
+        self.maxExpandedWidth = max(maxExpandedWidth, notchWidth + 2 * Self.earWidth)
     }
 
     /// The shape's body for `kind`. `expandedHeight` (notch included) is clamped to the maximum.
@@ -40,7 +43,7 @@ public struct NotchMetrics: Equatable, Sendable {
             return centred(width: max(Self.alertMinWidth, notchWidth + 120), height: notchHeight + NotchPillView.contentHeight)
         case .expanded:
             let height = min(max(expandedHeight, notchHeight + NotchPillView.contentHeight), maxExpandedHeight)
-            return centred(width: max(Self.expandedMinWidth, notchWidth + 2 * Self.earWidth), height: height)
+            return centred(width: maxExpandedWidth, height: height)
         }
     }
 
