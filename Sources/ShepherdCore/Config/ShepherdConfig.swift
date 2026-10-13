@@ -14,7 +14,8 @@ public struct ShepherdConfig: Sendable, Equatable {
     public var nextHotkey: String?
     /// Per agent kind ("claude", "codex"), how Shepherd starts it for a new task.
     public var agents: [String: AgentConfig]
-    /// When Shepherd posts system notifications.
+    /// When Shepherd posts system notifications. Off by default: the notch is the alert, and
+    /// nothing asks for permission until the user turns them on.
     public var notifications: Notifications
 
     public enum Notifications: String, Sendable, Equatable, CaseIterable {
@@ -36,7 +37,7 @@ public struct ShepherdConfig: Sendable, Equatable {
 
     public init(modules: [String]? = nil, tokens: TokenLayout = TokenLayout(),
                 nextHotkey: String? = ShepherdConfig.defaultNextHotkey, agents: [String: AgentConfig] = [:],
-                notifications: Notifications = .auto) {
+                notifications: Notifications = .off) {
         self.modules = modules
         self.tokens = tokens
         self.nextHotkey = nextHotkey

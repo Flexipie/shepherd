@@ -3,8 +3,9 @@ import ShepherdCore
 
 /// Posts a system notification when an agent becomes blocked while the user is not looking at
 /// it, and withdraws it once the agent moves on. Only changes seen happening count, from live
-/// sources. With `notifications` "auto" it stays quiet for a source that posts its own; "off"
-/// posts nothing. It has no contributions: it reacts to transitions and nothing else.
+/// sources. Off by default (`notifications` "off": nothing is posted and nothing asks for
+/// permission); "auto" stays quiet for a source that posts its own, "on" always posts. It has
+/// no contributions: it reacts to transitions and nothing else.
 @MainActor
 public final class NotificationsModule: ShepherdModule {
     public static let id = "notifications"

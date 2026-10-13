@@ -15,17 +15,9 @@ These need a person, real agents or other hardware:
   panel on a real herdr; closing the panel with a real click outside it; token colours and rules
   matching herdr's own sidebar side by side; VoiceOver reading the panel rows.
 
-## Next: act from the notch
-
-Each its own PR, in this order.
-
-- **Notifications.** A `notifications` module: blocked (and optionally done) while you are not
-  looking posts a notification with Jump and Reply. Quiet when herdr's own toasts are on unless
-  `"notifications": "on"`. Spike first: notifications from the ad-hoc signed bundle.
-
 ## Milestone 3: alerts that earn it
 
-- Native notifications for needs-you and configured token changes, with Jump and Reply buttons.
+- Notifications for configured token changes (blocked agents notify already, opt-in).
 - First-run alert choice: detect herdr's own toasts and sounds and let the user pick which app
   alerts, so nothing fires twice.
 - Outcome line: on `done` or `blocked`, the on-device model (`FoundationModels`)

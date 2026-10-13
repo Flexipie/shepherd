@@ -41,10 +41,10 @@ import Testing
     }
 
     @Test func notificationsMode() throws {
-        #expect(try read("{}").config.notifications == .auto)
-        #expect(try read(#"{"notifications": "off"}"#).config.notifications == .off)
+        #expect(try read("{}").config.notifications == .off)
+        #expect(try read(#"{"notifications": "auto"}"#).config.notifications == .auto)
         let (config, problems) = try read(#"{"notifications": true}"#)
-        #expect(config.notifications == .auto)
+        #expect(config.notifications == .off)
         #expect(problems == ["config: notifications must be \"auto\", \"on\" or \"off\""])
     }
 

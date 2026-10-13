@@ -52,3 +52,7 @@ Oldest first.
   (project, agent, optional branch, prompt): `worktree.create`, `agent.start` with
   `agents.<kind>.args` from config, then `agent.prompt`, and the new agent's stage opens. A
   failed step says what earlier steps left behind. FakeHerdr answers all of it.
+- Notifications, opt-in: the `notifications` module posts a macOS notification with Jump and
+  Reply when an agent blocks while you are not looking, and withdraws it when the agent moves
+  on. `"notifications": "off" | "on" | "auto"` (off by default; auto defers to herdr's own system
+  toasts). Permission is checked before every post and a refusal shows in the footer.
