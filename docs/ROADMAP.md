@@ -10,9 +10,6 @@ stay in [IDEAS.md](IDEAS.md).
 herdr's own behaviour is confirmed and recorded in PRD "What herdr gives us" and "Data flow".
 These need a person, real agents or other hardware:
 
-- Clicking the pill or a menu entry: herdr focuses the pane and the terminal comes forward. The
-  `agent.focus` request is tested against the fake; the click and the terminal activation have
-  not been tried on a real blocked agent yet.
 - The floating fallback bar on a display without a notch, and the pill on a second display.
 - Found in milestone 2: clicking a project card (`workspace.focus`) and a blocked agent in the
   panel on a real herdr; closing the panel with a real click outside it; token colours and rules
