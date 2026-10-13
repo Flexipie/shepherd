@@ -125,6 +125,17 @@ started = 1979-05-27 07:32:00Z
 }
 
 @Suite struct HerdrSidebarTests {
+    @Test func systemAlertsFromToastDelivery() {
+        func alerts(_ toml: String) -> Bool { HerdrSidebar.postsSystemAlerts(Data(toml.utf8)) }
+        #expect(alerts("[ui.toast]\ndelivery = \"system\"\n"))
+        #expect(alerts("[ui.toast]\ndelivery = \"terminal\"\n"))
+        // herdr's own toasts draw inside its window, so they are not system alerts.
+        #expect(!alerts("[ui.toast]\ndelivery = \"herdr\"\n"))
+        #expect(!alerts("[ui.toast]\nenabled = true\n"))
+        #expect(!alerts(""))
+        #expect(!HerdrSidebar.postsSystemAlerts(nil))
+    }
+
     @Test func takesPluginTokensFromSpaceRows() throws {
         let (layout, problems) = HerdrSidebar.read(Data(sampleHerdrConfig.utf8))
         #expect(problems.isEmpty)

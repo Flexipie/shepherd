@@ -14,6 +14,16 @@ public struct ShepherdConfig: Sendable, Equatable {
     public var nextHotkey: String?
     /// Per agent kind ("claude", "codex"), how Shepherd starts it for a new task.
     public var agents: [String: AgentConfig]
+    /// When Shepherd posts system notifications.
+    public var notifications: Notifications
+
+    public enum Notifications: String, Sendable, Equatable, CaseIterable {
+        /// Unless a source already posts its own (herdr with `ui.toast.delivery` "system" or
+        /// "terminal").
+        case auto
+        case on
+        case off
+    }
 
     public struct AgentConfig: Sendable, Equatable {
         /// Arguments after the agent's command, such as `--dangerously-skip-permissions`.
@@ -25,11 +35,13 @@ public struct ShepherdConfig: Sendable, Equatable {
     }
 
     public init(modules: [String]? = nil, tokens: TokenLayout = TokenLayout(),
-                nextHotkey: String? = ShepherdConfig.defaultNextHotkey, agents: [String: AgentConfig] = [:]) {
+                nextHotkey: String? = ShepherdConfig.defaultNextHotkey, agents: [String: AgentConfig] = [:],
+                notifications: Notifications = .auto) {
         self.modules = modules
         self.tokens = tokens
         self.nextHotkey = nextHotkey
         self.agents = agents
+        self.notifications = notifications
     }
 
     public static let defaults = ShepherdConfig()
@@ -53,7 +65,7 @@ public struct ShepherdConfig: Sendable, Equatable {
 
         var config = ShepherdConfig()
         var problems: [String] = []
-        for key in table.keys.sorted() where !["modules", "tokens", "hotkeys", "agents"].contains(key) {
+        for key in table.keys.sorted() where !["modules", "tokens", "hotkeys", "agents", "notifications"].contains(key) {
             problems.append("config: unknown key \"\(key)\"")
         }
         if let modules = table["modules"] {
@@ -120,6 +132,13 @@ public struct ShepherdConfig: Sendable, Equatable {
                 }
             } else {
                 problems.append("config: agents must be an object of agent kinds")
+            }
+        }
+        if let notifications = table["notifications"] {
+            if case .string(let mode) = notifications, let value = Notifications(rawValue: mode) {
+                config.notifications = value
+            } else {
+                problems.append("config: notifications must be \"auto\", \"on\" or \"off\"")
             }
         }
         return (config, problems)

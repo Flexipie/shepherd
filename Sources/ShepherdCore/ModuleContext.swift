@@ -8,12 +8,16 @@ public final class ModuleContext {
     public let presence: Presence
     public let actions: any AgentActions
     public let config: ConfigStore
+    /// Posts system notifications; nil where there are none (tests, or before the app sets one).
+    public let notifier: (any Notifier)?
 
-    public init(store: HerdStore, presence: Presence, actions: any AgentActions, config: ConfigStore = ConfigStore(fixed: .defaults)) {
+    public init(store: HerdStore, presence: Presence, actions: any AgentActions, config: ConfigStore = ConfigStore(fixed: .defaults),
+                notifier: (any Notifier)? = nil) {
         self.store = store
         self.presence = presence
         self.actions = actions
         self.config = config
+        self.notifier = notifier
     }
 
     /// Token lines for a project's or an agent's values: the config's layout for that section,
@@ -36,6 +40,29 @@ public final class Presence {
     public func isLookingAt(_ agent: HerdAgent) -> Bool {
         agent.isFocusedInSource && frontmostSources.contains(agent.id.source)
     }
+}
+
+/// One system notification about an agent. Posting again for the same agent replaces it.
+public struct AgentNotice: Sendable, Equatable {
+    public let agent: HerdAgent
+    public let reason: NotchItem.Reason
+    /// Whether the notification offers Reply (the source can send text to the agent).
+    public let canReply: Bool
+
+    public init(agent: HerdAgent, reason: NotchItem.Reason, canReply: Bool) {
+        self.agent = agent
+        self.reason = reason
+        self.canReply = canReply
+    }
+}
+
+/// Posts and withdraws system notifications. The app's implementation also handles their Jump
+/// and Reply buttons.
+@MainActor
+public protocol Notifier: AnyObject {
+    func post(_ notice: AgentNotice)
+    /// Removes the agent's notification, once it no longer needs the user.
+    func withdraw(_ agent: AgentID)
 }
 
 /// Actions modules can trigger.
