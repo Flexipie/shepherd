@@ -70,6 +70,32 @@ public final class HerdStore {
         try await source.focusProject(project)
     }
 
+    /// What the agent's source can do; empty for an unknown source.
+    public func capabilities(of agent: AgentID) -> SourceCapabilities {
+        source(agent.source)?.capabilities ?? []
+    }
+
+    /// The agent's last visible lines.
+    public func read(_ agent: AgentID, lines: Int) async throws -> String {
+        try await source(for: agent, needing: .readOutput).read(agent, lines: lines)
+    }
+
+    /// Presses keys in the agent.
+    public func sendKeys(_ agent: AgentID, _ keys: [String]) async throws {
+        try await source(for: agent, needing: .sendKeys).sendKeys(agent, keys)
+    }
+
+    /// Types text into the agent and presses Return.
+    public func sendText(_ agent: AgentID, _ text: String) async throws {
+        try await source(for: agent, needing: .sendText).sendText(agent, text)
+    }
+
+    private func source(for agent: AgentID, needing capability: SourceCapabilities) throws -> any AgentSource {
+        guard let source = source(agent.source) else { throw AgentSourceError.unknownSource(agent.source) }
+        guard source.capabilities.contains(capability) else { throw AgentSourceError.unsupported(capability) }
+        return source
+    }
+
     /// The project's agents, in source order.
     public func agents(in project: ProjectID) -> [HerdAgent] {
         agents.filter { $0.projectID == project }

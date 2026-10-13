@@ -11,7 +11,7 @@ import HerdrFake
 //   label <workspace> <text>           add or rename a workspace
 //   token <workspace|pane> key=value   set a token; key= removes it
 //   lost, stop, start                  events_lost, herdr quitting, herdr returning
-//   list, focused, quit
+//   list, focused, sent, quit           sent: keys and replies Shepherd sent to agents
 
 // Line-buffered, so output piped to a file shows up as it happens.
 setvbuf(stdout, nil, _IOLBF, 0)
@@ -21,7 +21,7 @@ let fake = FakeHerdrServer(herd: .basic, path: path)
 try await fake.start()
 print("fake herdr on \(path)")
 print("commands: block|done|work|idle <pane>, add <pane> [kind], remove <pane>, label <workspace> <text>,")
-print("          token <workspace|pane> key=value, lost, stop, start, list, focused, quit")
+print("          token <workspace|pane> key=value, lost, stop, start, list, focused, sent, quit")
 
 while let line = readLine() {
     let words = line.split(separator: " ").map(String.init)
@@ -54,6 +54,9 @@ while let line = readLine() {
     case "start": try await fake.start()
     case "focused":
         print("agents:", await fake.focusedTargets, "workspaces:", await fake.focusedWorkspaces)
+    case "sent":
+        for sent in await fake.sentKeys { print(sent.pane, "keys", sent.keys) }
+        for sent in await fake.sentInput { print(sent.pane, "input", sent.text, sent.keys) }
     case "list":
         for pane in await fake.herd.panes { print(pane.id, pane.agent ?? "shell", pane.status) }
     case "quit":

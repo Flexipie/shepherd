@@ -78,6 +78,18 @@ import Testing
         await #expect(throws: AgentSourceError.unknownSource("nope")) { try await store.focus(AgentID(source: "nope", local: "a")) }
     }
 
+    @Test func inputNeedsTheCapability() async throws {
+        let store = HerdStore()
+        store.add(StubSource("herdr"))
+        let agent = AgentID(source: "herdr", local: "a")
+        #expect(store.capabilities(of: agent) == [.focus])
+        #expect(store.capabilities(of: AgentID(source: "nope", local: "a")) == [])
+        await #expect(throws: AgentSourceError.unsupported(.readOutput)) { _ = try await store.read(agent, lines: 10) }
+        await #expect(throws: AgentSourceError.unsupported(.sendKeys)) { try await store.sendKeys(agent, ["1"]) }
+        await #expect(throws: AgentSourceError.unsupported(.sendText)) { try await store.sendText(agent, "hi") }
+        await #expect(throws: AgentSourceError.unknownSource("nope")) { try await store.sendKeys(AgentID(source: "nope", local: "a"), ["1"]) }
+    }
+
     @Test func updatesFlowFromStartedSources() async throws {
         let store = HerdStore()
         let herdr = StubSource("herdr")

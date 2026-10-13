@@ -47,6 +47,34 @@ import Testing
         await #expect(throws: HerdrError.timeout) { try await withTimeout { try await client.snapshot() } }
     }
 
+    @Test func readReturnsTheVisibleText() async throws {
+        let fake = try await startedFake()
+        defer { Task { await fake.stop() } }
+        await fake.update { $0.setStatus("w2:p1", "blocked") }
+        let client = HerdrClient(socketPath: fake.path)
+        let text = try await client.readAgent(paneID: "w2:p1", lines: 40)
+        #expect(text == FakeScreens.codexApproval)
+        let last = try await client.readAgent(paneID: "w2:p1", lines: 1)
+        #expect(last == "  Press enter to confirm or esc to cancel")
+        await #expect(throws: HerdrError.server(ServerErrorCode(rawValue: "agent_not_found"), message: "nope not found")) {
+            try await client.readAgent(paneID: "nope", lines: 1)
+        }
+    }
+
+    @Test func sendKeysAndInput() async throws {
+        let fake = try await startedFake()
+        defer { Task { await fake.stop() } }
+        let client = HerdrClient(socketPath: fake.path)
+        try await client.sendKeys(paneID: "w1:p1", keys: ["1"])
+        try await client.sendInput(paneID: "w1:p1", text: "use sqlite", keys: ["enter"])
+        #expect(await fake.sentKeys.map(\.keys) == [["1"]])
+        #expect(await fake.sentInput.map(\.text) == ["use sqlite"])
+        #expect(await fake.sentInput.map(\.keys) == [["enter"]])
+        // A shell pane is not an agent, so herdr refuses keys for it.
+        await #expect(throws: HerdrError.self) { try await client.sendKeys(paneID: "w1:p2", keys: ["enter"]) }
+        await #expect(throws: HerdrError.self) { try await client.sendKeys(paneID: "w1:p1", keys: ["not-a-key"]) }
+    }
+
     @Test func focusMarksFinishedAgentSeen() async throws {
         let fake = try await startedFake()
         defer { Task { await fake.stop() } }

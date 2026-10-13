@@ -7,8 +7,8 @@ public enum NotchSurfaceMode: Sendable, Equatable {
     case ear(StatusContribution)
     /// Someone is blocked or just finished: the pill below the notch.
     case alert(NotchItem)
-    /// Hovered: the bar.
-    case expanded(PanelContent)
+    /// Hovered: the bar, with an agent's stage open in it or not.
+    case expanded(PanelContent, stage: AgentStage? = nil)
 
     public var kind: NotchMetrics.Kind {
         switch self {
@@ -30,6 +30,7 @@ public struct NotchSurfaceView: View {
     let clock: PanelClock
     let barMaxHeight: CGFloat?
     let perform: (PanelAction) -> Void
+    let onStage: ((StageAction) -> Void)?
     let onExpand: () -> Void
     let onExpandedHeight: (CGFloat) -> Void
 
@@ -41,13 +42,15 @@ public struct NotchSurfaceView: View {
     /// scroll past that height.
     public init(mode: NotchSurfaceMode, metrics: NotchMetrics, expandedHeight: CGFloat, clock: PanelClock = .live,
                 barMaxHeight: CGFloat? = nil, perform: @escaping (PanelAction) -> Void = { _ in },
-                onExpand: @escaping () -> Void = {}, onExpandedHeight: @escaping (CGFloat) -> Void = { _ in }) {
+                onStage: ((StageAction) -> Void)? = nil, onExpand: @escaping () -> Void = {},
+                onExpandedHeight: @escaping (CGFloat) -> Void = { _ in }) {
         self.mode = mode
         self.metrics = metrics
         self.expandedHeight = expandedHeight
         self.clock = clock
         self.barMaxHeight = barMaxHeight
         self.perform = perform
+        self.onStage = onStage
         self.onExpand = onExpand
         self.onExpandedHeight = onExpandedHeight
     }
@@ -75,7 +78,7 @@ public struct NotchSurfaceView: View {
         switch mode {
         case .ear(let status): ear(status)
         case .alert(let item): alert(item)
-        case .expanded(let content): expanded(content, width: width)
+        case .expanded(let content, let stage): expanded(content, stage: stage, width: width)
         }
     }
 
@@ -128,10 +131,11 @@ public struct NotchSurfaceView: View {
         .notchItemAccessibility(item)
     }
 
-    private func expanded(_ content: PanelContent, width: CGFloat) -> some View {
+    private func expanded(_ content: PanelContent, stage: AgentStage?, width: CGFloat) -> some View {
         VStack(spacing: 0) {
             Color.clear.frame(height: metrics.notchHeight)
-            NotchBarView(content: content, clock: clock, width: width, maxHeight: barMaxHeight, perform: perform)
+            NotchBarView(content: content, clock: clock, width: width, maxHeight: barMaxHeight, stage: stage,
+                         perform: perform, onStage: onStage)
         }
         // Its own height, not the shape's: the shape follows the content, not the other way.
         .fixedSize()

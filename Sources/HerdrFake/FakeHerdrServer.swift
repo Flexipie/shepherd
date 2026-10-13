@@ -2,7 +2,8 @@ import Foundation
 import HerdrKit
 
 /// A fake herdr on a real Unix socket. It answers `ping`, `session.snapshot`, `agent.focus`,
-/// `workspace.focus` and `events.subscribe` the way herdr 0.9.3 does: one request per connection, subscriptions
+/// `workspace.focus`, `events.subscribe`, and `agent.read`, `agent.send_keys` and
+/// `pane.send_input` (see `FakeHerdrServer+Input.swift`) the way herdr 0.9.3 does: one request per connection, subscriptions
 /// validated against the current panes, both event name spellings, `events_lost` as an error
 /// carrying the subscribe id. Tests drive it and observe what the client did; demo mode will
 /// reuse it.
@@ -22,6 +23,11 @@ public actor FakeHerdrServer {
     public private(set) var maxConcurrentSnapshots = 0
     public private(set) var focusedTargets: [String] = []
     public private(set) var focusedWorkspaces: [String] = []
+    /// Keys and input sent to panes, in order.
+    public internal(set) var sentKeys: [(pane: String, keys: [String])] = []
+    public internal(set) var sentInput: [(pane: String, text: String, keys: [String])] = []
+    /// What `agent.read` returns for a pane; without one, a screen made up from its kind and status.
+    public var screens: [String: String] = [:]
     /// The fewest live subscribers seen since the first one started; nil before that.
     public private(set) var subscriberLowWater: Int?
     public var subscriberCount: Int { subscribers.count }
@@ -245,6 +251,8 @@ public actor FakeHerdrServer {
             subscribersChanged()
             while (try? await lines.next()) != nil {}
             return
+        case "agent.read", "agent.send_keys", "pane.send_input":
+            serveInput(method, params, connection, requestID)
         default:
             replyError(connection, requestID, code: "invalid_request", message: "unknown method \(method)")
         }
@@ -273,12 +281,12 @@ public actor FakeHerdrServer {
         resumeWaiters()
     }
 
-    private func reply(_ connection: LineConnection, _ id: String, _ result: [String: Any]) {
+    func reply(_ connection: LineConnection, _ id: String, _ result: [String: Any]) {
         send(connection, ["id": id, "result": result])
         connection.close()
     }
 
-    private func replyError(_ connection: LineConnection, _ id: String, code: String, message: String) {
+    func replyError(_ connection: LineConnection, _ id: String, code: String, message: String) {
         send(connection, ["id": id, "error": ["code": code, "message": message]])
         connection.close()
     }

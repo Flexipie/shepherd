@@ -168,6 +168,8 @@ public struct SourceCapabilities: OptionSet, Sendable, Hashable {
     public static let startAgent = SourceCapabilities(rawValue: 1 << 5)
     public static let createWorktree = SourceCapabilities(rawValue: 1 << 6)
     public static let focusProject = SourceCapabilities(rawValue: 1 << 7)
+    /// Typing text into the agent and pressing Return, for replies to an open question.
+    public static let sendText = SourceCapabilities(rawValue: 1 << 8)
 }
 
 /// Everything a source publishes at once.

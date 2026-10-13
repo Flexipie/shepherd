@@ -21,6 +21,18 @@ public protocol AgentSource: AnyObject {
     /// when `capabilities` contains `.focusProject`.
     func focusProject(_ project: ProjectID) async throws
 
+    /// The agent's last `lines` visible lines, as plain text. Only called when `capabilities`
+    /// contains `.readOutput`, and only while a surface shows them.
+    func read(_ agent: AgentID, lines: Int) async throws -> String
+
+    /// Presses keys in the agent, such as `["1"]` or `["enter"]`. Only called when
+    /// `capabilities` contains `.sendKeys`.
+    func sendKeys(_ agent: AgentID, _ keys: [String]) async throws
+
+    /// Types `text` into the agent and presses Return. Only called when `capabilities` contains
+    /// `.sendText`.
+    func sendText(_ agent: AgentID, _ text: String) async throws
+
     /// Pids of the apps the source's agents live in (for herdr, the terminal hosting it). Used to
     /// tell whether the user is already looking at an agent.
     func hostApplicationPIDs() -> [pid_t]
@@ -30,9 +42,31 @@ extension AgentSource {
     public func focusProject(_ project: ProjectID) async throws {
         throw AgentSourceError.unsupported(.focusProject)
     }
+
+    public func read(_ agent: AgentID, lines: Int) async throws -> String {
+        throw AgentSourceError.unsupported(.readOutput)
+    }
+
+    public func sendKeys(_ agent: AgentID, _ keys: [String]) async throws {
+        throw AgentSourceError.unsupported(.sendKeys)
+    }
+
+    public func sendText(_ agent: AgentID, _ text: String) async throws {
+        throw AgentSourceError.unsupported(.sendText)
+    }
 }
 
-public enum AgentSourceError: Error, Sendable, Equatable {
+public enum AgentSourceError: Error, Sendable, Equatable, CustomStringConvertible {
     case unknownSource(SourceID)
     case unsupported(SourceCapabilities)
+    /// The source tried and failed, in words a person can read.
+    case failed(String)
+
+    public var description: String {
+        switch self {
+        case .unknownSource(let source): "\(source) is not connected"
+        case .unsupported: "this agent's source cannot do that"
+        case .failed(let message): message
+        }
+    }
 }

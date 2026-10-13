@@ -42,3 +42,8 @@ Oldest first.
   (`BarColumn`, shared by the view and keyboard navigation), scrolling sideways when there are
   many; arrows move across the grid. The menu bar panel stays vertical. Idle with the ear
   showing: 0% CPU over 30 s, about 54 MB.
+- Answer from the notch: choosing a needs-you agent in the bar opens its stage, with its last
+  visible lines (`agent.read`, only while open), its choices parsed by `ChoiceParser` as buttons
+  and digits (`agent.send_keys`), Return and Escape as a fallback, and a reply field
+  (`pane.send_input`). Sources gained `read`, `sendKeys` and `sendText`, through `HerdStore` and
+  `AgentActions`; herdr's errors reach the stage in words. FakeHerdr answers all three.
