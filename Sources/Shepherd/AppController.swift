@@ -15,6 +15,7 @@ final class AppController {
     private let actions: AppActions
     private let config = ConfigStore()
     private let registry: ModuleRegistry
+    private let notifier: SystemNotifier?
     private var statusItem: StatusItemController?
     private var panel: PanelController?
     private var hotKeys: HotKeyCenter?
@@ -23,7 +24,8 @@ final class AppController {
     init() {
         store = HerdStore(log: log)
         actions = AppActions(store: store, presence: presence, config: config)
-        let context = ModuleContext(store: store, presence: presence, actions: actions, config: config)
+        notifier = SystemNotifier(store: store, actions: actions, config: config)
+        let context = ModuleContext(store: store, presence: presence, actions: actions, config: config, notifier: notifier)
         registry = ModuleRegistry(available: BuiltinModules.all, context: context)
     }
 

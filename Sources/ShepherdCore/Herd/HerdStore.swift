@@ -17,6 +17,8 @@ public final class HerdStore {
     public private(set) var statusLines: [SourceID: [String]] = [:]
     /// Each source's own token styling.
     public private(set) var tokenLayouts: [SourceID: TokenLayout] = [:]
+    /// Sources that post their own system notifications.
+    public private(set) var sourcesPostingAlerts: Set<SourceID> = []
     /// The transitions behind the most recent update that had any.
     public private(set) var lastTransitions: [HerdTransition] = []
 
@@ -141,6 +143,9 @@ public final class HerdStore {
         if sourceStates[source] != update.state { sourceStates[source] = update.state }
         if statusLines[source] != update.statusLines { statusLines[source] = update.statusLines }
         if tokenLayouts[source] != update.tokenLayout { tokenLayouts[source] = update.tokenLayout }
+        if sourcesPostingAlerts.contains(source) != update.postsSystemAlerts {
+            if update.postsSystemAlerts { sourcesPostingAlerts.insert(source) } else { sourcesPostingAlerts.remove(source) }
+        }
         if !update.transitions.isEmpty {
             lastTransitions = update.transitions
             if let log { Task { await log.append(update.transitions) } }

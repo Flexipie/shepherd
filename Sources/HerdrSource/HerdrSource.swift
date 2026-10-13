@@ -25,6 +25,8 @@ public final class HerdrSource: AgentSource {
     private let configURL: URL?
     private var configWatcher: FileWatcher?
     private var sidebar: (layout: TokenLayout?, problems: [String]) = (nil, [])
+    /// herdr's `ui.toast.delivery` reaches system notifications.
+    private var postsSystemAlerts = false
     /// The last update sent and its connection lines, so a change to herdr's config can be re-sent
     /// without a new snapshot.
     private var lastSent: (update: SourceUpdate, connectionLines: [String])?
@@ -159,6 +161,7 @@ public final class HerdrSource: AgentSource {
         guard let configURL else { return }
         let data = try? Data(contentsOf: configURL)
         sidebar = HerdrSidebar.read(data)
+        postsSystemAlerts = HerdrSidebar.postsSystemAlerts(data)
         let watcher = FileWatcher(url: configURL) { [weak self] data in
             Task { @MainActor in self?.configChanged(data) }
         }
@@ -168,12 +171,15 @@ public final class HerdrSource: AgentSource {
 
     func configChanged(_ data: Data?) {
         let read = HerdrSidebar.read(data)
-        guard read.layout != sidebar.layout || read.problems != sidebar.problems else { return }
+        let alerts = HerdrSidebar.postsSystemAlerts(data)
+        guard read.layout != sidebar.layout || read.problems != sidebar.problems || alerts != postsSystemAlerts else { return }
         sidebar = read
+        postsSystemAlerts = alerts
         guard let (last, lines) = lastSent else { return }
         // Same herd, new styling; the transitions were already sent.
         let update = SourceUpdate(agents: last.agents, projects: last.projects, state: last.state,
-                                  statusLines: lines + sidebar.problems, tokenLayout: sidebar.layout)
+                                  statusLines: lines + sidebar.problems, tokenLayout: sidebar.layout,
+                                  postsSystemAlerts: postsSystemAlerts)
         lastSent = (update, lines)
         continuation.yield(update)
     }
@@ -208,7 +214,7 @@ public final class HerdrSource: AgentSource {
         for transition in update.transitions where transition.kind == .closed { known[transition.paneID] = nil }
         return SourceUpdate(agents: agents, projects: projects, state: Self.state(update.connection),
                             statusLines: connectionLines + sidebar.problems, transitions: transitions,
-                            tokenLayout: sidebar.layout)
+                            tokenLayout: sidebar.layout, postsSystemAlerts: postsSystemAlerts)
     }
 
     static func status(_ status: AgentStatus) -> HerdStatus {

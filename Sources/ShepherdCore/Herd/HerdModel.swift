@@ -184,14 +184,18 @@ public struct SourceUpdate: Sendable, Equatable {
     public let transitions: [HerdTransition]
     /// The source's own token styling (for herdr, its sidebar config), if it has any.
     public let tokenLayout: TokenLayout?
+    /// The source already posts system notifications for its agents, so Shepherd should not
+    /// post them too unless the user asks.
+    public let postsSystemAlerts: Bool
 
     public init(agents: [HerdAgent], projects: [HerdProject] = [], state: SourceState, statusLines: [String] = [],
-                transitions: [HerdTransition] = [], tokenLayout: TokenLayout? = nil) {
+                transitions: [HerdTransition] = [], tokenLayout: TokenLayout? = nil, postsSystemAlerts: Bool = false) {
         self.agents = agents
         self.projects = projects
         self.state = state
         self.statusLines = statusLines
         self.transitions = transitions
         self.tokenLayout = tokenLayout
+        self.postsSystemAlerts = postsSystemAlerts
     }
 }

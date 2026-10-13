@@ -34,6 +34,15 @@ public enum HerdrSidebar {
         return (layout == TokenLayout() ? nil : layout, problems)
     }
 
+    /// Whether herdr posts system notifications itself: `ui.toast.delivery` "system" or
+    /// "terminal" (the terminal turns them into notifications). "herdr" toasts draw inside
+    /// herdr's own window, and the legacy `ui.toast.enabled = true` means "herdr".
+    static func postsSystemAlerts(_ data: Data?) -> Bool {
+        guard let data, let (value, _) = TOMLDocument(data).value(at: ["ui", "toast", "delivery"]),
+              case .string(let delivery) = value else { return false }
+        return delivery == "system" || delivery == "terminal"
+    }
+
     /// Drops built-in entries: in herdr a bare name is always a built-in.
     static func pluginTokensOnly(_ rows: ConfigValue) -> ConfigValue {
         guard case .array(let lines) = rows else { return rows }

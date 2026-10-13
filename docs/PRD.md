@@ -238,6 +238,15 @@ Every surface is optional and degrades on its own.
     and `agents.<kind>.args` from config), then `agent.prompt`, and opens the new agent's stage.
     A step that fails after an earlier one worked says what was left behind ("Created worktree
     x, but claude did not start: ...").
+- **Notifications** (the `notifications` module, off by default). When an agent becomes
+  `blocked` (a change seen happening, from a live source) while the user is not looking at it
+  (`Presence`), it posts through a `Notifier` (the app's is `UNUserNotificationCenter`), one
+  notification per agent with Jump and Reply (a reply while blocked, a prompt otherwise), and
+  withdraws it once the agent moves on. `"auto"` stays quiet for a source whose
+  `SourceUpdate.postsSystemAlerts` is set: herdr's `ui.toast.delivery` "system" or "terminal"
+  ("herdr" toasts draw inside herdr's own window). Permission is asked on the first post and
+  checked before each one; while it is off in System Settings the footer says so. Confirmed: an
+  ad-hoc signed `make app` bundle can ask and post; a Focus mode hides the banners.
 
   Hovering expands after 120 ms of rest and collapses 300 ms after the mouse leaves; an AppKit
   tracking area on the shape reports it, so nothing wakes while the mouse is elsewhere. Hovering

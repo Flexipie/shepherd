@@ -40,6 +40,14 @@ import Testing
         #expect(try read(#"{"agents": []}"#).problems == ["config: agents must be an object of agent kinds"])
     }
 
+    @Test func notificationsMode() throws {
+        #expect(try read("{}").config.notifications == .off)
+        #expect(try read(#"{"notifications": "auto"}"#).config.notifications == .auto)
+        let (config, problems) = try read(#"{"notifications": true}"#)
+        #expect(config.notifications == .off)
+        #expect(problems == ["config: notifications must be \"auto\", \"on\" or \"off\""])
+    }
+
     @Test func nullTurnsTheHotkeyOff() throws {
         #expect(try read(#"{"hotkeys": {"next": null}}"#).config.nextHotkey == nil)
     }

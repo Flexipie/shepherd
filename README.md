@@ -58,7 +58,8 @@ can be left out:
     "agents": [["summary"]]
   },
   "hotkeys": { "next": "ctrl+option+cmd+n" },
-  "agents": { "claude": { "args": [] } }
+  "agents": { "claude": { "args": [] } },
+  "notifications": "off"
 }
 ```
 
@@ -76,13 +77,18 @@ can be left out:
   tool and command without asking you first, so nothing will block for approval; use it only
   where that is safe (a worktree you can throw away, a machine without secrets). Off unless you set
   it.
+- `notifications`: macOS notifications when an agent blocks while you are not looking at it, with
+  Jump and Reply buttons. `"off"` (the default; the notch is the alert), `"on"`, or `"auto"`
+  (on unless herdr already posts system notifications itself, `ui.toast.delivery` "system" or
+  "terminal"). macOS asks for permission the first time; if it is off in System Settings, the
+  bar's footer says so.
 
 A mistake never breaks the app: the panel footer says what is wrong, and a file that is not valid
 JSON keeps the last good config.
 
 ## Planned
 
-- Native notifications, action buttons defined in config, and an on-device one-line summary of
+- Action buttons defined in config, and an on-device one-line summary of
   what an agent did.
 - A palette for jumping and prompting from anywhere, and Claude Code as a second source.
 
