@@ -15,6 +15,24 @@ These need a person, real agents or other hardware:
   panel on a real herdr; closing the panel with a real click outside it; token colours and rules
   matching herdr's own sidebar side by side; VoiceOver reading the panel rows.
 
+## Next: act from the notch
+
+Each its own PR, in this order.
+
+- **Answer from the notch.** Selecting a needs-you agent in the bar opens its stage: its last
+  visible lines (`agent.read`, once on open and again only when its status changes), choices
+  parsed from them (`ChoiceParser`, Claude Code and Codex approval prompts first) as buttons sent
+  with `agent.send_keys`, Enter and Esc as a fallback, and a reply field (`pane.send_text`).
+  Source capabilities `read`, `sendKeys`, `sendText` in `AgentSource`, `HerdStore` and
+  `AgentActions`.
+- **Prompt and new task.** A prompt field on the stage of an idle or finished agent
+  (`agent.prompt`). A "+" after the project columns: pick a workspace, branch, agent kind and
+  prompt; `worktree.create`, `agent.start` (with `agents.<kind>.args` from config), then
+  `agent.prompt`. Errors are shown in the stage.
+- **Notifications.** A `notifications` module: blocked (and optionally done) while you are not
+  looking posts a notification with Jump and Reply. Quiet when herdr's own toasts are on unless
+  `"notifications": "on"`. Spike first: notifications from the ad-hoc signed bundle.
+
 ## Milestone 3: alerts that earn it
 
 - Native notifications for needs-you and configured token changes, with Jump and Reply buttons.

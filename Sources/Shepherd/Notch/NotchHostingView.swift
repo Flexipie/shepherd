@@ -17,14 +17,14 @@ final class NotchSurfaceModel {
 struct NotchSurfaceRoot: View {
     let model: NotchSurfaceModel
     let metrics: NotchMetrics
-    let panelMaxHeight: CGFloat?
+    let barMaxHeight: CGFloat?
     let perform: (PanelAction) -> Void
     let onExpand: () -> Void
     let onExpandedHeight: (CGFloat) -> Void
 
     var body: some View {
         if let mode = model.mode {
-            NotchSurfaceView(mode: mode, metrics: metrics, expandedHeight: model.expandedHeight, panelMaxHeight: panelMaxHeight,
+            NotchSurfaceView(mode: mode, metrics: metrics, expandedHeight: model.expandedHeight, barMaxHeight: barMaxHeight,
                              perform: perform, onExpand: onExpand, onExpandedHeight: onExpandedHeight)
         }
     }

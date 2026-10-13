@@ -3,7 +3,7 @@ import ShepherdUI
 
 /// Where the notch surface goes. On a notched display it is drawn around the notch, flush with
 /// the top of the screen; `metrics` place each state relative to the notch. Elsewhere there is no
-/// ear and no hover panel, only the pill as a small floating capsule under the menu bar.
+/// ear and no hover bar, only the pill as a small floating capsule under the menu bar.
 struct NotchGeometry: Equatable {
     /// nil on a display without a notch.
     let metrics: NotchMetrics?
@@ -13,8 +13,11 @@ struct NotchGeometry: Equatable {
     let floatingFrame: NSRect
 
     static let floatingWidth: CGFloat = 340
-    /// Room the panel's footer needs below its scrolling sections.
-    static let footerAllowance: CGFloat = 80
+    /// Room the bar's status line needs below its scrolling columns.
+    static let footerAllowance: CGFloat = 44
+    /// The widest the bar gets, and the room it leaves at the screen's sides.
+    static let barWidth: CGFloat = 1000
+    static let barMargin: CGFloat = 80
 
     /// The display with a notch if there is one, otherwise the main display.
     @MainActor
@@ -35,8 +38,10 @@ struct NotchGeometry: Equatable {
             return NotchGeometry(metrics: nil, notchOrigin: .zero, floatingFrame: floating)
         }
         let notchWidth = max(0, full.width - left.width - right.width)
-        // The expanded panel stops at 70% of the screen.
-        let metrics = NotchMetrics(notchWidth: notchWidth, notchHeight: notchHeight, maxExpandedHeight: full.height * 0.7)
+        // The expanded bar stops at 30% of the screen, so it never covers the middle.
+        let width = min(barWidth, full.width - 2 * barMargin)
+        let metrics = NotchMetrics(notchWidth: notchWidth, notchHeight: notchHeight, maxExpandedHeight: full.height * 0.3,
+                                   maxExpandedWidth: width)
         return NotchGeometry(metrics: metrics, notchOrigin: NSPoint(x: full.minX + left.width, y: full.maxY),
                              floatingFrame: floating)
     }
@@ -46,8 +51,8 @@ struct NotchGeometry: Equatable {
         NSRect(x: notchOrigin.x + rect.minX, y: notchOrigin.y - rect.maxY, width: rect.width, height: rect.height)
     }
 
-    /// The expanded panel's sections scroll past this height.
-    var panelMaxHeight: CGFloat? {
+    /// The expanded bar's columns scroll past this height.
+    var barMaxHeight: CGFloat? {
         metrics.map { $0.maxExpandedHeight - $0.notchHeight - Self.footerAllowance }
     }
 }

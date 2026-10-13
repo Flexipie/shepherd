@@ -5,7 +5,7 @@ import ShepherdUI
 import SwiftUI
 
 /// The notch surface: one black shape around the notch that is the paw ear when the herd is
-/// quiet, the needs-you pill when a module offers a notch item, and the panel while hovered.
+/// quiet, the needs-you pill when a module offers a notch item, and the bar while hovered.
 ///
 /// The SwiftUI view spans a fixed canvas (every state at its largest) and never moves on screen;
 /// the window is only as large as the shape needs. Before a morph the window grows to cover both
@@ -46,7 +46,7 @@ final class NotchSurfaceController: NSObject, NSWindowDelegate {
         rebuild()
     }
 
-    /// Closes the panel back into the notch.
+    /// Folds the bar back into the notch.
     func collapse() {
         cancelHover()
         guard expanded else { return }
@@ -73,17 +73,17 @@ final class NotchSurfaceController: NSObject, NSWindowDelegate {
         guard next != geometry || panel == nil && next?.metrics != nil else { return }
         tearDown()
         geometry = next
-        if let next, let metrics = next.metrics { build(metrics, panelMaxHeight: next.panelMaxHeight) }
+        if let next, let metrics = next.metrics { build(metrics, barMaxHeight: next.barMaxHeight) }
         render()
     }
 
-    private func build(_ metrics: NotchMetrics, panelMaxHeight: CGFloat?) {
+    private func build(_ metrics: NotchMetrics, barMaxHeight: CGFloat?) {
         if model.expandedHeight == 0 { model.expandedHeight = metrics.notchHeight + 240 }
         let panel = NotchSurfacePanel()
         panel.delegate = self
         panel.onCancel = { [weak self] in self?.collapse() }
         let root = NotchSurfaceRoot(
-            model: model, metrics: metrics, panelMaxHeight: panelMaxHeight,
+            model: model, metrics: metrics, barMaxHeight: barMaxHeight,
             perform: { [weak self] action in self?.perform(action) },
             onExpand: { [weak self] in self?.expand() },
             onExpandedHeight: { [weak self] height in

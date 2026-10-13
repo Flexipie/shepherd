@@ -4,10 +4,11 @@ import SwiftUI
 import Testing
 @testable import ShepherdUI
 
-/// The notch surface in each state, at fixed notch metrics: a 200 x 32 notch.
+/// The notch surface in each state, at fixed notch metrics: a 200 x 32 notch and a bar up to
+/// 1000 x 300.
 @MainActor
 @Suite struct NotchSurfaceSnapshotTests {
-    let metrics = NotchMetrics(notchWidth: 200, notchHeight: 32, maxExpandedHeight: 720)
+    let metrics = NotchMetrics(notchWidth: 200, notchHeight: 32, maxExpandedHeight: 300, maxExpandedWidth: 1000)
 
     func check(_ name: String, _ mode: NotchSurfaceMode, height: CGFloat, expandedHeight: CGFloat = 0,
                sourceLocation: SourceLocation = #_sourceLocation) throws {
@@ -39,12 +40,26 @@ import Testing
         try check("notch-alert", .alert(item), height: 32 + NotchPillView.contentHeight + 8)
     }
 
+    /// The bar at its natural height, as the app sizes it.
+    func checkExpanded(_ name: String, _ content: PanelContent, sourceLocation: SourceLocation = #_sourceLocation) throws {
+        let width = metrics.body(.expanded, expandedHeight: 0).width
+        let bar = NotchBarView(content: content, clock: .fixed(SampleHerd.now), width: width) { _ in }
+        let height = NSHostingView(rootView: bar.environment(\.colorScheme, .dark)).fittingSize.height + 32
+        try check(name, .expanded(content), height: height + 8, expandedHeight: height, sourceLocation: sourceLocation)
+    }
+
     @Test func expanded() throws {
-        let panel = VStack(spacing: 0) {
-            PanelView(content: SampleHerd.content, clock: .fixed(SampleHerd.now)) { _ in }.padding(.bottom, 4)
-        }
-        let height = NSHostingView(rootView: panel.environment(\.colorScheme, .dark)).fittingSize.height + 32
-        try check("notch-expanded", .expanded(SampleHerd.content), height: height + 8, expandedHeight: height)
+        try checkExpanded("notch-expanded", SampleHerd.content)
+    }
+
+    @Test func expandedEmptyAndDisconnected() throws {
+        try checkExpanded("notch-bar-disconnected", SampleHerd.disconnected)
+    }
+
+    /// More projects than fit: the columns past the right edge are cut off (in the app, they
+    /// scroll sideways).
+    @Test func expandedWithManyProjects() throws {
+        try checkExpanded("notch-bar-many", SampleHerd.manyProjects)
     }
 
     @Test func shapesStayInsideTheCanvas() {
@@ -56,6 +71,10 @@ import Testing
         let notch = CGRect(x: 0, y: 0, width: 200, height: 32)
         #expect(metrics.body(.ear, expandedHeight: 0).contains(notch))
         #expect(metrics.body(.alert, expandedHeight: 0).contains(notch))
-        #expect(metrics.body(.expanded, expandedHeight: 10_000).height == 720)
+        #expect(metrics.body(.expanded, expandedHeight: 10_000).height == 300)
+        #expect(metrics.body(.expanded, expandedHeight: 0).width == 1000)
+        // Never narrower than the notch with an ear on each side.
+        let narrow = NotchMetrics(notchWidth: 200, notchHeight: 32, maxExpandedHeight: 300, maxExpandedWidth: 100)
+        #expect(narrow.body(.expanded, expandedHeight: 0).width == 200 + 2 * NotchMetrics.earWidth)
     }
 }

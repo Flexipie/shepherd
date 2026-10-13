@@ -19,6 +19,7 @@ struct ProjectCard: View {
                 AgentRow(row: row, now: now, isSelected: id != nil && id == selection)
                     .onTapGesture { if let action = row.action { perform(action) } }
                     .onHover { inside in if let id { hover(inside ? id : nil) } }
+                    .id(id)
             }
         }
         .padding(4)
@@ -54,6 +55,7 @@ struct ProjectCard: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)
         .accessibilityAddTraits(card.action == nil ? .isHeader : [.isHeader, .isButton])
+        .id(id)
     }
 
     /// "2 agents", "1 waiting of 3".

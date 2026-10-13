@@ -209,8 +209,15 @@ Every surface is optional and degrades on its own.
     orange with a count when agents need you, dimmed when the state is not live.
   - **Alert**, while a module offers a notch item: the pill below the notch with which agent, why,
     and how many others wait. Click jumps there.
-  - **Expanded**, while hovered: the same panel as under the menu bar item (both read
-    `PanelContentSource`), centred on the notch, up to 70% of the screen tall.
+  - **Expanded**, while hovered: the bar. A wide, short shape centred on the notch,
+    `min(1000, screen width - 160)` wide and as tall as its content, up to 30% of the screen,
+    so it never covers the middle. It reads the same `PanelContentSource` as the menu bar panel
+    but lays it out in columns (`BarColumn`): the `queue` section pinned on the left, then one
+    column per project card, and any other section as one column, so a new module's section
+    just appears as another column. Past the left column the columns scroll sideways; each
+    column scrolls on its own past the height cap. Status lines and config problems share one
+    line along the bottom. Up and down move within a column, left and right to the nearest row
+    of the next column.
 
   Hovering expands after 120 ms of rest and collapses 300 ms after the mouse leaves; an AppKit
   tracking area on the shape reports it, so nothing wakes while the mouse is elsewhere. Hovering

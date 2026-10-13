@@ -7,7 +7,7 @@ public enum NotchSurfaceMode: Sendable, Equatable {
     case ear(StatusContribution)
     /// Someone is blocked or just finished: the pill below the notch.
     case alert(NotchItem)
-    /// Hovered: the panel.
+    /// Hovered: the bar.
     case expanded(PanelContent)
 
     public var kind: NotchMetrics.Kind {
@@ -28,7 +28,7 @@ public struct NotchSurfaceView: View {
     let metrics: NotchMetrics
     let expandedHeight: CGFloat
     let clock: PanelClock
-    let panelMaxHeight: CGFloat?
+    let barMaxHeight: CGFloat?
     let perform: (PanelAction) -> Void
     let onExpand: () -> Void
     let onExpandedHeight: (CGFloat) -> Void
@@ -37,16 +37,16 @@ public struct NotchSurfaceView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// `expandedHeight` is the expanded shape's height, notch included; the view reports the
-    /// height its panel wants through `onExpandedHeight`. `panelMaxHeight` makes the panel's
-    /// sections scroll past that height.
+    /// height its bar wants through `onExpandedHeight`. `barMaxHeight` makes the bar's columns
+    /// scroll past that height.
     public init(mode: NotchSurfaceMode, metrics: NotchMetrics, expandedHeight: CGFloat, clock: PanelClock = .live,
-                panelMaxHeight: CGFloat? = nil, perform: @escaping (PanelAction) -> Void = { _ in },
+                barMaxHeight: CGFloat? = nil, perform: @escaping (PanelAction) -> Void = { _ in },
                 onExpand: @escaping () -> Void = {}, onExpandedHeight: @escaping (CGFloat) -> Void = { _ in }) {
         self.mode = mode
         self.metrics = metrics
         self.expandedHeight = expandedHeight
         self.clock = clock
-        self.panelMaxHeight = panelMaxHeight
+        self.barMaxHeight = barMaxHeight
         self.perform = perform
         self.onExpand = onExpand
         self.onExpandedHeight = onExpandedHeight
@@ -60,7 +60,7 @@ public struct NotchSurfaceView: View {
         let shape = reduceMotion ? AnyShape(Unanimated(shape: notch)) : AnyShape(notch)
         ZStack(alignment: .topLeading) {
             shape.fill(Color.black)
-            content
+            content(width: body.width)
                 .id(mode.kind)
                 .transition(.opacity)
                 .frame(width: body.width, height: body.height, alignment: .top)
@@ -71,11 +71,11 @@ public struct NotchSurfaceView: View {
         .environment(\.colorScheme, .dark)
     }
 
-    @ViewBuilder private var content: some View {
+    @ViewBuilder private func content(width: CGFloat) -> some View {
         switch mode {
         case .ear(let status): ear(status)
         case .alert(let item): alert(item)
-        case .expanded(let content): expanded(content)
+        case .expanded(let content): expanded(content, width: width)
         }
     }
 
@@ -128,11 +128,10 @@ public struct NotchSurfaceView: View {
         .notchItemAccessibility(item)
     }
 
-    private func expanded(_ content: PanelContent) -> some View {
+    private func expanded(_ content: PanelContent, width: CGFloat) -> some View {
         VStack(spacing: 0) {
             Color.clear.frame(height: metrics.notchHeight)
-            PanelView(content: content, clock: clock, maxHeight: panelMaxHeight, perform: perform)
-                .padding(.bottom, 4)
+            NotchBarView(content: content, clock: clock, width: width, maxHeight: barMaxHeight, perform: perform)
         }
         // Its own height, not the shape's: the shape follows the content, not the other way.
         .fixedSize()

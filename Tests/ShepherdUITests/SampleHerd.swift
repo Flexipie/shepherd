@@ -60,4 +60,21 @@ enum SampleHerd {
                                        items: [apiCard, webCard, docsCard].map(PanelItem.project), emptyText: "No projects")
 
     static let content = PanelContent(sections: [queue, projects], statusLines: ["2 working, 3 waiting", "herdr 0.9.3"])
+
+    static let disconnected = PanelContent(
+        sections: [PanelSection(id: "queue", title: "Needs you", items: [], emptyText: "Nothing needs you"),
+                   PanelSection(id: "projects", title: "Projects", items: [], emptyText: "No projects")],
+        statusLines: ["Not connected: herdr is not running. Retrying.", "herdr socket: ~/.config/herdr/herdr.sock"],
+        problems: ["config: tokens.projects[0][0].fg: must be #RGB or #RRGGBB"])
+
+    /// Twelve projects, one agent each, after the usual queue.
+    static let manyProjects: PanelContent = {
+        let cards = (1...12).map { index in
+            let project = HerdProject(id: ProjectID(source: "herdr", local: "m\(index)"), name: "project \(index)")
+            let status: HerdStatus = index.isMultiple(of: 3) ? .working : .idle
+            return PanelItem.project(card(project, [agent("m\(index):p1", "claude", project, status, ago(Double(index * 7)))]))
+        }
+        let projects = PanelSection(id: "projects", title: "Projects", items: cards, emptyText: "No projects")
+        return PanelContent(sections: [queue, projects], statusLines: ["4 working, 3 waiting"])
+    }()
 }
