@@ -14,9 +14,14 @@ public final class ModuleContext {
     public let usage: (any UsageReader)?
     /// Measures the Mac's CPU and memory; nil where there is no sampler.
     public let system: (any SystemSampler)?
+    /// Reads an agent's context size from its session; nil where there is no reader.
+    public let contextReader: (any AgentContextReader)?
+    /// Context sizes by agent, filled by the module that reads them.
+    public let agentContext = AgentContextStore()
 
     public init(store: HerdStore, presence: Presence, actions: any AgentActions, config: ConfigStore = ConfigStore(fixed: .defaults),
-                notifier: (any Notifier)? = nil, usage: (any UsageReader)? = nil, system: (any SystemSampler)? = nil) {
+                notifier: (any Notifier)? = nil, usage: (any UsageReader)? = nil, system: (any SystemSampler)? = nil,
+                contextReader: (any AgentContextReader)? = nil) {
         self.store = store
         self.presence = presence
         self.actions = actions
@@ -24,6 +29,7 @@ public final class ModuleContext {
         self.notifier = notifier
         self.usage = usage
         self.system = system
+        self.contextReader = contextReader
     }
 
     /// Token lines for a project's or an agent's values: the config's layout for that section,

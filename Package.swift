@@ -26,16 +26,19 @@ let package = Package(
         .target(name: "OpenUsageSource", dependencies: ["ShepherdCore"]),
         // The Mac's CPU and memory from Mach host calls, as a system sampler. No files, no I/O.
         .target(name: "SystemSource", dependencies: ["ShepherdCore"]),
+        // Claude Code's session files as a context reader: read-only, the file's tail only.
+        .target(name: "ClaudeSessionSource", dependencies: ["ShepherdCore"]),
         // Built-in features, one folder per module.
         .target(name: "ShepherdModules", dependencies: ["ShepherdCore"]),
         // SwiftUI views for the panel and the notch pill. Values in, no windows, no glass, so
         // every view can be snapshot tested.
         .target(name: "ShepherdUI", dependencies: ["ShepherdCore"]),
         // The app: menu bar item, panel, notch pill, settings.
-        .executableTarget(name: "Shepherd", dependencies: ["ShepherdModules", "ShepherdCore", "ShepherdUI", "HerdrSource", "OpenUsageSource", "SystemSource"]),
+        .executableTarget(name: "Shepherd", dependencies: ["ShepherdModules", "ShepherdCore", "ShepherdUI", "HerdrSource", "OpenUsageSource", "SystemSource", "ClaudeSessionSource"]),
         .testTarget(name: "HerdrKitTests", dependencies: ["HerdrKit", "HerdrFake"]),
         .testTarget(name: "HerdrSourceTests", dependencies: ["HerdrSource", "HerdrKit", "HerdrFake", "ShepherdCore"]),
         .testTarget(name: "OpenUsageSourceTests", dependencies: ["OpenUsageSource", "ShepherdCore"], resources: [.copy("Fixtures")]),
+        .testTarget(name: "ClaudeSessionSourceTests", dependencies: ["ClaudeSessionSource", "ShepherdCore", "HerdrSource", "HerdrKit"], resources: [.copy("Fixtures")]),
         .testTarget(name: "SystemSourceTests", dependencies: ["SystemSource", "ShepherdCore"]),
         .testTarget(name: "ShepherdCoreTests", dependencies: ["ShepherdCore", "ShepherdModules"]),
         .testTarget(name: "ShepherdUITests", dependencies: ["ShepherdUI", "ShepherdCore"], exclude: ["__Snapshots__"]),

@@ -62,6 +62,11 @@ know it.
   plus agent-hours and "waited on me: 12 min". Project names optional. Made to be shared; it shows
   parallelism, which a single-session recap cannot.
 
+- **Per-agent CPU and memory.** herdr's `pane.process_info` could give each agent's process
+  tree; a small figure on the row or stage, sampled only while shown, like the system gadget.
+- **Codex context size.** Codex writes its sessions under `~/.codex/sessions`; a reader there
+  would give Codex agents the same context size Claude Code agents have.
+
 ## Control
 
 - **Broadcast.** Send one message to several agents at once, for example "rebase on main and rerun

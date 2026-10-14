@@ -16,6 +16,22 @@ import Testing
         }
     }
 
+    /// Claude rows with a context size before the time, in the queue (with the jump arrow's
+    /// room) and in a narrow project card.
+    @Test func rowsWithContext() throws {
+        try Snapshot.check("row-context", width: 340) {
+            VStack(alignment: .leading, spacing: 0) {
+                AgentRow(row: SampleHerd.row(SampleHerd.blockedClaude, context: 184_213), now: SampleHerd.now, showsProject: true,
+                         isSelected: true, onJump: {})
+                AgentRow(row: SampleHerd.row(SampleHerd.finished, context: 1_250_000), now: SampleHerd.now, showsProject: true,
+                         onJump: {})
+                AgentRow(row: SampleHerd.row(SampleHerd.working, context: 23_480), now: SampleHerd.now, onJump: {})
+                    .frame(width: 230)
+            }
+            .padding(8)
+        }
+    }
+
     /// In the notch bar a selected row shows the jump arrow; unselected rows keep its room.
     @Test func queueRowsWithJump() throws {
         try Snapshot.check("queue-row-jump", width: 340) {

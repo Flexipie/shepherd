@@ -42,6 +42,20 @@ import Testing
         #expect(agent.stateChangeSeq == 0)
     }
 
+    @Test func cwdAndSessionAreDecodedLeniently() throws {
+        let agent = try decode(Agent.self, """
+        {"pane_id":"w1:p1","workspace_id":"w1","agent":"claude","cwd":"/tmp/project-1",
+         "agent_session":{"agent":"claude","kind":"id","value":"session-1","source":"source-1"}}
+        """)
+        #expect(agent.cwd == "/tmp/project-1")
+        #expect(agent.session == Agent.Session(agent: "claude", kind: "id", value: "session-1"))
+        let odd = try decode(Agent.self, #"{"pane_id":"w1:p2","workspace_id":"w1","cwd":7,"agent_session":{"kind":3}}"#)
+        #expect(odd.cwd == nil)
+        #expect(odd.session == Agent.Session())
+        let none = try decode(Agent.self, #"{"pane_id":"w1:p3","workspace_id":"w1","agent_session":"nope"}"#)
+        #expect(none.session == nil)
+    }
+
     @Test func malformedArrayElementIsSkipped() throws {
         let snapshot = try decode(SessionSnapshot.self, """
         {"version":"x","protocol":22,"workspaces":[{"label":"no id"},{"workspace_id":"w2"}],

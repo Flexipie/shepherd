@@ -54,6 +54,7 @@ make app     # build/Shepherd.app (release, ad-hoc signed)
 make run     # app, then relaunch it
 make fixture NAME=basic SECONDS=10   # record a sanitised fixture from the running herdr
 SHEPHERD_LIVE=1 swift test --filter LiveHerdr   # read-only checks against the real herdr
+SHEPHERD_LIVE=1 swift test --filter LiveClaudeContext   # context size of each live Claude agent (numbers only)
 swift run FakeHerdr /tmp/shepherd-fake.sock     # fake herdr driven from stdin (block, done, add,
                                                 # label, token, stop, start, focused, sent; see its main.swift)
 SHEPHERD_RECORD_SNAPSHOTS=1 swift test --filter ShepherdUITests   # re-record view snapshots

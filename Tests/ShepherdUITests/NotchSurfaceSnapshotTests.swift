@@ -81,6 +81,12 @@ import Testing
         try checkExpanded("notch-stage-question", SampleHerd.content, stage: .agent(stage))
     }
 
+    @Test func stageWithContext() throws {
+        let stage = AgentStage(row: SampleHerd.row(SampleHerd.working, context: 184_213),
+                               lines: ["Running the test suite.", "", "> "], canReply: true, prompts: true)
+        try checkExpanded("notch-stage-context", SampleHerd.content, stage: .agent(stage))
+    }
+
     @Test func stageReadingWithAnError() throws {
         let stage = AgentStage(row: SampleHerd.row(SampleHerd.finished), lines: nil,
                                error: "Could not read: herdr did not answer in time")

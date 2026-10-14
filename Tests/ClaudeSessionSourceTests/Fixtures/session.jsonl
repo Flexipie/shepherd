@@ -1,0 +1,8 @@
+{"type":"summary","summary":"made-up session for tests","leafUuid":"uuid-0"}
+{"type":"user","isSidechain":false,"sessionId":"session-1","cwd":"/tmp/project-1","message":{"role":"user","content":"hello"}}
+{"type":"assistant","isSidechain":false,"sessionId":"session-1","message":{"model":"claude-model","role":"assistant","usage":{"input_tokens":3,"cache_creation_input_tokens":2000,"cache_read_input_tokens":10000,"output_tokens":50}}}
+{"type":"assistant","isSidechain":false,"sessionId":"session-1","message":{"model":"claude-model","role":"assistant","usage":{"input_tokens":5,"cache_creation_input_tokens":1208,"cache_read_input_tokens":183000,"output_tokens":120,"output_tokens_details":{"thinking_tokens":80}}}}
+{"type":"assistant","isSidechain":true,"sessionId":"session-1","message":{"model":"claude-model","role":"assistant","usage":{"input_tokens":4,"cache_creation_input_tokens":0,"cache_read_input_tokens":9000,"output_tokens":7}}}
+{"type":"assistant","isSidechain":false,"isApiErrorMessage":true,"sessionId":"session-1","message":{"model":"<synthetic>","role":"assistant","usage":{"input_tokens":0,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":0}}}
+{"type":"user","isSidechain":false,"sessionId":"session-1","message":{"role":"user","content":[{"type":"tool_result","content":"the word \"assistant\" in a tool result"}]}}
+{"type":"system","subtype":"turn_duration","sessionId":"session-1"}

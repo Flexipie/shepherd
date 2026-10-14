@@ -66,3 +66,7 @@ Oldest first.
 - System gadget: a `system` column ("This Mac") after usage with the whole Mac's CPU and memory
   as two bars, from Mach host statistics in the `SystemSource` target. It samples every 2 s only
   while the bar or panel is open; closed, no task and no system calls.
+- Context size: Claude Code rows and the stage show the agent's context size ("184k"), read by
+  the `context` module through the `ClaudeSessionSource` target from the tail of the session
+  file herdr's `agent_session` points at, only while the bar or panel is open (on opening and on
+  a status change), cached by size and modification date.

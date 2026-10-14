@@ -32,9 +32,9 @@ enum SampleHerd {
     static let teal = HexColor("#94e2d5")!
     static let red = HexColor("#f38ba8")!
 
-    static func row(_ agent: HerdAgent, live: Bool = true) -> PanelAgentRow {
+    static func row(_ agent: HerdAgent, live: Bool = true, context: Int? = nil) -> PanelAgentRow {
         let tokens = agent.tokens["summary"].map { [[StyledToken(name: "summary", text: $0, dim: agent.status == .done)]] } ?? []
-        return PanelAgentRow(agent: agent, tokens: tokens, isLive: live, action: .jump(agent.id))
+        return PanelAgentRow(agent: agent, tokens: tokens, isLive: live, action: .jump(agent.id), contextTokens: context)
     }
 
     static let queue = PanelSection(id: "queue", title: "Needs you",

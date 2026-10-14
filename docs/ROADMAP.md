@@ -28,8 +28,6 @@ while shown, and never polls in the background. Everything stays local.
 
 - UI and UX polish of the bar and stage from daily use: column widths and height cap, what the
   ear and pill show, keyboard and mouse rough edges. (Jumping in one step shipped.)
-- Per-agent tokens: an agent's token count on its row or stage when the agent is Claude Code,
-  from its session file under `~/.claude` (needs mapping a herdr pane to its session).
 
 Done when: the user keeps the gadgets on for a week, and idle CPU and memory with the bar closed
 are the same as without them.

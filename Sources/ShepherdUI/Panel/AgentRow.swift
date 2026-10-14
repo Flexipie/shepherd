@@ -3,11 +3,13 @@ import SwiftUI
 
 /// An agent in the queue (with its project) or in a project card (without). One accessibility
 /// element: "codex, api, needs you, 4 minutes". With `onJump`, an arrow after the time jumps
-/// straight to the agent; it shows while the row is hovered or selected.
+/// straight to the agent; it shows while the row is hovered or selected. A context size, when
+/// known, sits before the time ("184k", or "184k context" with `namesContext`).
 struct AgentRow: View {
     let row: PanelAgentRow
     let now: Date
     var showsProject = false
+    var namesContext = false
     var isSelected = false
     var onJump: (() -> Void)?
 
@@ -25,6 +27,12 @@ struct AgentRow: View {
                         .font(.system(size: showsProject ? 12 : 11))
                         .foregroundStyle(.secondary)
                     Spacer(minLength: 8)
+                    if let tokens = row.contextTokens {
+                        Text(namesContext ? "\(ContextSize.short(tokens)) context" : ContextSize.short(tokens))
+                            .font(.system(size: 11).monospacedDigit())
+                            .foregroundStyle(.secondary)
+                            .help(ContextSize.help(tokens))
+                    }
                     if let elapsed = Elapsed.short(row.agent.since, now: now) {
                         Text(elapsed)
                             .font(.system(size: 11).monospacedDigit())
@@ -79,6 +87,7 @@ struct AgentRow: View {
         if showsProject, !row.agent.project.isEmpty { parts.append(row.agent.project) }
         parts.append(row.isLive ? row.agent.statusText : "last seen \(row.agent.statusText), not live")
         if let spoken = Elapsed.spoken(row.agent.since, now: now) { parts.append(spoken) }
+        if let tokens = row.contextTokens { parts.append(ContextSize.spoken(tokens)) }
         parts += row.tokens.flatMap { $0.map(\.text) }
         return parts.joined(separator: ", ")
     }

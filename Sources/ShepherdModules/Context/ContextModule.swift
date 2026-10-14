@@ -1,0 +1,85 @@
+import Observation
+import ShepherdCore
+
+/// The context size of agents whose session a reader understands (Claude Code for now), shown on
+/// their rows and stage. It has no section of its own: it fills `ModuleContext.agentContext`,
+/// which row builders read. It reads only while a panel is open: every agent with a session on
+/// opening, then an agent again when its status changes. Closed, nothing is read. Turned off, the
+/// sizes go away with it.
+@MainActor
+public final class ContextModule: ShepherdModule {
+    public static let id = "context"
+
+    private let context: ModuleContext
+    private var isVisible = false
+    /// Each agent's status when its size was last asked for, to see which changed since.
+    private var readStatus: [AgentID: HerdStatus] = [:]
+    private var reading: Set<AgentID> = []
+    /// Agents whose status changed while their read was on its way; read once more after it.
+    private var again: Set<AgentID> = []
+
+    public init(context: ModuleContext) {
+        self.context = context
+        watchVisibility()
+        watchAgents()
+    }
+
+    isolated deinit {
+        context.agentContext.removeAll()
+    }
+
+    private func watchVisibility() {
+        let visible = withObservationTracking {
+            context.presence.isPanelVisible
+        } onChange: { [weak self] in
+            Task { @MainActor in self?.watchVisibility() }
+        }
+        guard visible != isVisible else { return }
+        isVisible = visible
+        guard visible else { return }
+        readStatus = [:]
+        readChanged()
+    }
+
+    private func watchAgents() {
+        let agents = withObservationTracking {
+            context.store.agents
+        } onChange: { [weak self] in
+            Task { @MainActor in self?.watchAgents() }
+        }
+        let ids = Set(agents.map(\.id))
+        context.agentContext.keep(only: ids)
+        readStatus = readStatus.filter { ids.contains($0.key) }
+        if isVisible { readChanged() }
+    }
+
+    /// Reads every agent with a session whose status differs from when it was last read.
+    private func readChanged() {
+        guard context.contextReader != nil, context.presence.isPanelVisible else { return }
+        for agent in context.store.agents where readStatus[agent.id] != agent.status {
+            guard let session = agent.session else { continue }
+            readStatus[agent.id] = agent.status
+            read(agent.id, session)
+        }
+    }
+
+    private func read(_ agent: AgentID, _ session: AgentSession) {
+        guard let reader = context.contextReader else { return }
+        guard reading.insert(agent).inserted else {
+            again.insert(agent)
+            return
+        }
+        Task { @MainActor [weak self] in
+            let tokens = try? await reader.contextTokens(for: session)
+            guard let self else { return }
+            reading.remove(agent)
+            if context.store.agents.contains(where: { $0.id == agent }) {
+                context.agentContext.set(tokens, for: agent)
+            }
+            if again.remove(agent) != nil, context.presence.isPanelVisible,
+               let current = context.store.agents.first(where: { $0.id == agent }), let session = current.session {
+                read(agent, session)
+            }
+        }
+    }
+}

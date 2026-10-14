@@ -1,4 +1,5 @@
 import AppKit
+import ClaudeSessionSource
 import HerdrSource
 import OpenUsageSource
 import ShepherdCore
@@ -28,7 +29,8 @@ final class AppController {
         actions = AppActions(store: store, presence: presence, config: config)
         notifier = SystemNotifier(store: store, actions: actions, config: config)
         let context = ModuleContext(store: store, presence: presence, actions: actions, config: config, notifier: notifier,
-                                    usage: OpenUsageReader(), system: MachSystemSampler())
+                                    usage: OpenUsageReader(), system: MachSystemSampler(),
+                                    contextReader: ClaudeContextReader())
         registry = ModuleRegistry(available: BuiltinModules.all, context: context)
     }
 

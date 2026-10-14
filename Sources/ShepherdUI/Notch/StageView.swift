@@ -37,7 +37,7 @@ struct StageView: View {
 
     private var header: some View {
         HStack(spacing: 6) {
-            AgentRow(row: stage.row, now: now, showsProject: true)
+            AgentRow(row: stage.row, now: now, showsProject: true, namesContext: true)
             if let action = stage.row.action {
                 Button("Jump") { perform(action) }
                     .buttonStyle(StageButtonStyle())

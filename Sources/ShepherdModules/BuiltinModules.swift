@@ -11,5 +11,6 @@ public enum BuiltinModules {
         SystemModule.self,
         ProjectsModule.self,
         NotificationsModule.self,
+        ContextModule.self,
     ]
 }

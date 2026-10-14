@@ -33,6 +33,8 @@ import Testing
         await fake.update {
             $0.workspaces[1].tokens = ["pr": "12"]
             $0.panes[3].tokens = ["review": "safe"]
+            $0.panes[0].cwd = "/tmp/project-1"
+            $0.panes[0].sessionID = "session-1"
         }
         try await fake.start()
         let (store, _) = running(fake)
@@ -47,6 +49,8 @@ import Testing
         // Workspace tokens stay on the project; an agent carries only its own.
         #expect(store.agents.last?.tokens == ["review": "safe"])
         #expect(store.agents.first?.tokens == [:])
+        #expect(store.agents.first?.session == AgentSession(kind: "claude", id: "session-1", cwd: "/tmp/project-1"))
+        #expect(store.agents.last?.session == nil)
         #expect(store.workingCount == 2)
         #expect(store.statusLines["herdr"] == ["herdr 0.0.0-fake"])
 
@@ -145,6 +149,18 @@ import Testing
         }
         await store.stop()
         await fake.stop()
+    }
+
+    @Test func onlyASessionIDBecomesASession() {
+        let id = Agent(id: "p1", workspaceID: "w1", agent: "claude", status: .idle, cwd: "/tmp/project-1",
+                       session: Agent.Session(agent: "claude", kind: "id", value: "session-1"))
+        #expect(HerdrSource.session(id) == AgentSession(kind: "claude", id: "session-1", cwd: "/tmp/project-1"))
+        let path = Agent(id: "p1", workspaceID: "w1", agent: "claude", status: .idle,
+                         session: Agent.Session(agent: "claude", kind: "path", value: "/tmp/x"))
+        #expect(HerdrSource.session(path) == nil)
+        let unnamed = Agent(id: "p1", workspaceID: "w1", agent: "codex", status: .idle,
+                            session: Agent.Session(kind: "id", value: "session-2"))
+        #expect(HerdrSource.session(unnamed)?.kind == "codex")
     }
 
     @Test func agentNamesFollowHerdrsRules() {

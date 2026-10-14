@@ -43,6 +43,11 @@ PR number, a diff, a review verdict), and lets you act on it without switching t
 - **This Mac.** A small column after usage shows the whole Mac's CPU and memory as two bars
   (memory as Activity Monitor's "Memory Used"). It samples every 2 seconds only while the bar or
   panel is open; closed, nothing runs. Turn it off by leaving `system` out of `modules`.
+- **Context size.** A Claude Code agent's row and stage show how full its context is ("184k",
+  the last turn's input and cache tokens). Shepherd finds the session herdr reports for the pane
+  and reads only the tail of its file under `~/.claude/projects` (or `CLAUDE_CONFIG_DIR`),
+  read-only, when the bar or panel opens and when that agent's state changes; closed, nothing
+  is read. Other agents show none for now. Turn it off by leaving `context` out of `modules`.
 - **Notch pill** (a small floating bar on Macs without a notch). A blocked agent stays until it is
   handled; a finished one shows for a few seconds. Nothing shows for the pane you are already
   looking at. Click to focus the pane in herdr and bring your terminal forward.
@@ -63,7 +68,7 @@ can be left out:
 
 ```json
 {
-  "modules": ["status", "notch", "queue", "usage", "system", "projects"],
+  "modules": ["status", "notch", "queue", "usage", "system", "projects", "context"],
   "tokens": {
     "projects": [[{ "token": "pr", "fg": "#94e2d5", "rules": [{ "contains": "draft", "dim": true }] }, "ticket_state"]],
     "agents": [["summary"]]
