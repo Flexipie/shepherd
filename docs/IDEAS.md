@@ -33,6 +33,14 @@ know it.
   product's north star). When answer times keep climbing, gently suggest running fewer agents at
   once. Shown in the panel and recap, never as a notification.
 
+- **Parked from the old milestone 3 (alerts).** Decided not needed for now: herdr's states in the
+  notch are enough. Kept here: notifications for configured token changes (such as a `$lane`
+  token turning "needs you"); a first-run choice of which app alerts (mostly covered by
+  `"notifications": "auto"`); an on-device outcome line on `done` or `blocked`
+  (`FoundationModels`); the action model from PRD "Actions" (config and herdr plugin actions on
+  cards, in the notch, as notification buttons); the pill showing the agent's last lines (the
+  stage shows them once the bar is open).
+
 ## Awareness
 
 - **Live activity line.** What each agent is doing right now (reading a file, running tests),
@@ -116,9 +124,9 @@ Local first; see PRD "Intelligence" for the rules every idea here follows.
 - **Liquid Glass.** Use the system glass material for the notch pill and panel so
   Shepherd looks like part of the system.
 - **Haptic nudge.** A light trackpad haptic when hovering the notch while something needs you.
-- **Small apps in one place.** The notch bar has room for more than agents: small tools (a
-  timer, a clipboard shelf, a scratch note) as modules whose sections become columns. To discuss
-  before it goes anywhere near the roadmap: it must not dilute "your herd at a glance".
+- **More notch gadgets.** System and Claude Code usage gadgets are on the roadmap (milestone 3).
+  Others that could follow as modules whose sections become columns: a timer, a clipboard shelf,
+  a scratch note. Each must not dilute "your herd at a glance".
 
 ## Personality
 
