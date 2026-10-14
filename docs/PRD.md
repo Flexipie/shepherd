@@ -220,7 +220,8 @@ Every surface is optional and degrades on its own.
     of the next column.
   - **Stage**, inside the bar: choosing an agent's row anywhere in the bar (click or Return)
     swaps the project columns for that agent's stage, when its source can read output
-    (otherwise it jumps). The
+    (otherwise it jumps). The arrow on a hovered or selected agent row, ⌘-click and ⌘Return
+    skip the stage and jump (`BarChoice`). The
     stage shows the agent's last visible lines (`agent.read`, `source: "visible"`, read once on
     open and again only when the agent's status changes while it is open; nothing while
     closed), the choices `ChoiceParser` finds in them (a run of options numbered from 1 with

@@ -56,3 +56,5 @@ Oldest first.
   Reply when an agent blocks while you are not looking, and withdraws it when the agent moves
   on. `"notifications": "off" | "on" | "auto"` (off by default; auto defers to herdr's own system
   toasts). Permission is checked before every post and a refusal shows in the footer.
+- Quick jump from the bar: a hovered or selected agent row shows an arrow that jumps straight to
+  the agent; ⌘-click and ⌘Return do the same. A plain click or Return still opens the stage.

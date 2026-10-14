@@ -16,6 +16,18 @@ import Testing
         }
     }
 
+    /// In the notch bar a selected row shows the jump arrow; unselected rows keep its room.
+    @Test func queueRowsWithJump() throws {
+        try Snapshot.check("queue-row-jump", width: 340) {
+            VStack(spacing: 0) {
+                AgentRow(row: SampleHerd.row(SampleHerd.blockedCodex), now: SampleHerd.now, showsProject: true, isSelected: true,
+                         onJump: {})
+                AgentRow(row: SampleHerd.row(SampleHerd.finished), now: SampleHerd.now, showsProject: true, onJump: {})
+            }
+            .padding(8)
+        }
+    }
+
     @Test func projectCard() throws {
         try Snapshot.check("project-card", width: 340) {
             ProjectCard(card: SampleHerd.webCard, now: SampleHerd.now, selection: nil, sectionID: "projects",
@@ -71,6 +83,25 @@ import Testing
         #expect(PanelTarget.move(from: targets[0].id, by: 1, in: targets) == targets[1].id)
         #expect(PanelTarget.move(from: targets.last?.id, by: 1, in: targets) == targets.last?.id)
         #expect(PanelTarget.move(from: "gone", by: 1, in: []) == nil)
+    }
+}
+
+@Suite struct BarChoiceTests {
+    let agent = SampleHerd.blockedCodex.id
+
+    @Test func returnOpensTheStageAndCommandReturnJumps() {
+        #expect(BarChoice.choose(.jump(agent), command: false, hasStage: true) == .openStage(agent))
+        #expect(BarChoice.choose(.jump(agent), command: true, hasStage: true) == .perform(.jump(agent)))
+    }
+
+    @Test func withoutAStageEverythingPerforms() {
+        #expect(BarChoice.choose(.jump(agent), command: false, hasStage: false) == .perform(.jump(agent)))
+    }
+
+    @Test func projectHeadersAlwaysPerform() {
+        let focus = PanelAction.focusProject(SampleHerd.api.id)
+        #expect(BarChoice.choose(focus, command: false, hasStage: true) == .perform(focus))
+        #expect(BarChoice.choose(focus, command: true, hasStage: true) == .perform(focus))
     }
 }
 

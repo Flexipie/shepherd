@@ -27,7 +27,7 @@ be turned off in `modules`, and costs nothing while the bar is closed: it reads 
 while shown, and never polls in the background. Everything stays local.
 
 - UI and UX polish of the bar and stage from daily use: column widths and height cap, what the
-  ear and pill show, keyboard and mouse rough edges.
+  ear and pill show, keyboard and mouse rough edges. (Jumping in one step shipped.)
 - CPU and memory gadget: system CPU and memory, sampled (Mach host statistics) only while the bar
   is open.
 - Claude Code usage gadget: tokens used today and per session, and how close the plan's usage

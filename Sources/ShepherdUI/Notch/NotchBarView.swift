@@ -9,7 +9,8 @@ import SwiftUI
 ///
 /// With `onStage`, choosing an agent's row opens its stage in place of the project columns
 /// instead of jumping, and `offersNewTask` adds a "+" after the columns for the new task form.
-/// Escape or Left goes back, a digit picks one of a stage's choices.
+/// Escape or Left goes back, a digit picks one of a stage's choices. The arrow on a hovered or
+/// selected row, ⌘-click and ⌘Return jump straight to the agent.
 public struct NotchBarView: View {
     let content: PanelContent
     let clock: PanelClock
@@ -65,7 +66,7 @@ public struct NotchBarView: View {
         .onKeyPress(.rightArrow) { stage == nil ? move(.right) : .handled }
         .onKeyPress(.escape) { stage == nil ? .ignored : closeStage() }
         .onKeyPress(characters: .decimalDigits) { press in pick(press.characters) }
-        .onKeyPress(.return) { choose() }
+        .onKeyPress(.return, phases: .down) { press in choose(command: press.modifiers.contains(.command)) }
         .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: content)
     }
 
@@ -151,9 +152,10 @@ public struct NotchBarView: View {
     private func columnItems(_ column: BarColumn, now: Date) -> some View {
         if column.isCard, let item = column.items.first {
             PanelItemView(item: item, sectionID: column.section.id, now: now, selection: selection,
-                          perform: barPerform) { selection = $0 }
+                          jump: perform, perform: barPerform) { selection = $0 }
         } else {
-            PanelSectionView(section: column.section, now: now, selection: selection, perform: barPerform) { selection = $0 }
+            PanelSectionView(section: column.section, now: now, selection: selection, jump: perform,
+                             perform: barPerform) { selection = $0 }
         }
     }
 
@@ -165,10 +167,13 @@ public struct NotchBarView: View {
     /// Agent rows open their stage when there is one to open; anything else, such as a project
     /// header, does what it always does.
     private func barPerform(_ action: PanelAction) {
-        if let onStage, case .jump(let agent) = action {
-            onStage(.open(agent))
-        } else {
-            perform(action)
+        run(.choose(action, command: false, hasStage: onStage != nil))
+    }
+
+    private func run(_ choice: BarChoice) {
+        switch choice {
+        case .perform(let action): perform(action)
+        case .openStage(let agent): onStage?(.open(agent))
         }
     }
 
@@ -206,9 +211,9 @@ public struct NotchBarView: View {
         return .handled
     }
 
-    private func choose() -> KeyPress.Result {
+    private func choose(command: Bool) -> KeyPress.Result {
         guard let target = PanelTarget.all(in: columns).first(where: { $0.id == selection }) else { return .ignored }
-        barPerform(target.action)
+        run(.choose(target.action, command: command, hasStage: onStage != nil))
         return .handled
     }
 

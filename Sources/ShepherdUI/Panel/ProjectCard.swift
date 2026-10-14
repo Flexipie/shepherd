@@ -7,6 +7,7 @@ struct ProjectCard: View {
     let now: Date
     let selection: PanelTarget.ID?
     let sectionID: String
+    var jump: ((PanelAction) -> Void)?
     let perform: (PanelAction) -> Void
     let hover: (PanelTarget.ID?) -> Void
 
@@ -16,8 +17,9 @@ struct ProjectCard: View {
             ForEach(card.agents.indices, id: \.self) { index in
                 let row = card.agents[index]
                 let id = row.action.map { PanelTarget.id(section: sectionID, action: $0) }
-                AgentRow(row: row, now: now, isSelected: id != nil && id == selection)
-                    .onTapGesture { if let action = row.action { perform(action) } }
+                AgentRow(row: row, now: now, isSelected: id != nil && id == selection,
+                         onJump: jump.flatMap { jump in row.action.map { action in { jump(action) } } })
+                    .onTapGesture { if let action = row.action { tap(action, perform: perform, jump: jump) } }
                     .onHover { inside in if let id { hover(inside ? id : nil) } }
                     .id(id)
             }
