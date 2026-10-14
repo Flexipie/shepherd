@@ -27,7 +27,7 @@ public struct PanelTarget: Sendable, Hashable, Identifiable {
             switch item {
             case .agent(let row): [row.action].compactMap { $0 }
             case .project(let card): ([card.action] + card.agents.map(\.action)).compactMap { $0 }
-            case .notice: []
+            case .usage, .notice: []
             }
         }
     }

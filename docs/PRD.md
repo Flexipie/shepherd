@@ -75,6 +75,13 @@ As built:
   disconnected, problems in herdr's config). It declares `focus` and `focusProject`. It also
   reads herdr's sidebar config and sends it as the source's token layout (see "Tokens").
 - `HerdrKit` stays a standalone herdr client: socket, models, `SessionEngine`, transition tracking.
+- Gadgets read through a reader target the same way: the module decides when, a separate target
+  does the I/O. `OpenUsageSource` implements `UsageReader` (in `ShepherdCore`, with
+  `UsageReport`, `UsageProvider`, `UsageMeter`) over OpenUsage's local API (`GET
+  http://127.0.0.1:6736/v1/limits`, `openusage.limits.v1`): an ephemeral session, a 2 s timeout,
+  no proxy, loopback only (`SHEPHERD_OPENUSAGE_URL` may point at another loopback address).
+  Decoding is lenient; `consumption` resources become meters, non-empty `balance` ones notes,
+  `errors[]` notes on their provider. Shepherd never reads credentials or calls a vendor API.
 
 ### Transition history
 
@@ -239,6 +246,12 @@ Every surface is optional and degrades on its own.
     and `agents.<kind>.args` from config), then `agent.prompt`, and opens the new agent's stage.
     A step that fails after an earlier one worked says what was left behind ("Created worktree
     x, but claude did not start: ...").
+- **Usage** (the `usage` module), a column right after the needs-you queue in the bar and a
+  section in the menu bar panel: one card per OpenUsage provider (Claude accounts first), each
+  limit as a thin bar (orange from 80%) with its value and "resets in", notes below, dimmed when
+  stale. It reads only while a panel is open (`Presence.isPanelVisible`): on opening when the
+  last report is missing or past its earliest future `expiresAt`, then once more at that time if
+  still open; closing cancels it. Without OpenUsage running the column says so.
 - **Notifications** (the `notifications` module, off by default). When an agent becomes
   `blocked` (a change seen happening, from a live source) while the user is not looking at it
   (`Presence`), it posts through a `Notifier` (the app's is `UNUserNotificationCenter`), one
@@ -325,7 +338,8 @@ observable state; the app reads them inside observation tracking, so a surface r
 what it shows changes. A panel section holds agent rows and project cards, each with its token
 lines already styled and the `PanelAction` it performs (jump to an agent, focus a project), or
 none when the source cannot. Built in: `status`, `notch`, `queue` (the needs-you queue, live
-sources only) and `projects` (the cards; a source that is not live shows its last known state,
+sources only), `usage` (plan usage, read through `ModuleContext.usage` only while a panel is
+open), `notifications` and `projects` (the cards; a source that is not live shows its last known state,
 dimmed, never as current).
 
 `ModuleRegistry` builds the enabled modules from `config.modules` (all, in default order, when

@@ -18,6 +18,8 @@ public struct PanelSection: Sendable, Equatable, Identifiable {
 public enum PanelItem: Sendable, Equatable {
     case agent(PanelAgentRow)
     case project(PanelProjectCard)
+    /// One account's plan usage.
+    case usage(UsageProvider)
     case notice(String)
 }
 

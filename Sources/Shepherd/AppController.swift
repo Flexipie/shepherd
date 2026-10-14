@@ -1,5 +1,6 @@
 import AppKit
 import HerdrSource
+import OpenUsageSource
 import ShepherdCore
 import ShepherdModules
 
@@ -25,13 +26,14 @@ final class AppController {
         store = HerdStore(log: log)
         actions = AppActions(store: store, presence: presence, config: config)
         notifier = SystemNotifier(store: store, actions: actions, config: config)
-        let context = ModuleContext(store: store, presence: presence, actions: actions, config: config, notifier: notifier)
+        let context = ModuleContext(store: store, presence: presence, actions: actions, config: config, notifier: notifier,
+                                    usage: OpenUsageReader())
         registry = ModuleRegistry(available: BuiltinModules.all, context: context)
     }
 
     func start() {
         let content = PanelContentSource(store: store, registry: registry, config: config)
-        let panel = PanelController(content: content, actions: actions)
+        let panel = PanelController(content: content, actions: actions, presence: presence)
         self.panel = panel
         statusItem = StatusItemController(store: store, registry: registry, panel: panel)
         hotKeys = HotKeyCenter(config: config) { [weak self] in
@@ -39,7 +41,7 @@ final class AppController {
             self?.notch?.collapse()
             self?.actions.jumpToNext()
         }
-        notch = NotchSurfaceController(registry: registry, content: content, actions: actions)
+        notch = NotchSurfaceController(registry: registry, content: content, actions: actions, presence: presence)
         Task {
             // The log restores exact times in state, so read it before the first snapshot.
             let history = await log.load()

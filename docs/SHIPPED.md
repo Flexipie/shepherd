@@ -58,3 +58,8 @@ Oldest first.
   toasts). Permission is checked before every post and a refusal shows in the footer.
 - Quick jump from the bar: a hovered or selected agent row shows an arrow that jumps straight to
   the agent; ⌘-click and ⌘Return do the same. A plain click or Return still opens the stage.
+- Usage gadget: a `usage` column next to the needs-you queue (and a section in the menu bar
+  panel) with plan limits for every account OpenUsage tracks, both Claude accounts and Codex, read
+  from OpenUsage's local API by the `OpenUsageSource` target. No credentials, nothing sent off
+  the machine, and reads only while a panel is open, once per OpenUsage refresh. Idle with the
+  bar closed: 0% CPU, about 55 MB, no connections.

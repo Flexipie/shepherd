@@ -51,6 +51,12 @@ import Testing
         }
     }
 
+    @Test func panelWithUsage() throws {
+        try Snapshot.check("panel-usage", width: PanelView.width) {
+            PanelView(content: SampleHerd.contentWithUsage, clock: .fixed(SampleHerd.now)) { _ in }
+        }
+    }
+
     @Test func emptyAndDisconnectedPanel() throws {
         try Snapshot.check("panel-disconnected", width: PanelView.width) {
             PanelView(content: SampleHerd.disconnected, clock: .fixed(SampleHerd.now)) { _ in }

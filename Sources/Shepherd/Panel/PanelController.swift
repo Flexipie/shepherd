@@ -11,6 +11,7 @@ import SwiftUI
 final class PanelController: NSObject, NSWindowDelegate {
     private let content: PanelContentSource
     private let actions: any AgentActions
+    private let presence: Presence
     private var panel: ShepherdPanel?
     private var hosting: PanelHostingView<PanelView>?
     private var anchor: NSRect = .zero
@@ -24,9 +25,10 @@ final class PanelController: NSObject, NSWindowDelegate {
 
     var isOpen: Bool { panel != nil }
 
-    init(content: PanelContentSource, actions: any AgentActions) {
+    init(content: PanelContentSource, actions: any AgentActions, presence: Presence) {
         self.content = content
         self.actions = actions
+        self.presence = presence
     }
 
     /// Opens under `anchor` (a rect in screen coordinates, the status item button) on `screen`.
@@ -54,6 +56,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         panel.makeKeyAndOrderFront(nil)
         startMonitoring()
         render(generation)
+        presence.setPanel("menu", visible: true)
         onVisibilityChange?(true)
     }
 
@@ -66,6 +69,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         self.panel = nil
         hosting = nil
         closedAt = Date()
+        presence.setPanel("menu", visible: false)
         onVisibilityChange?(false)
     }
 
