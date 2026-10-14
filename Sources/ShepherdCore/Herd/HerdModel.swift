@@ -98,10 +98,12 @@ public struct HerdAgent: Sendable, Equatable, Identifiable {
     public let tokens: [String: String]
     /// The source's own UI has this agent focused, so the user may be looking at it.
     public let isFocusedInSource: Bool
+    /// The agent's own session, when the source knows it.
+    public let session: AgentSession?
 
     public init(id: AgentID, kind: String? = nil, name: String, projectID: ProjectID? = nil, project: String = "",
                 status: HerdStatus, statusLabel: String? = nil, since: Since? = nil, tokens: [String: String] = [:],
-                isFocusedInSource: Bool = false) {
+                isFocusedInSource: Bool = false, session: AgentSession? = nil) {
         self.id = id
         self.kind = kind
         self.name = name
@@ -112,6 +114,7 @@ public struct HerdAgent: Sendable, Equatable, Identifiable {
         self.since = since
         self.tokens = tokens
         self.isFocusedInSource = isFocusedInSource
+        self.session = session
     }
 }
 

@@ -37,12 +37,16 @@ public struct PanelAgentRow: Sendable, Equatable {
     public let isLive: Bool
     /// nil when the source cannot do it.
     public let action: PanelAction?
+    /// How many tokens the agent's context holds, when a reader found out.
+    public let contextTokens: Int?
 
-    public init(agent: HerdAgent, tokens: [[StyledToken]] = [], isLive: Bool = true, action: PanelAction? = nil) {
+    public init(agent: HerdAgent, tokens: [[StyledToken]] = [], isLive: Bool = true, action: PanelAction? = nil,
+                contextTokens: Int? = nil) {
         self.agent = agent
         self.tokens = tokens
         self.isLive = isLive
         self.action = action
+        self.contextTokens = contextTokens
     }
 }
 

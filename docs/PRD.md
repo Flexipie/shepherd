@@ -86,6 +86,16 @@ As built:
   calls only: CPU as the busy share of `HOST_CPU_LOAD_INFO` ticks since the previous sample,
   memory from `HOST_VM_INFO64` as Activity Monitor's "Memory Used" (internal less purgeable,
   plus wired, plus compressed pages), total from `ProcessInfo.physicalMemory`.
+- An agent's own files are read the same way, never as a source: herdr reports each agent's
+  `cwd` and `agent_session` (`{"agent":"claude","kind":"id","value":"<session id>"}`), which
+  `HerdrSource` passes on as a source-neutral `HerdAgent.session` (`AgentSession`: kind, id,
+  cwd). `ClaudeSessionSource` implements `AgentContextReader` for Claude Code: the file is
+  `<CLAUDE_CONFIG_DIR or ~/.claude>/projects/<cwd, every non-alphanumeric character as "-">/<id>.jsonl`,
+  else a one-time search of `projects/*/<id>.jsonl`. Session ids other than letters, digits,
+  "-" and "_" are refused. Off the main actor it reads the last 256 KB, drops the first (cut)
+  line, and walks back to the last assistant line that is not a sidechain or a synthetic error
+  with `message.usage`; the size is input plus cache read plus cache creation tokens. Readings
+  are cached by path, size and modification date, so an unchanged file costs one `stat`.
 
 ### Transition history
 
@@ -260,6 +270,13 @@ Every surface is optional and degrades on its own.
   bars, reusing the usage card. While a panel is open it samples on opening (which only primes
   the CPU reading), after 0.5 s, then every 2 s; closing cancels the task, so nothing runs
   while closed.
+- **Context size** (the `context` module, no section of its own): a Claude Code agent's
+  context size on its row ("184k", before the time; help "Context: 184,213 tokens") and in its
+  stage header ("184k context"). While a panel is open the module reads every agent with a
+  session on opening, then an agent again when its status changes, into
+  `ModuleContext.agentContext` (`AgentContextStore`), which `queue` and `projects` read into
+  `PanelAgentRow.contextTokens`. Closed, nothing is read; gone agents drop out; turned off, the
+  store empties and rows show no size.
 - **Notifications** (the `notifications` module, off by default). When an agent becomes
   `blocked` (a change seen happening, from a live source) while the user is not looking at it
   (`Presence`), it posts through a `Notifier` (the app's is `UNUserNotificationCenter`), one
@@ -348,7 +365,8 @@ lines already styled and the `PanelAction` it performs (jump to an agent, focus 
 none when the source cannot. Built in: `status`, `notch`, `queue` (the needs-you queue, live
 sources only), `usage` (plan usage, read through `ModuleContext.usage` only while a panel is
 open), `system` (CPU and memory, sampled through `ModuleContext.system` only while a panel is
-open), `notifications` and `projects` (the cards; a source that is not live shows its last known state,
+open), `context` (context sizes, read through `ModuleContext.contextReader` only while a
+panel is open), `notifications` and `projects` (the cards; a source that is not live shows its last known state,
 dimmed, never as current).
 
 `ModuleRegistry` builds the enabled modules from `config.modules` (all, in default order, when

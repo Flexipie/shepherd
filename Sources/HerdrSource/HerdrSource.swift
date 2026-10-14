@@ -200,7 +200,7 @@ public final class HerdrSource: AgentSource {
                 projectID: ProjectID(source: id, local: agent.workspaceID), project: state.workspaceLabel,
                 status: Self.status(agent.status), statusLabel: agent.stateLabels[agent.status.rawValue],
                 since: state.since.map(Self.since), tokens: agent.tokens,
-                isFocusedInSource: agent.id == snapshot.focusedPaneID)
+                isFocusedInSource: agent.id == snapshot.focusedPaneID, session: Self.session(agent))
         }
         let transitions = update.transitions.map { transition -> HerdTransition in
             let info = known[transition.paneID]
@@ -215,6 +215,13 @@ public final class HerdrSource: AgentSource {
         return SourceUpdate(agents: agents, projects: projects, state: Self.state(update.connection),
                             statusLines: connectionLines + sidebar.problems, transitions: transitions,
                             tokenLayout: sidebar.layout, postsSystemAlerts: postsSystemAlerts)
+    }
+
+    /// The agent's own session, when herdr reports its id.
+    static func session(_ agent: Agent) -> AgentSession? {
+        guard let session = agent.session, session.kind == "id", let id = session.value, !id.isEmpty,
+              let kind = session.agent ?? agent.agent else { return nil }
+        return AgentSession(kind: kind, id: id, cwd: agent.cwd)
     }
 
     static func status(_ status: AgentStatus) -> HerdStatus {

@@ -33,7 +33,8 @@ public final class ProjectsModule: ShepherdModule {
         let canJump = can(.focus, source)
         let rows = agents.map { agent in
             PanelAgentRow(agent: agent, tokens: context.tokenLines(.agents, values: agent.tokens, source: source),
-                          isLive: live, action: canJump ? .jump(agent.id) : nil)
+                          isLive: live, action: canJump ? .jump(agent.id) : nil,
+                          contextTokens: context.agentContext.tokens[agent.id])
         }
         return PanelProjectCard(project: project, tokens: context.tokenLines(.projects, values: project.tokens, source: source),
                                 agents: rows, isLive: live, action: action)

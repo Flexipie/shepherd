@@ -26,10 +26,13 @@ public struct FakeHerd: Sendable, Equatable {
         public var stateChangeSeq: UInt64 = 0
         public var completionSeq: UInt64? = nil
         public var tokens: [String: String] = [:]
+        public var cwd: String?
+        /// The agent's session id, sent as `agent_session` with kind `id`.
+        public var sessionID: String?
 
         public init(id: String, workspaceID: String, terminalID: String? = nil, agent: String? = "claude",
                     status: String = "idle", stateChangeSeq: UInt64 = 1, completionSeq: UInt64? = nil,
-                    tokens: [String: String] = [:]) {
+                    tokens: [String: String] = [:], cwd: String? = nil, sessionID: String? = nil) {
             self.id = id
             self.workspaceID = workspaceID
             self.terminalID = terminalID ?? "term-\(id)"
@@ -38,6 +41,8 @@ public struct FakeHerd: Sendable, Equatable {
             self.stateChangeSeq = stateChangeSeq
             self.completionSeq = completionSeq
             self.tokens = tokens
+            self.cwd = cwd
+            self.sessionID = sessionID
         }
     }
 
@@ -145,6 +150,7 @@ public struct FakeHerd: Sendable, Equatable {
         ]
         if let agent = pane.agent { json["agent"] = agent }
         if !pane.tokens.isEmpty { json["tokens"] = pane.tokens }
+        if let cwd = pane.cwd { json["cwd"] = cwd }
         return json
     }
 
@@ -152,6 +158,9 @@ public struct FakeHerd: Sendable, Equatable {
         var json = paneJSON(pane)
         json["state_change_seq"] = pane.stateChangeSeq
         json["completion_seq"] = pane.completionSeq.map { $0 as Any } ?? NSNull()
+        if let sessionID = pane.sessionID, let agent = pane.agent {
+            json["agent_session"] = ["agent": agent, "kind": "id", "value": sessionID]
+        }
         return json
     }
 }
