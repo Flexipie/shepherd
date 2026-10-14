@@ -30,12 +30,8 @@ while shown, and never polls in the background. Everything stays local.
   ear and pill show, keyboard and mouse rough edges. (Jumping in one step shipped.)
 - CPU and memory gadget: system CPU and memory, sampled (Mach host statistics) only while the bar
   is open.
-- Claude Code usage gadget: tokens used today and per session, and how close the plan's usage
-  limits are, as a bar. Spike first: find a local, read-only source (Claude Code's own session
-  files under `~/.claude`) and what it can and cannot tell; a source that needs the network or
-  stored credentials stays opt-in and says so.
-- Per-agent tokens: an agent's token count on its row or stage, from the same source, when the
-  agent is Claude Code.
+- Per-agent tokens: an agent's token count on its row or stage when the agent is Claude Code,
+  from its session file under `~/.claude` (needs mapping a herdr pane to its session).
 
 Done when: the user keeps the gadgets on for a week, and idle CPU and memory with the bar closed
 are the same as without them.

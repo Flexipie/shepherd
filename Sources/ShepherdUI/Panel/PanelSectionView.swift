@@ -41,7 +41,7 @@ struct PanelSectionView: View {
     }
 }
 
-/// One item: an agent row (with its project), a project card or a notice. Hovering selects.
+/// One item: an agent row (with its project), a project card, a usage card or a notice. Hovering selects.
 /// With `jump`, agent rows show a jump arrow and ⌘-click jumps instead of `perform`.
 struct PanelItemView: View {
     let item: PanelItem
@@ -65,6 +65,8 @@ struct PanelItemView: View {
             ProjectCard(card: card, now: now, selection: selection, sectionID: sectionID, jump: jump, perform: perform) { id in
                 if let id { select(id) }
             }
+        case .usage(let provider):
+            UsageCard(provider: provider, now: now)
         case .notice(let text):
             Text(text)
                 .font(.system(size: 12))

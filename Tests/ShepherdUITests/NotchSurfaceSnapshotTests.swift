@@ -109,6 +109,16 @@ import Testing
         try checkExpanded("notch-expanded", SampleHerd.content)
     }
 
+    @Test func expandedWithUsage() throws {
+        try checkExpanded("notch-bar-usage", SampleHerd.contentWithUsage)
+    }
+
+    @Test func expandedWithUsageNotRunning() throws {
+        let content = PanelContent(sections: [SampleHerd.queue, SampleHerd.usageNotRunning, SampleHerd.projects],
+                                   statusLines: SampleHerd.content.statusLines)
+        try checkExpanded("notch-bar-usage-not-running", content)
+    }
+
     @Test func expandedEmptyAndDisconnected() throws {
         try checkExpanded("notch-bar-disconnected", SampleHerd.disconnected)
     }

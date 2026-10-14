@@ -33,6 +33,13 @@ PR number, a diff, a review verdict), and lets you act on it without switching t
 - **New task.** The "+" after the project columns: pick a project, an agent and a prompt
   (a branch name is optional). Shepherd creates a git worktree from that project's repo, starts
   the agent in it and sends the prompt, then shows you the new agent.
+- **Usage.** A column next to the needs-you list shows your Claude Code plan limits (session,
+  weekly, per model, extra usage) for every account, plus Codex and anything else you track, with
+  when each resets. It reads them from [OpenUsage](https://github.com/robinebers/openusage), which
+  must be running: Shepherd asks its local API on `127.0.0.1:6736` and nothing else, holds no
+  credentials and sends nothing anywhere. It reads only while the bar or panel is open, at most
+  once per OpenUsage refresh. Without OpenUsage the column says so. Turn it off by leaving `usage`
+  out of `modules`.
 - **Notch pill** (a small floating bar on Macs without a notch). A blocked agent stays until it is
   handled; a finished one shows for a few seconds. Nothing shows for the pane you are already
   looking at. Click to focus the pane in herdr and bring your terminal forward.
@@ -53,7 +60,7 @@ can be left out:
 
 ```json
 {
-  "modules": ["status", "notch", "queue", "projects"],
+  "modules": ["status", "notch", "queue", "usage", "projects"],
   "tokens": {
     "projects": [[{ "token": "pr", "fg": "#94e2d5", "rules": [{ "contains": "draft", "dim": true }] }, "ticket_state"]],
     "agents": [["summary"]]
@@ -122,6 +129,11 @@ Shepherd has no third-party dependencies.
 
 [docs/README.md](docs/README.md) indexes everything else, including the architecture and how to add
 a module ([docs/PRD.md](docs/PRD.md)).
+
+## Thanks
+
+The usage column reads from [OpenUsage](https://github.com/robinebers/openusage) by Robin Ebers
+(MIT), which does the hard part of finding and refreshing each account.
 
 ## License
 

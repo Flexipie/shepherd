@@ -1,0 +1,55 @@
+{
+  "schema": "openusage.limits.v1",
+  "generatedAt": "2030-01-01T12:00:00.000Z",
+  "providers": {
+    "codex": {
+      "displayName": "Codex",
+      "plan": "Plus",
+      "stale": false,
+      "fetchedAt": "2030-01-01T11:58:00.000Z",
+      "expiresAt": "2030-01-01T12:03:00.000Z",
+      "resources": {
+        "weekly": { "kind": "consumption", "unit": "percent", "used": 36, "limit": 100, "remaining": 64,
+                    "utilization": 0.36, "resetsAt": "2030-01-05T08:00:00.000Z", "windowSeconds": 604800 },
+        "credits": { "kind": "balance", "unit": "credits", "available": 0 },
+        "rateLimitResets": { "kind": "balance", "unit": "resets", "available": 2,
+                             "expiresAt": ["2030-01-10T00:00:00.000Z", "2030-01-12T00:00:00.000Z"] }
+      }
+    },
+    "claude@a1b2c3": {
+      "displayName": "Claude",
+      "plan": "Team",
+      "stale": true,
+      "fetchedAt": "2029-12-31T09:00:00.000Z",
+      "expiresAt": "2029-12-31T09:05:00.000Z",
+      "resources": {
+        "weekly": { "kind": "consumption", "unit": "percent", "used": 100, "limit": 100, "utilization": 1,
+                    "resetsAt": "2030-01-02T20:00:00.000Z" },
+        "extraUsage": { "kind": "consumption", "unit": "usd", "used": 114.3, "limit": 350, "utilization": 0.3266 },
+        "someNewLimit": { "kind": "consumption", "unit": "requests", "used": 40, "limit": 200 },
+        "broken": { "kind": "consumption", "used": "lots" },
+        "futureThing": { "kind": "gauge", "value": 3 }
+      }
+    },
+    "claude": {
+      "displayName": "Claude",
+      "plan": "Max 5x",
+      "stale": false,
+      "fetchedAt": "2030-01-01T11:57:00.000Z",
+      "expiresAt": "2030-01-01T12:02:00.000Z",
+      "newProviderField": { "anything": true },
+      "resources": {
+        "weekly": { "kind": "consumption", "unit": "percent", "used": 21, "limit": 100, "utilization": 0.21,
+                    "resetsAt": "2030-01-06T14:00:00.000Z" },
+        "session": { "kind": "consumption", "unit": "percent", "used": 77, "limit": 100, "utilization": 0.77,
+                     "resetsAt": "2030-01-01T14:10:00.000Z" },
+        "sonnet": { "kind": "consumption", "unit": "percent", "used": 3, "limit": 100, "utilization": 0.03 }
+      }
+    },
+    "weird": "not an object"
+  },
+  "errors": [
+    { "providerId": "claude@a1b2c3", "message": "Session expired. Run `claude` to log in again." },
+    { "providerId": "cursor", "message": "Not signed in." }
+  ]
+}

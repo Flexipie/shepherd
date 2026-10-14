@@ -26,7 +26,10 @@ final class NotchSurfaceController: NSObject, NSWindowDelegate {
     private var geometry: NotchGeometry?
     private var panel: NotchSurfacePanel?
     private var hosting: NotchHostingView?
-    private var expanded = false
+    private let presence: Presence
+    private var expanded = false {
+        didSet { presence.setPanel("notch", visible: expanded) }
+    }
     private var hoverTask: Task<Void, Never>?
     /// Bumps on every render, so a stale observation callback is ignored.
     private var renderToken = 0
@@ -34,10 +37,11 @@ final class NotchSurfaceController: NSObject, NSWindowDelegate {
     private var morphToken = 0
     private var screenObserver: NSObjectProtocol?
 
-    init(registry: ModuleRegistry, content: PanelContentSource, actions: any AgentActions) {
+    init(registry: ModuleRegistry, content: PanelContentSource, actions: any AgentActions, presence: Presence) {
         self.registry = registry
         self.content = content
         self.actions = actions
+        self.presence = presence
         stage = StageModel(store: content.store, actions: actions, config: content.config)
         super.init()
         screenObserver = NotificationCenter.default.addObserver(

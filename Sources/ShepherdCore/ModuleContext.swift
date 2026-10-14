@@ -10,14 +10,17 @@ public final class ModuleContext {
     public let config: ConfigStore
     /// Posts system notifications; nil where there are none (tests, or before the app sets one).
     public let notifier: (any Notifier)?
+    /// Reads plan usage limits; nil where there is no reader.
+    public let usage: (any UsageReader)?
 
     public init(store: HerdStore, presence: Presence, actions: any AgentActions, config: ConfigStore = ConfigStore(fixed: .defaults),
-                notifier: (any Notifier)? = nil) {
+                notifier: (any Notifier)? = nil, usage: (any UsageReader)? = nil) {
         self.store = store
         self.presence = presence
         self.actions = actions
         self.config = config
         self.notifier = notifier
+        self.usage = usage
     }
 
     /// Token lines for a project's or an agent's values: the config's layout for that section,
@@ -33,8 +36,18 @@ public final class ModuleContext {
 public final class Presence {
     /// Sources whose host app is frontmost, so the agent each has focused is on screen.
     public var frontmostSources: Set<SourceID> = []
+    /// The surfaces showing the panel's content right now: the menu bar panel, the notch bar.
+    public private(set) var visiblePanels: Set<String> = []
 
     public init() {}
+
+    /// Whether any panel is open, so a module that reads something only while shown can read.
+    public var isPanelVisible: Bool { !visiblePanels.isEmpty }
+
+    public func setPanel(_ surface: String, visible: Bool) {
+        guard visiblePanels.contains(surface) != visible else { return }
+        if visible { visiblePanels.insert(surface) } else { visiblePanels.remove(surface) }
+    }
 
     /// Whether the user is probably looking at this agent right now.
     public func isLookingAt(_ agent: HerdAgent) -> Bool {

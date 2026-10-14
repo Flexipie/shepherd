@@ -124,7 +124,10 @@ Local first; see PRD "Intelligence" for the rules every idea here follows.
 - **Liquid Glass.** Use the system glass material for the notch pill and panel so
   Shepherd looks like part of the system.
 - **Haptic nudge.** A light trackpad haptic when hovering the notch while something needs you.
-- **More notch gadgets.** System and Claude Code usage gadgets are on the roadmap (milestone 3).
+- **Built-in Claude usage reader.** For people without OpenUsage, a fallback `UsageReader` that
+  reads Claude Code's own token and asks the usage endpoint. Read-only: it must never refresh a
+  token or write to Claude Code's keychain item, and it stays opt-in since it uses the network.
+- **More notch gadgets.** A system gadget is on the roadmap (milestone 3).
   Others that could follow as modules whose sections become columns: a timer, a clipboard shelf,
   a scratch note. Each must not dilute "your herd at a glance".
 
