@@ -82,6 +82,10 @@ As built:
   no proxy, loopback only (`SHEPHERD_OPENUSAGE_URL` may point at another loopback address).
   Decoding is lenient; `consumption` resources become meters, non-empty `balance` ones notes,
   `errors[]` notes on their provider. Shepherd never reads credentials or calls a vendor API.
+  `SystemSource` implements `SystemSampler` (`SystemSample` in `ShepherdCore`) with Mach host
+  calls only: CPU as the busy share of `HOST_CPU_LOAD_INFO` ticks since the previous sample,
+  memory from `HOST_VM_INFO64` as Activity Monitor's "Memory Used" (internal less purgeable,
+  plus wired, plus compressed pages), total from `ProcessInfo.physicalMemory`.
 
 ### Transition history
 
@@ -252,6 +256,10 @@ Every surface is optional and degrades on its own.
   stale. It reads only while a panel is open (`Presence.isPanelVisible`): on opening when the
   last report is missing or past its earliest future `expiresAt`, then once more at that time if
   still open; closing cancels it. Without OpenUsage running the column says so.
+- **This Mac** (the `system` module), a column after usage: one card with CPU and memory as
+  bars, reusing the usage card. While a panel is open it samples on opening (which only primes
+  the CPU reading), after 0.5 s, then every 2 s; closing cancels the task, so nothing runs
+  while closed.
 - **Notifications** (the `notifications` module, off by default). When an agent becomes
   `blocked` (a change seen happening, from a live source) while the user is not looking at it
   (`Presence`), it posts through a `Notifier` (the app's is `UNUserNotificationCenter`), one
@@ -339,6 +347,7 @@ what it shows changes. A panel section holds agent rows and project cards, each 
 lines already styled and the `PanelAction` it performs (jump to an agent, focus a project), or
 none when the source cannot. Built in: `status`, `notch`, `queue` (the needs-you queue, live
 sources only), `usage` (plan usage, read through `ModuleContext.usage` only while a panel is
+open), `system` (CPU and memory, sampled through `ModuleContext.system` only while a panel is
 open), `notifications` and `projects` (the cards; a source that is not live shows its last known state,
 dimmed, never as current).
 

@@ -3,6 +3,7 @@ import HerdrSource
 import OpenUsageSource
 import ShepherdCore
 import ShepherdModules
+import SystemSource
 
 /// Wires the store, sources, modules and surfaces together. Owns everything for the app's lifetime.
 @MainActor
@@ -27,7 +28,7 @@ final class AppController {
         actions = AppActions(store: store, presence: presence, config: config)
         notifier = SystemNotifier(store: store, actions: actions, config: config)
         let context = ModuleContext(store: store, presence: presence, actions: actions, config: config, notifier: notifier,
-                                    usage: OpenUsageReader())
+                                    usage: OpenUsageReader(), system: MachSystemSampler())
         registry = ModuleRegistry(available: BuiltinModules.all, context: context)
     }
 

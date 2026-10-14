@@ -12,15 +12,18 @@ public final class ModuleContext {
     public let notifier: (any Notifier)?
     /// Reads plan usage limits; nil where there is no reader.
     public let usage: (any UsageReader)?
+    /// Measures the Mac's CPU and memory; nil where there is no sampler.
+    public let system: (any SystemSampler)?
 
     public init(store: HerdStore, presence: Presence, actions: any AgentActions, config: ConfigStore = ConfigStore(fixed: .defaults),
-                notifier: (any Notifier)? = nil, usage: (any UsageReader)? = nil) {
+                notifier: (any Notifier)? = nil, usage: (any UsageReader)? = nil, system: (any SystemSampler)? = nil) {
         self.store = store
         self.presence = presence
         self.actions = actions
         self.config = config
         self.notifier = notifier
         self.usage = usage
+        self.system = system
     }
 
     /// Token lines for a project's or an agent's values: the config's layout for that section,

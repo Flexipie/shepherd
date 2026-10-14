@@ -63,3 +63,6 @@ Oldest first.
   from OpenUsage's local API by the `OpenUsageSource` target. No credentials, nothing sent off
   the machine, and reads only while a panel is open, once per OpenUsage refresh. Idle with the
   bar closed: 0% CPU, about 55 MB, no connections.
+- System gadget: a `system` column ("This Mac") after usage with the whole Mac's CPU and memory
+  as two bars, from Mach host statistics in the `SystemSource` target. It samples every 2 s only
+  while the bar or panel is open; closed, no task and no system calls.

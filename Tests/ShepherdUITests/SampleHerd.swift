@@ -108,5 +108,16 @@ enum SampleHerd {
     ], emptyText: "")
 
     static let contentWithUsage = PanelContent(sections: [queue, usage, projects], statusLines: content.statusLines)
+
+    // MARK: This Mac
+
+    static let system = PanelSection(id: "system", title: "This Mac", items: [
+        .usage(UsageProvider(id: "system", name: "CPU and memory", meters: [
+            meter("cpu", "CPU", 0.23),
+            meter("memory", "Memory", 0.86, "31.0 of 36 GB"),
+        ])),
+    ], emptyText: "Measuring…")
+
+    static let contentWithSystem = PanelContent(sections: [queue, usage, system, projects], statusLines: content.statusLines)
 }
 
