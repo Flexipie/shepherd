@@ -8,6 +8,7 @@ public enum BuiltinModules {
         NotchModule.self,
         QueueModule.self,
         UsageModule.self,
+        SystemModule.self,
         ProjectsModule.self,
         NotificationsModule.self,
     ]

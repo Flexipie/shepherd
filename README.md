@@ -40,6 +40,9 @@ PR number, a diff, a review verdict), and lets you act on it without switching t
   credentials and sends nothing anywhere. It reads only while the bar or panel is open, at most
   once per OpenUsage refresh. Without OpenUsage the column says so. Turn it off by leaving `usage`
   out of `modules`.
+- **This Mac.** A small column after usage shows the whole Mac's CPU and memory as two bars
+  (memory as Activity Monitor's "Memory Used"). It samples every 2 seconds only while the bar or
+  panel is open; closed, nothing runs. Turn it off by leaving `system` out of `modules`.
 - **Notch pill** (a small floating bar on Macs without a notch). A blocked agent stays until it is
   handled; a finished one shows for a few seconds. Nothing shows for the pane you are already
   looking at. Click to focus the pane in herdr and bring your terminal forward.
@@ -60,7 +63,7 @@ can be left out:
 
 ```json
 {
-  "modules": ["status", "notch", "queue", "usage", "projects"],
+  "modules": ["status", "notch", "queue", "usage", "system", "projects"],
   "tokens": {
     "projects": [[{ "token": "pr", "fg": "#94e2d5", "rules": [{ "contains": "draft", "dim": true }] }, "ticket_state"]],
     "agents": [["summary"]]

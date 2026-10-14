@@ -24,16 +24,19 @@ let package = Package(
         .target(name: "HerdrSource", dependencies: ["HerdrKit", "ShepherdCore"]),
         // OpenUsage's local API as a usage reader: loopback only, read-only, no credentials.
         .target(name: "OpenUsageSource", dependencies: ["ShepherdCore"]),
+        // The Mac's CPU and memory from Mach host calls, as a system sampler. No files, no I/O.
+        .target(name: "SystemSource", dependencies: ["ShepherdCore"]),
         // Built-in features, one folder per module.
         .target(name: "ShepherdModules", dependencies: ["ShepherdCore"]),
         // SwiftUI views for the panel and the notch pill. Values in, no windows, no glass, so
         // every view can be snapshot tested.
         .target(name: "ShepherdUI", dependencies: ["ShepherdCore"]),
         // The app: menu bar item, panel, notch pill, settings.
-        .executableTarget(name: "Shepherd", dependencies: ["ShepherdModules", "ShepherdCore", "ShepherdUI", "HerdrSource", "OpenUsageSource"]),
+        .executableTarget(name: "Shepherd", dependencies: ["ShepherdModules", "ShepherdCore", "ShepherdUI", "HerdrSource", "OpenUsageSource", "SystemSource"]),
         .testTarget(name: "HerdrKitTests", dependencies: ["HerdrKit", "HerdrFake"]),
         .testTarget(name: "HerdrSourceTests", dependencies: ["HerdrSource", "HerdrKit", "HerdrFake", "ShepherdCore"]),
         .testTarget(name: "OpenUsageSourceTests", dependencies: ["OpenUsageSource", "ShepherdCore"], resources: [.copy("Fixtures")]),
+        .testTarget(name: "SystemSourceTests", dependencies: ["SystemSource", "ShepherdCore"]),
         .testTarget(name: "ShepherdCoreTests", dependencies: ["ShepherdCore", "ShepherdModules"]),
         .testTarget(name: "ShepherdUITests", dependencies: ["ShepherdUI", "ShepherdCore"], exclude: ["__Snapshots__"]),
     ]
