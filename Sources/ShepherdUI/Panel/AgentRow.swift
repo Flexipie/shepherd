@@ -2,12 +2,16 @@ import ShepherdCore
 import SwiftUI
 
 /// An agent in the queue (with its project) or in a project card (without). One accessibility
-/// element: "codex, api, needs you, 4 minutes".
+/// element: "codex, api, needs you, 4 minutes". With `onJump`, an arrow after the time jumps
+/// straight to the agent; it shows while the row is hovered or selected.
 struct AgentRow: View {
     let row: PanelAgentRow
     let now: Date
     var showsProject = false
     var isSelected = false
+    var onJump: (() -> Void)?
+
+    @State private var isHovered = false
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -26,6 +30,9 @@ struct AgentRow: View {
                             .font(.system(size: 11).monospacedDigit())
                             .foregroundStyle(.secondary)
                     }
+                    if let onJump {
+                        jumpButton(onJump)
+                    }
                 }
                 .lineLimit(1)
                 TokenLines(lines: row.tokens, isLive: row.isLive)
@@ -36,9 +43,29 @@ struct AgentRow: View {
         .padding(.vertical, showsProject ? 6 : 4)
         .background(RoundedRectangle(cornerRadius: 7).fill(isSelected ? Color.accentColor.opacity(0.18) : .clear))
         .contentShape(Rectangle())
+        .onHover { isHovered = $0 }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)
         .accessibilityAddTraits(row.action == nil ? [] : .isButton)
+        .accessibilityActions {
+            if let onJump { Button("Jump", action: onJump) }
+        }
+    }
+
+    /// Always laid out, so the row does not shift when the arrow appears.
+    private func jumpButton(_ onJump: @escaping () -> Void) -> some View {
+        let shows = isHovered || isSelected
+        return Button(action: onJump) {
+            Image(systemName: "arrow.up.right")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: 14, height: 14)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help("Jump to it (⌘-click)")
+        .opacity(shows ? 1 : 0)
+        .allowsHitTesting(shows)
     }
 
     private var subtitle: String {

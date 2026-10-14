@@ -81,3 +81,16 @@ public struct PanelTarget: Sendable, Hashable, Identifiable {
         }
     }
 }
+
+/// What choosing a row in the notch bar does. With ⌘ (click or Return) an agent's row jumps
+/// straight to it; otherwise it opens the agent's stage when the bar has one. Anything else, such
+/// as a project header, does what it always does.
+enum BarChoice: Equatable {
+    case perform(PanelAction)
+    case openStage(AgentID)
+
+    static func choose(_ action: PanelAction, command: Bool, hasStage: Bool) -> BarChoice {
+        if !command, hasStage, case .jump(let agent) = action { return .openStage(agent) }
+        return .perform(action)
+    }
+}

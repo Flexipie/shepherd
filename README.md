@@ -26,7 +26,8 @@ PR number, a diff, a review verdict), and lets you act on it without switching t
   click inside to use the arrow keys (left and right between columns) and Return, Escape to fold
   it.
 - **Answer and prompt from the notch.** Click any agent in the bar to see its last lines right
-  there. For an approval prompt (Claude Code, Codex) its choices are buttons: click one or press
+  there. To skip that and jump straight to the agent, click the arrow on a hovered row, ⌘-click
+  the row, or press ⌘Return. For an approval prompt (Claude Code, Codex) its choices are buttons: click one or press
   its digit. Otherwise use Return, Escape, or type a reply. An agent that is idle or finished gets
   a prompt field instead. Escape goes back.
 - **New task.** The "+" after the project columns: pick a project, an agent and a prompt

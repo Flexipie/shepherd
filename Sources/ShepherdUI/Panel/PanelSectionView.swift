@@ -1,3 +1,4 @@
+import AppKit
 import ShepherdCore
 import SwiftUI
 
@@ -7,6 +8,7 @@ struct PanelSectionView: View {
     let section: PanelSection
     let now: Date
     let selection: PanelTarget.ID?
+    var jump: ((PanelAction) -> Void)?
     let perform: (PanelAction) -> Void
     let select: (PanelTarget.ID) -> Void
 
@@ -33,18 +35,20 @@ struct PanelSectionView: View {
             }
             ForEach(section.items.indices, id: \.self) { index in
                 PanelItemView(item: section.items[index], sectionID: section.id, now: now, selection: selection,
-                              perform: perform, select: select)
+                              jump: jump, perform: perform, select: select)
             }
         }
     }
 }
 
 /// One item: an agent row (with its project), a project card or a notice. Hovering selects.
+/// With `jump`, agent rows show a jump arrow and ⌘-click jumps instead of `perform`.
 struct PanelItemView: View {
     let item: PanelItem
     let sectionID: String
     let now: Date
     let selection: PanelTarget.ID?
+    var jump: ((PanelAction) -> Void)?
     let perform: (PanelAction) -> Void
     let select: (PanelTarget.ID) -> Void
 
@@ -52,12 +56,13 @@ struct PanelItemView: View {
         switch item {
         case .agent(let row):
             let id = row.action.map { PanelTarget.id(section: sectionID, action: $0) }
-            AgentRow(row: row, now: now, showsProject: true, isSelected: id != nil && id == selection)
-                .onTapGesture { if let action = row.action { perform(action) } }
+            AgentRow(row: row, now: now, showsProject: true, isSelected: id != nil && id == selection,
+                     onJump: jumpAction(row))
+                .onTapGesture { if let action = row.action { tap(action, perform: perform, jump: jump) } }
                 .onHover { inside in if inside, let id { select(id) } }
                 .id(id)
         case .project(let card):
-            ProjectCard(card: card, now: now, selection: selection, sectionID: sectionID, perform: perform) { id in
+            ProjectCard(card: card, now: now, selection: selection, sectionID: sectionID, jump: jump, perform: perform) { id in
                 if let id { select(id) }
             }
         case .notice(let text):
@@ -66,5 +71,20 @@ struct PanelItemView: View {
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 8)
         }
+    }
+
+    private func jumpAction(_ row: PanelAgentRow) -> (() -> Void)? {
+        guard let jump, let action = row.action else { return nil }
+        return { jump(action) }
+    }
+}
+
+/// A click on a row: ⌘-click jumps when the row offers it, a plain click performs.
+@MainActor
+func tap(_ action: PanelAction, perform: (PanelAction) -> Void, jump: ((PanelAction) -> Void)?) {
+    if let jump, NSEvent.modifierFlags.contains(.command) {
+        jump(action)
+    } else {
+        perform(action)
     }
 }
