@@ -70,14 +70,15 @@ Oldest first.
   the `context` module through the `ClaudeSessionSource` target from the tail of the session
   file herdr's `agent_session` points at, only while the bar or panel is open (on opening and on
   a status change), cached by size and modification date.
-- Palette: ⌃⌥⌘Space (`hotkeys.palette`, `null` turns it off) opens a search field centred on the
-  screen under the mouse, over any app, without taking the frontmost app's place. It finds live
-  agents, projects and module commands by name, kind, project, status and token values with a
-  fuzzy match (word starts, runs and prefixes first, matched characters bold); with no query,
-  agents that need you come first. Return jumps or focuses the project, Escape closes. Modules
-  contribute commands (`ShepherdModule.commands`); `queue` offers "Next agent that needs you".
-  `HotKeyCenter` handles several named hotkeys and reports a clash between them. Idle with the
-  palette closed: 0% CPU over 30 s, about 56 MB; the first open adds about 45 MB.
+- Palette: ⌥Space (`hotkeys.palette`, `null` turns it off; ⌃⌥⌘Space at first, which is hard to
+  press on a Swedish keyboard) opens a search field centred on the screen under the mouse, over
+  any app, without taking the frontmost app's place. It finds live agents, projects and module
+  commands by name, kind, project, status and token values with a fuzzy match (word starts, runs
+  and prefixes first, matched characters bold); with no query, agents that need you come first.
+  Return jumps or focuses the project, Escape closes. Modules contribute commands
+  (`ShepherdModule.commands`); `queue` offers "Next agent that needs you". `HotKeyCenter` handles
+  several named hotkeys and reports a clash between them. Idle with the palette closed: 0% CPU
+  over 30 s, about 56 MB; the first open adds about 45 MB.
 - Prompt and new task in the palette: Tab (or →) on an agent opens its prompt page (its row, its
   last eight lines, the field), from a second `StageModel` that reads only while the page shows.
   Return replies to a blocked agent and prompts any other; success closes the palette, a failure

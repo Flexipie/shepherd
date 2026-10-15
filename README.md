@@ -20,7 +20,7 @@ PR number, a diff, a review verdict), and lets you act on it without switching t
   Right-click the icon for a small menu with the connection state and Quit.
 - **"Next" hotkey.** ⌃⌥⌘N from any app jumps to the next agent that needs you; press again to
   walk the queue. Nothing waiting, nothing happens.
-- **Palette.** ⌃⌥⌘Space from any app opens a search box in the middle of the screen. Type part of
+- **Palette.** ⌥Space from any app opens a search box in the middle of the screen. Type part of
   an agent, a workspace, a status or any token value (a PR number, a ticket) to find it; up and
   down move, Return jumps (or switches herdr to the workspace), Escape closes. With nothing typed
   it lists the agents that need you first. Commands such as "Next agent that needs you" are in
@@ -85,7 +85,7 @@ can be left out:
     "projects": [[{ "token": "pr", "fg": "#94e2d5", "rules": [{ "contains": "draft", "dim": true }] }, "ticket_state"]],
     "agents": [["summary"]]
   },
-  "hotkeys": { "next": "ctrl+option+cmd+n", "palette": "ctrl+option+cmd+space" },
+  "hotkeys": { "next": "ctrl+option+cmd+n", "palette": "option+space" },
   "agents": { "claude": { "args": [] } },
   "notifications": "off"
 }
@@ -100,8 +100,8 @@ can be left out:
   every token shows unstyled.
 - `hotkeys.next` and `hotkeys.palette`: modifiers (`ctrl`, `option`, `cmd`, `shift`) and one key
   (a-z, 0-9, `space`, `return`, `tab`, `f1`-`f12`); `null` turns one off. macOS does not say when
-  a system shortcut already owns a combination, so if the palette does not open, pick another
-  (`ctrl+option+cmd+p`, for example).
+  a system shortcut or another app (Raycast and Alfred like ⌥Space too) already owns a
+  combination, so if the palette does not open, pick another (`ctrl+option+space`, for example).
 - `agents.<kind>.args`: extra arguments when a new task starts that agent, for example
   `"claude": { "args": ["--dangerously-skip-permissions"] }`. That flag lets Claude Code run every
   tool and command without asking you first, so nothing will block for approval; use it only

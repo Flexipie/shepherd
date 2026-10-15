@@ -314,7 +314,7 @@ Every surface is optional and degrades on its own.
 - **Notifications.** Only for needs-you and token changes the user asked about, with action
   buttons. On first run Shepherd detects whether herdr's own toasts or sounds are on and asks which
   app should alert, rather than firing both.
-- **Palette.** A global hotkey (default ⌃⌥⌘Space, `hotkeys.palette`) opens a search field centred
+- **Palette.** A global hotkey (default ⌥Space, `hotkeys.palette`) opens a search field centred
   in the upper third of the screen under the mouse: a non-activating, key-capable `ShepherdPanel`
   with the glass, like the menu bar panel (`FloatingPanelHost` holds what the two share). It lists
   live agents (as queue rows, with their project), projects and every module's commands, built
@@ -409,7 +409,7 @@ Every key is optional and a missing file means defaults. As built:
 - `modules`: enabled module ids, in order.
 - `tokens`: `projects` and `agents`, each a list of lines in herdr's sidebar syntax (see "Tokens").
 - `hotkeys.next`: the "next" hotkey, `null` to turn it off.
-- `hotkeys.palette`: the palette's hotkey (default `ctrl+option+cmd+space`), `null` to turn it
+- `hotkeys.palette`: the palette's hotkey (default `option+space`), `null` to turn it
   off. `HotKeyCenter` registers each by name, re-registers on change and reports problems as
   `hotkeys.<name>`, including two hotkeys set to the same combination.
 
