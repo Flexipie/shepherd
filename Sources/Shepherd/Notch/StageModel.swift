@@ -20,6 +20,8 @@ final class StageModel {
     private(set) var isBusy = false
     /// A task's agent that started but is not in the herd yet: its kind and where it runs.
     private(set) var starting: (kind: String, place: String)?
+    /// The project the new task form opened with, when one was asked for.
+    private(set) var taskProject: ProjectID?
 
     @ObservationIgnored private let store: HerdStore
     @ObservationIgnored private let actions: any AgentActions
@@ -56,9 +58,10 @@ final class StageModel {
         read(agent, generation)
     }
 
-    func openNewTask() {
-        guard mode != .newTask else { return }
+    func openNewTask(in project: ProjectID? = nil) {
+        guard mode != .newTask || taskProject != project else { return }
         reset(to: .newTask)
+        taskProject = project
     }
 
     func close() {
@@ -72,17 +75,18 @@ final class StageModel {
         error = nil
         isBusy = false
         starting = nil
+        taskProject = nil
         watchedStatus = nil
     }
 
     // MARK: Sending
 
     /// Keys go to the agent as they are; text is a reply while it is blocked and a prompt
-    /// otherwise.
-    func send(_ action: StageAction) {
+    /// otherwise. `onSuccess` runs once it was sent, if this stage is still open.
+    func send(_ action: StageAction, onSuccess: (@MainActor () -> Void)? = nil) {
         guard case .agent(let agent) = mode, !isBusy else { return }
         let blocked = store.agents.first { $0.id == agent }?.status == .blocked
-        run(failure: "Could not send") { [actions] in
+        run(failure: "Could not send", onSuccess: onSuccess) { [actions] in
             switch action {
             case .keys(let keys): try await actions.sendKeys(agent, keys)
             case .reply(let text) where blocked: try await actions.sendText(agent, text)
@@ -104,13 +108,15 @@ final class StageModel {
         }
     }
 
-    private func run(failure: String, _ work: @escaping @MainActor () async throws -> Void) {
+    private func run(failure: String, onSuccess: (@MainActor () -> Void)? = nil,
+                     _ work: @escaping @MainActor () async throws -> Void) {
         let generation = generation
         isBusy = true
         error = nil
         Task {
             do {
                 try await work()
+                if generation == self.generation { onSuccess?() }
             } catch {
                 guard generation == self.generation else { return }
                 self.error = "\(failure): \(error)"
@@ -122,26 +128,32 @@ final class StageModel {
     // MARK: What the bar shows
 
     func stage(in content: PanelContent) -> BarStage? {
+        stage { Self.row(for: $0, in: content) }
+    }
+
+    /// The stage, taking an agent's row (with its tokens and context size) from `row`.
+    func stage(row: (AgentID) -> PanelAgentRow?) -> BarStage? {
         switch mode {
         case nil: return nil
         case .newTask:
             let projects = taskProjects
             let kinds = (config.config.agents.keys.sorted() + Self.defaultKinds + store.agents.compactMap(\.kind))
                 .reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } }
-            return .newTask(NewTaskStage(projects: projects, suggestedProject: projects.first { $0.isFocusedInSource }?.id,
+            let suggested = taskProject ?? projects.first { $0.isFocusedInSource }?.id
+            return .newTask(NewTaskStage(projects: projects, suggestedProject: suggested,
                                          kinds: kinds, isStarting: isBusy, error: error))
         case .agent(let agent):
-            return agentStage(agent, in: content).map(BarStage.agent)
+            return agentStage(agent, row: row).map(BarStage.agent)
         }
     }
 
     /// nil when the agent is gone, unless it is a new task's agent the herd has not shown yet.
-    private func agentStage(_ agent: AgentID, in content: PanelContent) -> AgentStage? {
+    private func agentStage(_ agent: AgentID, row: (AgentID) -> PanelAgentRow?) -> AgentStage? {
         let herdAgent = store.agents.first { $0.id == agent } ?? starting.map {
             HerdAgent(id: agent, kind: $0.kind, name: $0.kind, project: $0.place, status: .unknown, statusLabel: "starting")
         }
         guard let herdAgent else { return nil }
-        let row = Self.row(for: agent, in: content) ?? PanelAgentRow(agent: herdAgent, action: .jump(agent))
+        let row = row(agent) ?? PanelAgentRow(agent: herdAgent, action: .jump(agent))
         let capabilities = actions.capabilities(of: agent)
         let blocked = herdAgent.status == .blocked
         return AgentStage(

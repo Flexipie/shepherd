@@ -19,6 +19,47 @@ import Testing
         }
     }
 
+    /// An idle agent's prompt: its row, its last lines, the field.
+    @Test func prompt() throws {
+        let stage = AgentStage(row: SampleHerd.row(SampleHerd.working, context: 184_213),
+                               lines: ["Running the test suite.", "", "All 40 tests pass.", "", "> "], canReply: true, prompts: true)
+        try Snapshot.check("palette-prompt", width: PaletteView.width) {
+            PaletteView(content: PaletteContent(items: SamplePalette.content.items, page: .prompt(stage)),
+                        clock: .fixed(SampleHerd.now)) { _ in }
+        }
+    }
+
+    /// A blocked agent: its choices with ⌘ digits, and a failed send kept on screen.
+    @Test func promptBlocked() throws {
+        let text = """
+        Bash command
+
+          make migrate
+          Apply the schema change
+
+        Do you want to proceed?
+        ❯ 1. Yes
+          2. Yes, and don't ask again for make commands in /work/api
+          3. No, and tell Claude what to do differently (esc)
+        """
+        let stage = AgentStage(row: SampleHerd.row(SampleHerd.blockedCodex), lines: text.components(separatedBy: "\n"),
+                               choices: ChoiceParser.choices(in: text), canSendKeys: true, canReply: true,
+                               error: "Could not send: herdr did not answer in time")
+        try Snapshot.check("palette-prompt-blocked", width: PaletteView.width) {
+            PaletteView(content: PaletteContent(items: SamplePalette.content.items, page: .prompt(stage)),
+                        clock: .fixed(SampleHerd.now)) { _ in }
+        }
+    }
+
+    @Test func newTask() throws {
+        let stage = NewTaskStage(projects: [SampleHerd.api, SampleHerd.web], suggestedProject: SampleHerd.web.id,
+                                 kinds: ["claude", "codex"])
+        try Snapshot.check("palette-new-task", width: PaletteView.width) {
+            PaletteView(content: PaletteContent(items: SamplePalette.content.items, page: .newTask(stage)),
+                        clock: .fixed(SampleHerd.now)) { _ in }
+        }
+    }
+
     @Test func noMatches() throws {
         try Snapshot.check("palette-empty", width: PaletteView.width) {
             PaletteView(content: PaletteContent(items: [], notice: "Not connected: herdr is not running. Retrying."),

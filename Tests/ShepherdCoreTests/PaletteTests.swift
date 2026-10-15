@@ -22,7 +22,7 @@ import Testing
     }
 
     func items() -> [PaletteItem] {
-        PaletteIndex.items(context: context, modules: [QueueModule(context: context)])
+        PaletteIndex.items(context: context, modules: [QueueModule(context: context), ProjectsModule(context: context)])
     }
 
     func ids(_ results: [PaletteResult]) -> [String] {
@@ -121,5 +121,32 @@ import Testing
         }
         #expect(row.contextTokens == 1234)
         #expect(row.tokens == [[StyledToken(name: "summary", text: "hi")]])
+    }
+
+    @Test func agentsCanBePromptedWhenTheirSourceTakesText() {
+        herdr.capabilities = [.focus, .prompt]
+        showHerd()
+        let byID = Dictionary(uniqueKeysWithValues: items().map { ($0.id, $0) })
+        // Idle and finished agents take a prompt; a blocked one needs a reply (`sendText`).
+        #expect(byID["agent/herdr:a"]?.canPrompt == true)
+        #expect(byID["agent/herdr:b"]?.canPrompt == true)
+        #expect(byID["agent/herdr:c"]?.canPrompt == false)
+        #expect(byID["project/herdr:w1"]?.canPrompt == false)
+        herdr.capabilities = [.focus, .sendText]
+        store.apply(SourceUpdate(agents: [herdAgent("herdr", "c", .blocked)], state: .live), from: "herdr")
+        #expect(items().first?.canPrompt == true)
+    }
+
+    @Test func newTaskCommandsForProjectsThatCanStartOne() {
+        showHerd()
+        #expect(!ids(PaletteSearch.results(items(), query: "")).contains { $0.hasPrefix("command/projects.") })
+        herdr.capabilities = [.focus, .createWorktree, .startAgent]
+        let commands = PaletteSearch.results(items(), query: "").compactMap { result -> PaletteCommand? in
+            if case .command(let command) = result.item.kind, command.id.hasPrefix("projects.") { command } else { nil }
+        }
+        #expect(commands.map(\.title) == ["New task…", "New task in api", "New task in web"])
+        #expect(commands.map(\.action) == [.newTask(nil), .newTask(ProjectID(source: "herdr", local: "w1")),
+                                            .newTask(ProjectID(source: "herdr", local: "w2"))])
+        #expect(PaletteSearch.results(items(), query: "new task web").first?.id == "command/projects.new-task.herdr:w2")
     }
 }

@@ -21,11 +21,12 @@ public enum PaletteIndex {
 
     private static func agentItem(_ agent: HerdAgent, project: HerdProject?, context: ModuleContext) -> PaletteItem {
         let canFocus = can(.focus, agent.id.source, context)
+        let canPrompt = can(agent.status == .blocked ? .sendText : .prompt, agent.id.source, context)
         let row = PanelAgentRow(agent: agent, tokens: context.tokenLines(.agents, values: agent.tokens, source: agent.id.source),
                                 action: canFocus ? .jump(agent.id) : nil, contextTokens: context.agentContext.tokens[agent.id])
         let words = [agent.kind ?? "", agent.project, agent.statusText] + values(agent.tokens) + values(project?.tokens ?? [:])
         return PaletteItem(id: "agent/\(agent.id)", kind: .agent(row), searchText: [agent.name] + words.filter { !$0.isEmpty },
-                           action: canFocus ? .jump(agent.id) : nil)
+                           action: canFocus ? .jump(agent.id) : nil, canPrompt: canPrompt)
     }
 
     private static func projectItem(_ project: HerdProject, context: ModuleContext) -> PaletteItem {

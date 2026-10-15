@@ -25,6 +25,12 @@ PR number, a diff, a review verdict), and lets you act on it without switching t
   down move, Return jumps (or switches herdr to the workspace), Escape closes. With nothing typed
   it lists the agents that need you first. Commands such as "Next agent that needs you" are in
   the same list. Your terminal stays frontmost the whole time.
+- **Prompt from the palette.** Tab (or →) on an agent turns the search field into a prompt for it,
+  with its last lines underneath. Type and press Return: a prompt for an idle or finished agent,
+  a reply for one that needs you. An approval prompt's choices are buttons, ⌘1, ⌘2 and so on.
+  Escape (or ← in an empty field) goes back to the list with your search kept. "New task…" and
+  "New task in <project>" open the new task form right there, and the palette then shows the new
+  agent.
 - **The notch.** A small paw sticks out to the left of the notch, part of it; it turns orange with
   a count when agents need you. Hover it and a wide, short bar grows out of the notch along the
   top of the screen: the needs-you queue on the left, then one column per project, scrolling
@@ -114,7 +120,8 @@ JSON keeps the last good config.
 
 - Action buttons defined in config, and an on-device one-line summary of
   what an agent did.
-- Prompting an agent and starting a task from the palette, and Claude Code as a second source.
+- A UI and UX pass, columns and gadgets you choose and order in config, and Claude Code as a
+  second source.
 
 ## Requirements
 

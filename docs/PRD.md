@@ -324,8 +324,14 @@ Every surface is optional and degrades on its own.
   token values); a name counts most, and its matched characters are bold. With no query, agents
   that need the user come first in queue order. It closes on Escape, an outside click, a Space
   change, losing key or after an action, and is built fresh on every opening. It does not count
-  as a visible panel, so gadgets do not start reading for it. Planned: prompting the selected
-  agent (Tab) and the new task form inside it.
+  as a visible panel, so gadgets do not start reading for it. Tab (or →) on an agent whose
+  source can take text opens its prompt page, and the "New task" commands (from `projects`)
+  open the new task form; both are a second `StageModel`, so the palette reads an agent's last
+  lines only while its prompt shows (on entering and on a status change) and a started task
+  turns into the new agent's prompt. Return sends a reply while the agent is blocked and a
+  prompt otherwise; a success closes the palette, a failure stays on screen with the text kept.
+  Choices are buttons with ⌘ digits, since plain digits are typing. Which keys move between
+  pages is a pure `PaletteMode` in Core; Escape goes back to the list, and closes from there.
 - **Mac integration** (planned): a Services menu entry to send selected text to an agent, drag and
   drop onto the notch, and App Intents so Spotlight, Shortcuts and Focus filters can drive
   Shepherd.
@@ -368,7 +374,8 @@ A module is a main-actor class conforming to `ShepherdModule`, in
 - palette commands (`commands`, a list of `PaletteCommand`: an id, a title, an SF Symbol,
   keywords and a `PaletteAction`). The palette lists every enabled module's commands after the
   agents and projects, so a module adds one by returning it; there is no central list. `queue`
-  offers "Next agent that needs you" while a live agent does.
+  offers "Next agent that needs you" while a live agent does; `projects` offers "New task…" and
+  "New task in <project>" for live projects a task can start in.
 
 Modules receive the herd model (see "Sources"), its transitions and the config through a
 `ModuleContext`, plus a `Presence` (whether the agent's host app is frontmost) and actions (jump
