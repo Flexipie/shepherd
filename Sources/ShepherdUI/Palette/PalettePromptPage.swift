@@ -63,7 +63,7 @@ struct PalettePromptPage: View {
                 .textFieldStyle(.plain)
                 .font(.system(size: 18))
                 .focused($focused)
-                .disabled(!stage.canReply || stage.isSending)
+                .disabled(!stage.canReply)
                 .onSubmit(send)
                 .onKeyPress(.leftArrow) { key(.left) }
                 .onKeyPress(.rightArrow) { key(.right) }
@@ -72,9 +72,13 @@ struct PalettePromptPage: View {
                 ProgressView().controlSize(.small)
             }
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 14)
-        .onAppear { focused = true }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+        // A box, so the field reads as somewhere to type, unlike the search field above a list.
+        .background(RoundedRectangle(cornerRadius: 10).fill(Color.primary.opacity(0.07)))
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .focusOnAppear($focused)
     }
 
     private var placeholder: String {
