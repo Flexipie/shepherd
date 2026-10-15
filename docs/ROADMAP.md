@@ -65,6 +65,9 @@ needs-you queue from Shepherd.
   Today each subscribed pane costs herdr a check every 100 ms (PRD "What subscriptions cost
   herdr"); with a global event Shepherd's cost inside herdr would be near zero.
 - `rows_by_agent` from herdr's sidebar config (per agent kind layouts).
+- Snapshots with a text field sometimes render it a few points off under load (CI on
+  `notch-stage-context`, locally on a palette snapshot during a full run); reruns pass. Find what
+  moves it, or keep text fields out of compared snapshots.
 - Memory: 54 to 65 MB, at or above the 40 to 60 MB budget. Measure what the bar's first open
   costs and what stays resident. The palette's first open adds about 45 MB (56 to 101 MB) that
   stays resident.
