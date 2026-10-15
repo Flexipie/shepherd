@@ -20,7 +20,7 @@ These need a person, real agents or other hardware:
   notification with no Focus mode on.
 - From the palette: Escape handing typing back to the previous app; Tab, →, ← and ⌘ digits in the
   fields; prompting a real idle agent and answering a real approval; a new task from it on a real
-  herdr; whether ⌃⌥⌘Space clashes with a system shortcut on another Mac; a config change
+  herdr; whether ⌥Space clashes with a launcher such as Raycast or Alfred; a config change
   re-registering the hotkey live, and a clash with `hotkeys.next` showing in the footer.
 
 ## Milestone 5: UI and UX pass, and a modular UI

@@ -11,7 +11,7 @@ import Testing
         let (config, problems) = try read("{}")
         #expect(config == .defaults)
         #expect(config.nextHotkey == "ctrl+option+cmd+n")
-        #expect(config.paletteHotkey == "ctrl+option+cmd+space")
+        #expect(config.paletteHotkey == "option+space")
         #expect(config.modules == nil)
         #expect(problems.isEmpty)
     }

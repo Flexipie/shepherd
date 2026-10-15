@@ -5,7 +5,7 @@ import Foundation
 /// rest still applies.
 public struct ShepherdConfig: Sendable, Equatable {
     public static let defaultNextHotkey = "ctrl+option+cmd+n"
-    public static let defaultPaletteHotkey = "ctrl+option+cmd+space"
+    public static let defaultPaletteHotkey = "option+space"
 
     /// Enabled module ids in order; nil means every built-in module in default order.
     public var modules: [String]?
