@@ -35,17 +35,3 @@ struct StateGlyph: View {
         }
     }
 }
-
-extension HerdAgent {
-    /// What the agent is doing, in words: the source's label if it has one.
-    var statusText: String {
-        if let statusLabel { return statusLabel }
-        return switch status {
-        case .blocked: "needs you"
-        case .done: "finished"
-        case .working: "working"
-        case .idle: "idle"
-        case .unknown: "unknown"
-        }
-    }
-}

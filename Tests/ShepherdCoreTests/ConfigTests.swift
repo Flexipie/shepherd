@@ -11,6 +11,7 @@ import Testing
         let (config, problems) = try read("{}")
         #expect(config == .defaults)
         #expect(config.nextHotkey == "ctrl+option+cmd+n")
+        #expect(config.paletteHotkey == "ctrl+option+cmd+space")
         #expect(config.modules == nil)
         #expect(problems.isEmpty)
     }
@@ -19,9 +20,10 @@ import Testing
         let (config, problems) = try read(##"""
         {"modules": ["queue", "projects"],
          "tokens": {"projects": [[{"token": "$pr", "fg": "#94e2d5"}, "ticket_state"]], "agents": [["summary"]]},
-         "hotkeys": {"next": "ctrl+option+cmd+j"}}
+         "hotkeys": {"next": "ctrl+option+cmd+j", "palette": "ctrl+option+cmd+p"}}
         """##)
         #expect(problems.isEmpty)
+        #expect(config.paletteHotkey == "ctrl+option+cmd+p")
         #expect(config.modules == ["queue", "projects"])
         #expect(config.tokens.projects?.first?.map(\.name) == ["pr", "ticket_state"])
         #expect(config.tokens.agents?.first?.map(\.name) == ["summary"])
@@ -50,18 +52,22 @@ import Testing
 
     @Test func nullTurnsTheHotkeyOff() throws {
         #expect(try read(#"{"hotkeys": {"next": null}}"#).config.nextHotkey == nil)
+        let palette = try read(#"{"hotkeys": {"palette": null}}"#).config
+        #expect(palette.paletteHotkey == nil)
+        #expect(palette.nextHotkey == ShepherdConfig.defaultNextHotkey)
     }
 
     @Test func badKeysFallBackAndTheRestApplies() throws {
         let (config, problems) = try read(##"""
         {"modules": "queue", "colour": 1,
          "tokens": {"projects": [[{"token": "pr", "fg": "teal"}]], "agents": [["summary"]], "panes": []},
-         "hotkeys": {"next": 3, "prev": "x"}}
+         "hotkeys": {"next": 3, "prev": "x", "palette": ["cmd+p"]}}
         """##)
         #expect(config.modules == nil)
         #expect(config.tokens.projects == nil)
         #expect(config.tokens.agents?.first?.map(\.name) == ["summary"])
         #expect(config.nextHotkey == ShepherdConfig.defaultNextHotkey)
+        #expect(config.paletteHotkey == ShepherdConfig.defaultPaletteHotkey)
         #expect(problems == [
             "config: unknown key \"colour\"",
             "config: modules must be a list of module ids",
@@ -69,6 +75,7 @@ import Testing
             "config: tokens.projects[0][0].fg: must be #RGB or #RRGGBB",
             "config: unknown key \"hotkeys.prev\"",
             "config: hotkeys.next must be a string or null, found a number",
+            "config: hotkeys.palette must be a string or null, found a list",
         ])
     }
 

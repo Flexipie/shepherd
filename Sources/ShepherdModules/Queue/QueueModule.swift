@@ -23,6 +23,14 @@ public final class QueueModule: ShepherdModule {
         return PanelSection(id: Self.id, title: "Needs you", items: rows.map(PanelItem.agent), emptyText: "Nothing needs you")
     }
 
+    /// "Next agent that needs you", offered while a live agent does.
+    public var commands: [PaletteCommand] {
+        let store = context.store
+        guard store.needsYou.contains(where: { store.sourceStates[$0.id.source]?.isLive == true }) else { return [] }
+        return [PaletteCommand(id: "queue.next", title: "Next agent that needs you", symbol: "arrow.forward.circle",
+                               keywords: ["queue", "waiting", "blocked"], action: .nextInQueue)]
+    }
+
     private func canFocus(_ source: SourceID) -> Bool {
         context.store.source(source)?.capabilities.contains(.focus) == true
     }

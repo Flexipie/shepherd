@@ -70,3 +70,11 @@ Oldest first.
   the `context` module through the `ClaudeSessionSource` target from the tail of the session
   file herdr's `agent_session` points at, only while the bar or panel is open (on opening and on
   a status change), cached by size and modification date.
+- Palette: ⌃⌥⌘Space (`hotkeys.palette`, `null` turns it off) opens a search field centred on the
+  screen under the mouse, over any app, without taking the frontmost app's place. It finds live
+  agents, projects and module commands by name, kind, project, status and token values with a
+  fuzzy match (word starts, runs and prefixes first, matched characters bold); with no query,
+  agents that need you come first. Return jumps or focuses the project, Escape closes. Modules
+  contribute commands (`ShepherdModule.commands`); `queue` offers "Next agent that needs you".
+  `HotKeyCenter` handles several named hotkeys and reports a clash between them. Idle with the
+  palette closed: 0% CPU over 30 s, about 56 MB; the first open adds about 45 MB.

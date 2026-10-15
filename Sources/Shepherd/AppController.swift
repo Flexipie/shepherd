@@ -17,18 +17,20 @@ final class AppController {
     private let presence = Presence()
     private let actions: AppActions
     private let config = ConfigStore()
+    private let context: ModuleContext
     private let registry: ModuleRegistry
     private let notifier: SystemNotifier?
     private var statusItem: StatusItemController?
     private var panel: PanelController?
     private var hotKeys: HotKeyCenter?
     private var notch: NotchSurfaceController?
+    private var palette: PaletteController?
 
     init() {
         store = HerdStore(log: log)
         actions = AppActions(store: store, presence: presence, config: config)
         notifier = SystemNotifier(store: store, actions: actions, config: config)
-        let context = ModuleContext(store: store, presence: presence, actions: actions, config: config, notifier: notifier,
+        context = ModuleContext(store: store, presence: presence, actions: actions, config: config, notifier: notifier,
                                     usage: OpenUsageReader(), system: MachSystemSampler(),
                                     contextReader: ClaudeContextReader())
         registry = ModuleRegistry(available: BuiltinModules.all, context: context)
@@ -39,12 +41,19 @@ final class AppController {
         let panel = PanelController(content: content, actions: actions, presence: presence)
         self.panel = panel
         statusItem = StatusItemController(store: store, registry: registry, panel: panel)
-        hotKeys = HotKeyCenter(config: config) { [weak self] in
-            self?.panel?.close()
-            self?.notch?.collapse()
-            self?.actions.jumpToNext()
-        }
         notch = NotchSurfaceController(registry: registry, content: content, actions: actions, presence: presence)
+        palette = PaletteController(context: context, registry: registry, actions: actions)
+        hotKeys = HotKeyCenter(config: config, bindings: [
+            .init(name: "next", combo: \.nextHotkey) { [weak self] in
+                self?.closeSurfaces()
+                self?.actions.jumpToNext()
+            },
+            .init(name: "palette", combo: \.paletteHotkey) { [weak self] in
+                guard let self else { return }
+                if palette?.isOpen != true { closeSurfaces() }
+                palette?.toggle()
+            },
+        ])
         Task {
             // The log restores exact times in state, so read it before the first snapshot.
             let history = await log.load()
@@ -52,5 +61,12 @@ final class AppController {
             store.start()
             actions.updatePresence()
         }
+    }
+
+    /// Closes the menu bar panel, the notch bar and the palette, before a hotkey does its thing.
+    private func closeSurfaces() {
+        panel?.close()
+        notch?.collapse()
+        palette?.close()
     }
 }
