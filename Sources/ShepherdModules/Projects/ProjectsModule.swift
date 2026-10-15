@@ -27,6 +27,19 @@ public final class ProjectsModule: ShepherdModule {
         return PanelSection(id: Self.id, title: "Projects", items: cards.map(PanelItem.project), emptyText: "No projects")
     }
 
+    /// "New task…", then "New task in <project>" for each live project a task can start in.
+    public var commands: [PaletteCommand] {
+        let store = context.store
+        let projects = store.projects.filter { store.sourceStates[$0.id.source]?.isLive == true && store.canStartTask(in: $0.id) }
+        guard !projects.isEmpty else { return [] }
+        let keywords = ["start", "agent", "worktree", "branch"]
+        return [PaletteCommand(id: "projects.new-task", title: "New task…", symbol: "plus", keywords: keywords, action: .newTask(nil))]
+            + projects.map { project in
+                PaletteCommand(id: "projects.new-task.\(project.id)", title: "New task in \(project.name.isEmpty ? "Untitled" : project.name)",
+                               symbol: "plus", keywords: keywords, action: .newTask(project.id))
+            }
+    }
+
     private func card(_ project: HerdProject, agents: [HerdAgent], action: PanelAction?) -> PanelProjectCard {
         let source = project.id.source
         let live = context.store.sourceStates[source]?.isLive == true

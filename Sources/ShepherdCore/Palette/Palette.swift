@@ -4,6 +4,8 @@ public enum PaletteAction: Sendable, Hashable {
     case focusProject(ProjectID)
     /// Jumps to the next agent that needs the user, like the "next" hotkey.
     case nextInQueue
+    /// Opens the new task form in the palette, with this project picked if given.
+    case newTask(ProjectID?)
 }
 
 /// A command a module offers in the palette. Modules contribute them, so the palette grows
@@ -41,12 +43,15 @@ public struct PaletteItem: Sendable, Equatable, Identifiable {
     public let searchText: [String]
     /// nil when its source cannot do it; choosing it then does nothing.
     public let action: PaletteAction?
+    /// An agent whose source can take a prompt or a reply, so the palette can prompt it.
+    public let canPrompt: Bool
 
-    public init(id: String, kind: Kind, searchText: [String], action: PaletteAction?) {
+    public init(id: String, kind: Kind, searchText: [String], action: PaletteAction?, canPrompt: Bool = false) {
         self.id = id
         self.kind = kind
         self.searchText = searchText
         self.action = action
+        self.canPrompt = canPrompt
     }
 
     /// The name shown in bold, which highlights refer to.

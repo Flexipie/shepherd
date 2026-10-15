@@ -18,20 +18,10 @@ These need a person, real agents or other hardware:
   (digit and button); prompting a real idle agent; a new task on a real herdr (creates a git
   worktree); left and right keys scrolling across columns in the live bar; Reply from a macOS
   notification with no Focus mode on.
-
-## Milestone 4: the palette
-
-Search, jump and focus shipped (see SHIPPED). Left:
-
-- Prompt mode: Tab (or →) on an agent whose source can prompt or send text turns the field into a
-  prompt for it, with its last lines (read once on entering and on a status change, like the
-  stage). Return sends a reply while it is blocked and a prompt otherwise; a blocked agent's
-  choices are buttons with ⌘1 to ⌘9. Escape (or ← in an empty field) goes back to the list.
-- New task: "New task…" and "New task in <project>" commands, contributed by a module, open the
-  notch's new task form inside the palette; on start it switches to the new agent's prompt mode.
-
-Done when: the user jumps and prompts from the palette for a week instead of switching to the
-terminal to find an agent.
+- From the palette: Escape handing typing back to the previous app; Tab, →, ← and ⌘ digits in the
+  fields; prompting a real idle agent and answering a real approval; a new task from it on a real
+  herdr; whether ⌃⌥⌘Space clashes with a system shortcut on another Mac; a config change
+  re-registering the hotkey live, and a clash with `hotkeys.next` showing in the footer.
 
 ## Milestone 5: UI and UX pass, and a modular UI
 
@@ -75,6 +65,9 @@ needs-you queue from Shepherd.
   Today each subscribed pane costs herdr a check every 100 ms (PRD "What subscriptions cost
   herdr"); with a global event Shepherd's cost inside herdr would be near zero.
 - `rows_by_agent` from herdr's sidebar config (per agent kind layouts).
+- Snapshots with a text field sometimes render it a few points off under load (CI on
+  `notch-stage-context`, locally on a palette snapshot during a full run); reruns pass. Find what
+  moves it, or keep text fields out of compared snapshots.
 - Memory: 54 to 65 MB, at or above the 40 to 60 MB budget. Measure what the bar's first open
   costs and what stays resident. The palette's first open adds about 45 MB (56 to 101 MB) that
   stays resident.

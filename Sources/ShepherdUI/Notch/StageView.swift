@@ -84,9 +84,7 @@ struct StageView: View {
                     }
                     .buttonStyle(StageButtonStyle())
                 } else {
-                    ForEach(stage.choices, id: \.key) { choice in
-                        choiceButton(choice)
-                    }
+                    ChoiceButtons(choices: stage.choices) { onStage(.keys($0)) }
                 }
             }
             if stage.canReply {
@@ -100,27 +98,6 @@ struct StageView: View {
             }
         }
         .disabled(stage.isSending)
-    }
-
-    private func choiceButton(_ choice: AgentChoice) -> some View {
-        Button {
-            onStage(.keys([choice.key]))
-        } label: {
-            HStack(alignment: .firstTextBaseline, spacing: 7) {
-                Text(choice.key)
-                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                    .frame(width: 16, height: 16)
-                    .background(RoundedRectangle(cornerRadius: 4).strokeBorder(Color.secondary.opacity(0.6)))
-                Text(choice.label)
-                    .font(.system(size: 12, weight: choice.isSelected ? .semibold : .regular))
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-                Spacer(minLength: 0)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .buttonStyle(StageButtonStyle(fill: choice.isSelected ? Color.accentColor.opacity(0.22) : nil))
-        .help("Press \(choice.key)")
     }
 
     private var reply: some View {

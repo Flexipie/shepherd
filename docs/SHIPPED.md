@@ -78,3 +78,11 @@ Oldest first.
   contribute commands (`ShepherdModule.commands`); `queue` offers "Next agent that needs you".
   `HotKeyCenter` handles several named hotkeys and reports a clash between them. Idle with the
   palette closed: 0% CPU over 30 s, about 56 MB; the first open adds about 45 MB.
+- Prompt and new task in the palette: Tab (or →) on an agent opens its prompt page (its row, its
+  last eight lines, the field), from a second `StageModel` that reads only while the page shows.
+  Return replies to a blocked agent and prompts any other; success closes the palette, a failure
+  stays with the text kept. Choices are buttons with ⌘1 to ⌘9 (`ChoiceButtons`, shared with the
+  notch stage). `projects` contributes "New task…" and "New task in <project>", which open the
+  new task form in the palette with the project picked; a started task becomes the new agent's
+  prompt page. Escape or ← in an empty field goes back with the query kept; the page keys are
+  the pure `PaletteMode` in Core.
