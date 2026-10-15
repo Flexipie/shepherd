@@ -11,6 +11,8 @@ struct AgentRow: View {
     var showsProject = false
     var namesContext = false
     var isSelected = false
+    /// Characters of the name a palette query matched.
+    var nameHighlights: [Range<String.Index>] = []
     var onJump: (() -> Void)?
 
     @State private var isHovered = false
@@ -21,7 +23,7 @@ struct AgentRow: View {
                 .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + 4 }
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text(row.agent.name)
+                    Highlighted.text(row.agent.name, nameHighlights)
                         .font(.system(size: showsProject ? 13 : 12, weight: .semibold))
                     Text(subtitle)
                         .font(.system(size: showsProject ? 12 : 11))

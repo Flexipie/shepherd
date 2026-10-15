@@ -19,30 +19,47 @@ These need a person, real agents or other hardware:
   worktree); left and right keys scrolling across columns in the live bar; Reply from a macOS
   notification with no Focus mode on.
 
-## Milestone 3: notch gadgets and polish
+## Milestone 4: the palette
 
-The notch bar is where the user already looks, so it can carry a few small, glanceable things
-next to the herd. Each gadget is a module whose section becomes a bar column (`BarColumn`), can
-be turned off in `modules`, and costs nothing while the bar is closed: it reads or samples only
-while shown, and never polls in the background. Everything stays local.
+Search, jump and focus shipped (see SHIPPED). Left:
 
-- UI and UX polish of the bar and stage from daily use: column widths and height cap, what the
-  ear and pill show, keyboard and mouse rough edges. (Jumping in one step shipped.)
+- Prompt mode: Tab (or →) on an agent whose source can prompt or send text turns the field into a
+  prompt for it, with its last lines (read once on entering and on a status change, like the
+  stage). Return sends a reply while it is blocked and a prompt otherwise; a blocked agent's
+  choices are buttons with ⌘1 to ⌘9. Escape (or ← in an empty field) goes back to the list.
+- New task: "New task…" and "New task in <project>" commands, contributed by a module, open the
+  notch's new task form inside the palette; on start it switches to the new agent's prompt mode.
 
-Done when: the user keeps the gadgets on for a week, and idle CPU and memory with the bar closed
-are the same as without them.
+Done when: the user jumps and prompts from the palette for a week instead of switching to the
+terminal to find an agent.
 
-## Milestone 4: from anywhere
+## Milestone 5: UI and UX pass, and a modular UI
 
-- Palette: a global hotkey opens one fuzzy list (by workspace, agent, token) to jump, prompt an
-  agent (`agent.prompt`) or run any action.
-- New task from the palette, reusing the notch's new task flow.
+Done before any new gadget.
+
+- The user's list from daily use: the bar and stage (column widths and height cap, what the ear
+  and pill show, keyboard and mouse rough edges), the panel and the palette.
+- A modular UI in code: shared row and card components and a clear surface layer, so a new
+  surface or gadget does not copy views.
+- A modular UI for the user: choose and order columns and gadgets from config, later a settings
+  window.
+
+Done when: the user's list is done, and adding a gadget touches only its module and one view.
+
+## Milestone 6: more from anywhere
+
 - Drop onto the notch: drag a file, screenshot or URL onto an agent to send it as a prompt.
 - Services menu: "Send to agent" for selected text in any app.
 - Spike: App Intents for Spotlight and Shortcuts under the SwiftPM build. Ship them if the build
   works without an Xcode project; otherwise write down why and park it.
 
-## Milestone 5: a second source
+## More gadgets
+
+After milestone 5. Each gadget is a module whose section becomes a bar column (`BarColumn`), can
+be turned off in `modules`, and costs nothing while the bar is closed: it reads or samples only
+while shown, and never polls in the background. Everything stays local.
+
+## Milestone 7: a second source
 
 - Claude Code as a source without herdr, through its hooks, contained in its own adapter (PRD
   "Sources"). Capabilities it cannot offer are hidden, not faked.
@@ -59,7 +76,8 @@ needs-you queue from Shepherd.
   herdr"); with a global event Shepherd's cost inside herdr would be near zero.
 - `rows_by_agent` from herdr's sidebar config (per agent kind layouts).
 - Memory: 54 to 65 MB, at or above the 40 to 60 MB budget. Measure what the bar's first open
-  costs and what stays resident.
+  costs and what stays resident. The palette's first open adds about 45 MB (56 to 101 MB) that
+  stays resident.
 
 ## Public 0.1 (later)
 

@@ -314,7 +314,18 @@ Every surface is optional and degrades on its own.
 - **Notifications.** Only for needs-you and token changes the user asked about, with action
   buttons. On first run Shepherd detects whether herdr's own toasts or sounds are on and asks which
   app should alert, rather than firing both.
-- **Palette.** A global hotkey opens one fuzzy list for jumping, prompting and running actions.
+- **Palette.** A global hotkey (default ⌃⌥⌘Space, `hotkeys.palette`) opens a search field centred
+  in the upper third of the screen under the mouse: a non-activating, key-capable `ShepherdPanel`
+  with the glass, like the menu bar panel (`FloatingPanelHost` holds what the two share). It lists
+  live agents (as queue rows, with their project), projects and every module's commands, built
+  by `PaletteIndex` and ranked by `PaletteSearch` with `FuzzyMatch`: a case- and
+  diacritic-insensitive subsequence match that favours word starts, runs and prefixes. Every word
+  of the query must match one of an item's words (name, kind, project, status, agent and project
+  token values); a name counts most, and its matched characters are bold. With no query, agents
+  that need the user come first in queue order. It closes on Escape, an outside click, a Space
+  change, losing key or after an action, and is built fresh on every opening. It does not count
+  as a visible panel, so gadgets do not start reading for it. Planned: prompting the selected
+  agent (Tab) and the new task form inside it.
 - **Mac integration** (planned): a Services menu entry to send selected text to an agent, drag and
   drop onto the notch, and App Intents so Spotlight, Shortcuts and Focus filters can drive
   Shepherd.
@@ -353,7 +364,11 @@ A module is a main-actor class conforming to `ShepherdModule`, in
 - a menu bar contribution (a glyph or a count),
 - a panel section, or a row inside each workspace card,
 - notch content (what the pill shows, and when it should appear),
-- actions (see "Actions").
+- actions (see "Actions"),
+- palette commands (`commands`, a list of `PaletteCommand`: an id, a title, an SF Symbol,
+  keywords and a `PaletteAction`). The palette lists every enabled module's commands after the
+  agents and projects, so a module adds one by returning it; there is no central list. `queue`
+  offers "Next agent that needs you" while a live agent does.
 
 Modules receive the herd model (see "Sources"), its transitions and the config through a
 `ModuleContext`, plus a `Presence` (whether the agent's host app is frontmost) and actions (jump
@@ -387,6 +402,9 @@ Every key is optional and a missing file means defaults. As built:
 - `modules`: enabled module ids, in order.
 - `tokens`: `projects` and `agents`, each a list of lines in herdr's sidebar syntax (see "Tokens").
 - `hotkeys.next`: the "next" hotkey, `null` to turn it off.
+- `hotkeys.palette`: the palette's hotkey (default `ctrl+option+cmd+space`), `null` to turn it
+  off. `HotKeyCenter` registers each by name, re-registers on change and reports problems as
+  `hotkeys.<name>`, including two hotkeys set to the same combination.
 
 Reading is lenient per key: a key that cannot be used is reported in the panel footer and falls
 back to its default while the rest applies; a file that is not valid JSON keeps the last good

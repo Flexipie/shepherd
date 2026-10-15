@@ -5,6 +5,7 @@ import Foundation
 /// rest still applies.
 public struct ShepherdConfig: Sendable, Equatable {
     public static let defaultNextHotkey = "ctrl+option+cmd+n"
+    public static let defaultPaletteHotkey = "ctrl+option+cmd+space"
 
     /// Enabled module ids in order; nil means every built-in module in default order.
     public var modules: [String]?
@@ -12,6 +13,8 @@ public struct ShepherdConfig: Sendable, Equatable {
     public var tokens: TokenLayout
     /// The global "next" hotkey; nil turns it off.
     public var nextHotkey: String?
+    /// The global hotkey that opens the palette; nil turns it off.
+    public var paletteHotkey: String?
     /// Per agent kind ("claude", "codex"), how Shepherd starts it for a new task.
     public var agents: [String: AgentConfig]
     /// When Shepherd posts system notifications. Off by default: the notch is the alert, and
@@ -36,11 +39,13 @@ public struct ShepherdConfig: Sendable, Equatable {
     }
 
     public init(modules: [String]? = nil, tokens: TokenLayout = TokenLayout(),
-                nextHotkey: String? = ShepherdConfig.defaultNextHotkey, agents: [String: AgentConfig] = [:],
+                nextHotkey: String? = ShepherdConfig.defaultNextHotkey,
+                paletteHotkey: String? = ShepherdConfig.defaultPaletteHotkey, agents: [String: AgentConfig] = [:],
                 notifications: Notifications = .off) {
         self.modules = modules
         self.tokens = tokens
         self.nextHotkey = nextHotkey
+        self.paletteHotkey = paletteHotkey
         self.agents = agents
         self.notifications = notifications
     }
@@ -101,12 +106,16 @@ public struct ShepherdConfig: Sendable, Equatable {
         }
         if let hotkeys = table["hotkeys"] {
             if case .table(let keys) = hotkeys {
-                for key in keys.keys.sorted() where key != "next" { problems.append("config: unknown key \"hotkeys.\(key)\"") }
-                switch keys["next"] {
-                case nil: break
-                case .null?: config.nextHotkey = nil
-                case .string(let combo)?: config.nextHotkey = combo
-                case let other?: problems.append("config: hotkeys.next must be a string or null, found \(other.kind)")
+                for key in keys.keys.sorted() where !["next", "palette"].contains(key) {
+                    problems.append("config: unknown key \"hotkeys.\(key)\"")
+                }
+                for (name, path) in [("next", \ShepherdConfig.nextHotkey), ("palette", \ShepherdConfig.paletteHotkey)] {
+                    switch keys[name] {
+                    case nil: break
+                    case .null?: config[keyPath: path] = nil
+                    case .string(let combo)?: config[keyPath: path] = combo
+                    case let other?: problems.append("config: hotkeys.\(name) must be a string or null, found \(other.kind)")
+                    }
                 }
             } else {
                 problems.append("config: hotkeys must be an object")

@@ -18,12 +18,16 @@ public protocol ShepherdModule: AnyObject {
 
     /// A section of the panel, if the module has one.
     var panel: PanelSection? { get }
+
+    /// Commands the module offers in the palette.
+    var commands: [PaletteCommand] { get }
 }
 
 extension ShepherdModule {
     public var status: StatusContribution? { nil }
     public var notch: NotchItem? { nil }
     public var panel: PanelSection? { nil }
+    public var commands: [PaletteCommand] { [] }
 }
 
 /// A menu bar glyph with an optional count.
