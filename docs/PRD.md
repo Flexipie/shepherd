@@ -67,7 +67,9 @@ As built:
   to the owning source. Agent and project ids are namespaced by source (`herdr:w1:p1`,
   `herdr:w1`). A project is where agents work (for herdr, a workspace); projects without agents
   are kept, since they are somewhere to go. Project tokens stay on the project and agent tokens
-  on the agent.
+  on the agent. `HerdProject.repo` (`HerdRepo`: a key, a name, whether it is a linked checkout)
+  says which git repo a project is a checkout of; herdr fills it from the workspace's
+  `worktree`, and a future source with git checkouts can too.
 - `HerdrSource` is the only target that imports both `HerdrKit` and `ShepherdCore`. It adapts
   herdr's session to the herd model, implements focus (`agent.focus`, then the hosting terminal
   forward) and project focus (`workspace.focus`, then the terminal), reports the terminal as its
@@ -150,6 +152,9 @@ source at github.com/herdrdev/herdr, and experiments on a throwaway `herdr --ses
 - **Tokens** live on workspaces and on panes (`workspace.report_metadata`, `pane.report_metadata`):
   at most 32 keys each, names `[A-Za-z0-9_-]{1,32}`, values up to 80 characters, optional TTL. They
   are not restored after a herdr restart, so an empty token map is normal and never an error.
+- **Worktrees.** A workspace inside git carries `worktree { repo_key, repo_name, repo_root,
+  checkout_path, is_linked_worktree }`; every checkout of one repo has the same `repo_key`, and
+  the main checkout has `is_linked_worktree: false`. A workspace outside git has no `worktree`.
 - **Presentation fields.** Pane metadata can override the title, `display_agent` and per-state
   `state_labels`. Shepherd honours them the way herdr's own sidebar does.
 - **herdr already alerts.** `ui.toast.delivery` (`off`, `herdr`, `terminal`, `system`; default
@@ -244,7 +249,7 @@ its tab shows (`Presence.isShowing(_:)`).
     `min(1000, screen width - 160)` wide and as tall as its content, up to 30% of the screen,
     so it never covers the middle. It reads the same `PanelContentSource` as the menu bar panel
     but lays it out in columns (`BarColumn`): the `queue` section pinned on the left, then one
-    column per project card, and any other section as one column, so a new module's section
+    column per project or repo card, and any other section as one column, so a new module's section
     just appears as another column. Past the left column the columns scroll sideways; each
     column scrolls on its own past the height cap. Status lines and config problems share one
     line along the bottom. Up and down move within a column, left and right to the nearest row
@@ -400,7 +405,9 @@ sources only), `usage` (plan usage, read through `ModuleContext.usage` only whil
 shows), `system` (CPU and memory, sampled through `ModuleContext.system` only while Gadgets
 shows), `context` (context sizes, read through `ModuleContext.contextReader` only while Agents
 shows), `notifications` and `projects` (the cards; a source that is not live shows its last known state,
-dimmed, never as current).
+dimmed, never as current; two or more checkouts of one repo, by `HerdProject.repo`, share one
+`PanelRepoCard` at the place of the first, main checkout first, each checkout a sub-header
+with its agents under it).
 
 `ModuleRegistry` builds the enabled modules from `config.modules` (all, in default order, when
 absent), reports unknown ids, and rebuilds when the list changes; a module that stays enabled

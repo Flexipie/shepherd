@@ -9,6 +9,8 @@ import HerdrFake
 //   add <pane> [kind]                  add a working agent (its workspace is created if needed)
 //   remove <pane>                      close a pane
 //   label <workspace> <text>           add or rename a workspace
+//   repo <workspace> [name]            make it the main checkout of a repo (no name: no repo);
+//                                      a new task from it is then a linked worktree of that repo
 //   token <workspace|pane> key=value   set a token; key= removes it
 //   lost, stop, start                  events_lost, herdr quitting, herdr returning
 //   list, focused, sent, quit           sent: keys and replies Shepherd sent to agents
@@ -20,7 +22,7 @@ let path = CommandLine.arguments.dropFirst().first ?? "/tmp/shepherd-fake.sock"
 let fake = FakeHerdrServer(herd: .basic, path: path)
 try await fake.start()
 print("fake herdr on \(path)")
-print("commands: block|done|work|idle <pane>, add <pane> [kind], remove <pane>, label <workspace> <text>,")
+print("commands: block|done|work|idle <pane>, add <pane> [kind], remove <pane>, label <workspace> <text>, repo <workspace> [name],")
 print("          token <workspace|pane> key=value, lost, stop, start, list, focused, sent, quit")
 
 while let line = readLine() {
@@ -48,6 +50,7 @@ while let line = readLine() {
             continue
         }
         await fake.setToken(pane, String(rest[..<equals]), String(rest[rest.index(after: equals)...]))
+    case "repo": await fake.setRepo(pane, name: words.count > 2 ? words[2] : nil)
     case "remove": await fake.removePane(pane)
     case "lost": await fake.sendEventsLost()
     case "stop": await fake.stop()

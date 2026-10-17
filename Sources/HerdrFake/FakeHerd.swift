@@ -8,12 +8,31 @@ public struct FakeHerd: Sendable, Equatable {
         public var id: String
         public var label: String
         public var tokens: [String: String] = [:]
+        /// The git checkout, sent as `worktree`; nil outside git.
+        public var repo: Repo?
 
-        public init(id: String, label: String, tokens: [String: String] = [:]) {
+        public init(id: String, label: String, tokens: [String: String] = [:], repo: Repo? = nil) {
             self.id = id
             self.label = label
             self.tokens = tokens
+            self.repo = repo
         }
+    }
+
+    /// A workspace's repo: its main checkout, or a linked worktree of it.
+    public struct Repo: Sendable, Equatable {
+        public var name: String
+        public var isLinked: Bool
+        /// The checkout's path; a linked one's is under `/work`.
+        public var checkoutPath: String
+
+        public init(name: String, isLinked: Bool = false, checkoutPath: String? = nil) {
+            self.name = name
+            self.isLinked = isLinked
+            self.checkoutPath = checkoutPath ?? "/tmp/\(name)"
+        }
+
+        public var key: String { "/tmp/\(name)/.git" }
     }
 
     public struct Pane: Sendable, Equatable {
@@ -139,6 +158,12 @@ public struct FakeHerd: Sendable, Equatable {
             "agent_status": own.first(where: { $0.status == "blocked" })?.status ?? own.first?.status ?? "idle",
         ]
         if !workspace.tokens.isEmpty { json["tokens"] = workspace.tokens }
+        if let repo = workspace.repo {
+            json["worktree"] = [
+                "repo_key": repo.key, "repo_name": repo.name, "repo_root": "/tmp/\(repo.name)",
+                "checkout_path": repo.checkoutPath, "is_linked_worktree": repo.isLinked,
+            ]
+        }
         return json
     }
 

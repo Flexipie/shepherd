@@ -67,6 +67,28 @@ enum SampleHerd {
         statusLines: ["Not connected: herdr is not running. Retrying.", "herdr socket: ~/.config/herdr/herdr.sock"],
         problems: ["config: tokens.projects[0][0].fg: must be #RGB or #RRGGBB"])
 
+    // MARK: Worktrees of one repo
+
+    static let shop = HerdRepo(key: "repo-shop", name: "shop")
+    static let shopMain = HerdProject(id: ProjectID(source: "herdr", local: "w4"), name: "main", repo: shop)
+    static let shopCart = HerdProject(id: ProjectID(source: "herdr", local: "w5"), name: "cart-totals", tokens: ["pr": "#31"],
+                                      isFocusedInSource: true, repo: HerdRepo(key: "repo-shop", name: "shop", isLinkedCheckout: true))
+    static let shopSearch = HerdProject(id: ProjectID(source: "herdr", local: "w6"), name: "search-filters",
+                                        repo: HerdRepo(key: "repo-shop", name: "shop", isLinkedCheckout: true))
+
+    /// A repo with its main checkout and two worktrees, one of them with a PR.
+    static let shopCard = PanelRepoCard(key: "herdr/repo-shop", name: "shop", projects: [
+        card(shopMain, [agent("w4:p1", "claude", shopMain, .idle, ago(50, .noLaterThan))]),
+        card(shopCart, [agent("w5:p1", "codex", shopCart, .blocked, ago(3)), agent("w5:p2", "claude", shopCart, .working, ago(9))],
+             tokens: [[StyledToken(name: "pr", text: "#31", fg: teal)]]),
+        card(shopSearch, [agent("w6:p1", "claude", shopSearch, .done, ago(18), tokens: ["summary": "filters done"])]),
+    ])
+
+    static let contentWithRepo = PanelContent(
+        sections: [queue, PanelSection(id: "projects", title: "Projects", items: [.project(apiCard), .repo(shopCard), .project(webCard)],
+                                       emptyText: "No projects")],
+        statusLines: content.statusLines)
+
     /// Twelve projects, one agent each, after the usual queue.
     static let manyProjects: PanelContent = {
         let cards = (1...12).map { index in

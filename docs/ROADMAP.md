@@ -30,8 +30,6 @@ Done before any new gadget.
 
 - The user's list from daily use: the bar and stage (column widths and height cap, what the ear
   and pill show, keyboard and mouse rough edges), the panel and the palette.
-  - Worktrees of one repo share one card or column, with a sub-header per worktree (its label
-    and tokens) and its agents under it. herdr sends each workspace's `worktree` object.
 - A modular UI in code: shared row and card components and a clear surface layer, so a new
   surface or gadget does not copy views.
 - A modular UI for the user: choose and order columns and gadgets from config, later a settings

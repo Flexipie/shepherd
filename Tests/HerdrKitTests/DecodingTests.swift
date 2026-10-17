@@ -42,6 +42,21 @@ import Testing
         #expect(agent.stateChangeSeq == 0)
     }
 
+    @Test func workspaceWorktreeIsDecodedLeniently() throws {
+        let linked = try decode(Workspace.self, """
+        {"workspace_id":"w5","label":"feature","worktree":{"repo_key":"repo_key-1","repo_name":"repo_name-1",
+         "repo_root":"/tmp/project-1","checkout_path":"checkout_path-2","is_linked_worktree":true,"brand_new":[1]}}
+        """)
+        #expect(linked.worktree == Worktree(repoKey: "repo_key-1", repoName: "repo_name-1", isLinked: true,
+                                            repoRoot: "/tmp/project-1", checkoutPath: "checkout_path-2"))
+        let sparse = try decode(Workspace.self, #"{"workspace_id":"w1","worktree":{"repo_key":"repo_key-1"}}"#)
+        #expect(sparse.worktree == Worktree(repoKey: "repo_key-1", repoName: ""))
+        // Outside git there is no key; a malformed one is the same as none.
+        #expect(try decode(Workspace.self, #"{"workspace_id":"w2"}"#).worktree == nil)
+        #expect(try decode(Workspace.self, #"{"workspace_id":"w3","worktree":{"repo_name":"x"}}"#).worktree == nil)
+        #expect(try decode(Workspace.self, #"{"workspace_id":"w4","worktree":"nope"}"#).worktree == nil)
+    }
+
     @Test func cwdAndSessionAreDecodedLeniently() throws {
         let agent = try decode(Agent.self, """
         {"pane_id":"w1:p1","workspace_id":"w1","agent":"claude","cwd":"/tmp/project-1",

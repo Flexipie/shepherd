@@ -95,3 +95,10 @@ Oldest first.
   ⌘1 and ⌘2. `PanelSection.tab` says where a section goes, so gadgets need no central list.
   `Presence` tracks the tab each surface shows; `usage` and `system` read only while Gadgets
   shows and `context` only while Agents shows. No gadgets enabled, no tab bar.
+- Worktrees grouped by repo: herdr's `worktree` object on workspaces is decoded
+  (`Workspace.worktree`) into `HerdProject.repo`. `projects` puts two or more checkouts of one
+  repo in one `PanelRepoCard` (one card in the panel, one column in the bar) at the first one's
+  place, main checkout first, each with a sub-header (label, focus dot, tokens, a branch glyph
+  for worktrees) that focuses it. Keyboard navigation walks each checkout's header and agents;
+  the palette finds every worktree by the repo's name. FakeHerdr has `repo <workspace> [name]`,
+  and its `worktree.create` makes a linked worktree of the source's repo.

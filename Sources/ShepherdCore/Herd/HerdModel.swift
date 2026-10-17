@@ -71,12 +71,31 @@ public struct HerdProject: Sendable, Equatable, Identifiable {
     public let tokens: [String: String]
     /// The source's own UI has this project focused.
     public let isFocusedInSource: Bool
+    /// The repo the project is a checkout of, when the source knows.
+    public let repo: HerdRepo?
 
-    public init(id: ProjectID, name: String, tokens: [String: String] = [:], isFocusedInSource: Bool = false) {
+    public init(id: ProjectID, name: String, tokens: [String: String] = [:], isFocusedInSource: Bool = false,
+                repo: HerdRepo? = nil) {
         self.id = id
         self.name = name
         self.tokens = tokens
         self.isFocusedInSource = isFocusedInSource
+        self.repo = repo
+    }
+}
+
+/// The repo a project is a checkout of. Projects of one source with the same `key` are
+/// checkouts of one repo: its main checkout and its linked worktrees.
+public struct HerdRepo: Sendable, Equatable, Hashable {
+    public let key: String
+    public let name: String
+    /// False for the repo's main checkout.
+    public let isLinkedCheckout: Bool
+
+    public init(key: String, name: String, isLinkedCheckout: Bool = false) {
+        self.key = key
+        self.name = name
+        self.isLinkedCheckout = isLinkedCheckout
     }
 }
 

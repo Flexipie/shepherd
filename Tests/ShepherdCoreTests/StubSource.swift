@@ -35,6 +35,7 @@ func herdAgent(_ source: SourceID, _ local: String, _ status: HerdStatus, since:
               status: status, since: since.map { Since($0, .exact) }, tokens: tokens, isFocusedInSource: focused)
 }
 
-func herdProject(_ source: SourceID, _ local: String, name: String? = nil, tokens: [String: String] = [:]) -> HerdProject {
-    HerdProject(id: ProjectID(source: source, local: local), name: name ?? "project \(local)", tokens: tokens)
+func herdProject(_ source: SourceID, _ local: String, name: String? = nil, tokens: [String: String] = [:],
+                 repo: HerdRepo? = nil) -> HerdProject {
+    HerdProject(id: ProjectID(source: source, local: local), name: name ?? "project \(local)", tokens: tokens, repo: repo)
 }

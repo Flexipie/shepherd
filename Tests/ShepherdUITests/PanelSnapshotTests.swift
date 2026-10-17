@@ -52,6 +52,15 @@ import Testing
         }
     }
 
+    /// A repo's checkouts under one header: main first, then worktrees with a branch glyph.
+    @Test func repoCard() throws {
+        try Snapshot.check("repo-card", width: 340) {
+            RepoCard(card: SampleHerd.shopCard, now: SampleHerd.now, selection: nil, sectionID: "projects",
+                     perform: { _ in }, hover: { _ in })
+                .padding(8)
+        }
+    }
+
     @Test func staleProjectCard() throws {
         try Snapshot.check("project-card-stale", width: 340) {
             ProjectCard(card: SampleHerd.card(SampleHerd.api, [SampleHerd.blockedCodex], live: false), now: SampleHerd.now,
@@ -136,6 +145,17 @@ import Testing
         #expect(Set(targets.map(\.id)).count == targets.count)
     }
 
+    @Test func repoCardsAreWalkedCheckoutByCheckout() {
+        let targets = PanelTarget.all(in: SampleHerd.contentWithRepo.sections)
+        let project = { (local: String) in PanelAction.focusProject(ProjectID(source: "herdr", local: local)) }
+        let agent = { (local: String) in PanelAction.jump(AgentID(source: "herdr", local: local)) }
+        // After the queue (3) and api (3): each checkout's header, then its agents.
+        #expect(Array(targets.dropFirst(6).prefix(7)).map(\.action) == [
+            project("w4"), agent("w4:p1"), project("w5"), agent("w5:p1"), agent("w5:p2"), project("w6"), agent("w6:p1"),
+        ])
+        #expect(Set(targets.map(\.id)).count == targets.count)
+    }
+
     @Test func movingClampsAtTheEnds() {
         let targets = PanelTarget.all(in: SampleHerd.content.sections)
         #expect(PanelTarget.move(from: nil, by: 1, in: targets) == targets.first?.id)
@@ -186,6 +206,13 @@ import Testing
         #expect(BarColumn.layout([other]).map(\.id) == ["other"])
         // An empty projects section is one column, to show its empty text.
         #expect(BarColumn.layout(SampleHerd.disconnected.sections).map(\.id) == ["queue", "projects"])
+    }
+
+    @Test func aRepoCardIsOneColumn() {
+        let columns = BarColumn.layout(SampleHerd.contentWithRepo.sections)
+        #expect(columns.map(\.id) == ["queue", "projects/herdr:w1", "projects/repo/herdr/repo-shop", "projects/herdr:w2"])
+        let targets = PanelTarget.all(in: columns)
+        #expect(targets.filter { $0.column == 2 }.count == 7)
     }
 
     @Test func targetsAreLaidOutByColumn() {

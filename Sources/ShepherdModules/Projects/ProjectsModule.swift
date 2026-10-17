@@ -3,6 +3,7 @@ import ShepherdCore
 /// One card per project, in each source's own order: its tokens, then each agent with its state,
 /// time in state and tokens. Projects without agents are still shown, since they are somewhere
 /// to go. A source that is not live shows its last known state, dimmed, never as current.
+/// Checkouts of one repo share a card, at the place of the first, with the main checkout first.
 @MainActor
 public final class ProjectsModule: ShepherdModule {
     public static let id = "projects"
@@ -24,7 +25,25 @@ public final class ProjectsModule: ShepherdModule {
             let project = HerdProject(id: ProjectID(source: source.id, local: ""), name: source.displayName)
             cards.append(card(project, agents: loose.filter { $0.id.source == source.id }, action: nil))
         }
-        return PanelSection(id: Self.id, title: "Projects", items: cards.map(PanelItem.project), emptyText: "No projects")
+        return PanelSection(id: Self.id, title: "Projects", items: Self.grouped(cards), emptyText: "No projects")
+    }
+
+    /// Cards of two or more checkouts of one repo become one repo card where the first of them
+    /// was: the main checkout first, then linked worktrees in source order. A lone checkout, or a
+    /// project with no repo, stays a plain card.
+    static func grouped(_ cards: [PanelProjectCard]) -> [PanelItem] {
+        func key(_ card: PanelProjectCard) -> String? {
+            card.project.repo.map { "\(card.project.id.source)/\($0.key)" }
+        }
+        let members = Dictionary(grouping: cards.filter { key($0) != nil }) { key($0)! }
+        var placed: Set<String> = []
+        return cards.compactMap { card in
+            guard let key = key(card), let group = members[key], group.count > 1 else { return .project(card) }
+            guard placed.insert(key).inserted else { return nil }
+            let ordered = group.filter { $0.project.repo?.isLinkedCheckout == false } + group.filter { $0.project.repo?.isLinkedCheckout == true }
+            let name = card.project.repo?.name ?? ""
+            return .repo(PanelRepoCard(key: key, name: name.isEmpty ? ordered[0].project.name : name, projects: ordered))
+        }
     }
 
     /// "New task…", then "New task in <project>" for each live project a task can start in.

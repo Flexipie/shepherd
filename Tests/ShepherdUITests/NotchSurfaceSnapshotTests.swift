@@ -131,6 +131,11 @@ import Testing
         try checkExpanded("notch-bar-usage-not-running", content, tab: .gadgets)
     }
 
+    /// Worktrees of one repo share a column.
+    @Test func expandedWithARepo() throws {
+        try checkExpanded("notch-bar-repo", SampleHerd.contentWithRepo)
+    }
+
     @Test func expandedEmptyAndDisconnected() throws {
         try checkExpanded("notch-bar-disconnected", SampleHerd.disconnected)
     }

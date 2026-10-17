@@ -86,6 +86,40 @@ import Testing
         #expect(card?.agents.first?.action == nil)
     }
 
+    @Test func checkoutsOfOneRepoShareACardMainFirst() {
+        let main = HerdRepo(key: "repo-1", name: "repo 1")
+        let linked = HerdRepo(key: "repo-1", name: "repo 1", isLinkedCheckout: true)
+        let lone = HerdRepo(key: "repo-2", name: "repo 2")
+        store.apply(SourceUpdate(agents: [herdAgent("herdr", "a", .working, projectID: "w4"), herdAgent("herdr", "b", .idle, projectID: "w2")],
+                                 projects: [herdProject("herdr", "w1"), herdProject("herdr", "w2", repo: linked),
+                                            herdProject("herdr", "w3", repo: lone), herdProject("herdr", "w4", repo: main),
+                                            herdProject("herdr", "w5", repo: linked)],
+                                 state: .live), from: "herdr")
+        let items = ProjectsModule(context: context).panel?.items ?? []
+        #expect(items.count == 3)
+        // No repo, and a repo with one checkout, stay plain cards.
+        guard case .project(let plain) = items[0], case .repo(let group) = items[1], case .project(let single) = items[2] else {
+            Issue.record("unexpected items \(items)")
+            return
+        }
+        #expect(plain.project.id.local == "w1")
+        #expect(single.project.id.local == "w3")
+        // The group sits where its first member was, main checkout first, then worktrees in order.
+        #expect(group.name == "repo 1")
+        #expect(group.projects.map(\.project.id.local) == ["w4", "w2", "w5"])
+        #expect(group.projects.map { $0.agents.map(\.agent.id.local) } == [["a"], ["b"], []])
+        #expect(group.projects.first?.action == .focusProject(ProjectID(source: "herdr", local: "w4")))
+    }
+
+    @Test func reposOfDifferentSourcesStayApart() {
+        let repo = HerdRepo(key: "repo-1", name: "repo 1")
+        store.apply(SourceUpdate(agents: [], projects: [herdProject("herdr", "w1", repo: repo)], state: .live), from: "herdr")
+        store.apply(SourceUpdate(agents: [], projects: [herdProject("other", "w1", repo: repo)], state: .live), from: "other")
+        let items = ProjectsModule(context: context).panel?.items ?? []
+        #expect(items.count == 2)
+        #expect(cards(ProjectsModule(context: context).panel).count == 2)
+    }
+
     @Test func agentsWithoutAProjectGetASourceCard() {
         store.apply(SourceUpdate(agents: [HerdAgent(id: AgentID(source: "other", local: "z"), name: "z", status: .idle)],
                                  state: .live), from: "other")

@@ -60,6 +60,20 @@ import Testing
         #expect(ids(PaletteSearch.results(items(), query: "tests pass")) == ["agent/herdr:b"])
     }
 
+    @Test func theRepoNameFindsEveryWorktree() {
+        store.apply(SourceUpdate(
+            agents: [herdAgent("herdr", "a", .working, project: "main", projectID: "w1"),
+                     herdAgent("herdr", "b", .idle, project: "feature-x", projectID: "w2")],
+            projects: [herdProject("herdr", "w1", name: "main", repo: HerdRepo(key: "k", name: "shepherd")),
+                       herdProject("herdr", "w2", name: "feature-x", repo: HerdRepo(key: "k", name: "shepherd", isLinkedCheckout: true)),
+                       herdProject("herdr", "w3", name: "notes")],
+            state: .live), from: "herdr")
+        let results = PaletteSearch.results(items(), query: "shepherd")
+        #expect(Set(ids(results)) == ["project/herdr:w1", "project/herdr:w2", "agent/herdr:a", "agent/herdr:b"])
+        // The project's own name stays its title.
+        #expect(results.first { $0.id == "project/herdr:w2" }?.item.title == "feature-x")
+    }
+
     @Test func titlesRankFirstAndHighlight() throws {
         showHerd()
         let results = PaletteSearch.results(items(), query: "web")
