@@ -18,10 +18,11 @@ These need a person, real agents or other hardware:
   (digit and button); prompting a real idle agent; a new task on a real herdr (creates a git
   worktree); left and right keys scrolling across columns in the live bar; Reply from a macOS
   notification with no Focus mode on.
-- From the palette: Escape handing typing back to the previous app; Tab, →, ← and ⌘ digits in the
-  fields; prompting a real idle agent and answering a real approval; a new task from it on a real
-  herdr; whether ⌥Space clashes with a launcher such as Raycast or Alfred; a config change
-  re-registering the hotkey live, and a clash with `hotkeys.next` showing in the footer.
+- From the palette (⌥Space opening, Tab into a prompt and prompting a real idle agent are
+  confirmed): Escape handing typing back to the previous app; → and ⌘ digits in the fields;
+  answering a real approval; a new task from it on a real herdr; whether ⌥Space clashes with a
+  launcher such as Raycast or Alfred on other Macs; a config change re-registering the hotkey
+  live, and a clash with `hotkeys.next` showing in the footer.
 
 ## Milestone 5: UI and UX pass, and a modular UI
 
