@@ -407,7 +407,8 @@ shows), `context` (context sizes, read through `ModuleContext.contextReader` onl
 shows), `notifications` and `projects` (the cards; a source that is not live shows its last known state,
 dimmed, never as current; two or more checkouts of one repo, by `HerdProject.repo`, share one
 `PanelRepoCard` at the place of the first, main checkout first, each checkout a sub-header
-with its agents under it).
+with its agents under it; a checkout with one agent is a single row, its label then the agent's
+state, which jumps to the agent).
 
 `ModuleRegistry` builds the enabled modules from `config.modules` (all, in default order, when
 absent), reports unknown ids, and rebuilds when the list changes; a module that stays enabled

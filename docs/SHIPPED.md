@@ -99,6 +99,7 @@ Oldest first.
   (`Workspace.worktree`) into `HerdProject.repo`. `projects` puts two or more checkouts of one
   repo in one `PanelRepoCard` (one card in the panel, one column in the bar) at the first one's
   place, main checkout first, each with a sub-header (label, focus dot, tokens, a branch glyph
-  for worktrees) that focuses it. Keyboard navigation walks each checkout's header and agents;
+  for worktrees) that focuses it; a checkout with one agent is one row (its label, the agent's
+  state and time) that jumps to the agent. Keyboard navigation walks each checkout's header and agents;
   the palette finds every worktree by the repo's name. FakeHerdr has `repo <workspace> [name]`,
   and its `worktree.create` makes a linked worktree of the source's repo.

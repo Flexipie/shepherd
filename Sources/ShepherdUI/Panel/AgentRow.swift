@@ -4,10 +4,13 @@ import SwiftUI
 /// An agent in the queue (with its project) or in a project card (without). One accessibility
 /// element: "codex, api, needs you, 4 minutes". With `onJump`, an arrow after the time jumps
 /// straight to the agent; it shows while the row is hovered or selected. A context size, when
-/// known, sits before the time ("184k", or "184k context" with `namesContext`).
+/// known, sits before the time ("184k", or "184k context" with `namesContext`). With `checkout`,
+/// the row stands for a repo card's checkout and its one agent: the checkout's label (a branch
+/// glyph for a worktree, a dot when focused) as the title, then the agent's status.
 struct AgentRow: View {
     let row: PanelAgentRow
     let now: Date
+    var checkout: HerdProject?
     var showsProject = false
     var namesContext = false
     var isSelected = false
@@ -23,8 +26,12 @@ struct AgentRow: View {
                 .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + 4 }
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Highlighted.text(row.agent.name, nameHighlights)
-                        .font(.system(size: showsProject ? 13 : 12, weight: .semibold))
+                    if let checkout {
+                        checkoutTitle(checkout)
+                    } else {
+                        Highlighted.text(row.agent.name, nameHighlights)
+                            .font(.system(size: showsProject ? 13 : 12, weight: .semibold))
+                    }
                     Text(subtitle)
                         .font(.system(size: showsProject ? 12 : 11))
                         .foregroundStyle(.secondary)
@@ -34,11 +41,13 @@ struct AgentRow: View {
                             .font(.system(size: 11).monospacedDigit())
                             .foregroundStyle(.secondary)
                             .help(ContextSize.help(tokens))
+                            .fixedSize()
                     }
                     if let elapsed = Elapsed.short(row.agent.since, now: now) {
                         Text(elapsed)
                             .font(.system(size: 11).monospacedDigit())
                             .foregroundStyle(.secondary)
+                            .fixedSize()
                     }
                     if let onJump {
                         jumpButton(onJump)
@@ -60,6 +69,22 @@ struct AgentRow: View {
         .accessibilityActions {
             if let onJump { Button("Jump", action: onJump) }
         }
+    }
+
+    private func checkoutTitle(_ checkout: HerdProject) -> some View {
+        HStack(spacing: 5) {
+            if checkout.repo?.isLinkedCheckout == true {
+                Image(systemName: "arrow.triangle.branch")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.secondary)
+            }
+            Text(checkout.name.isEmpty ? "Untitled" : checkout.name)
+                .font(.system(size: 12, weight: .semibold))
+            if checkout.isFocusedInSource {
+                Circle().fill(Color.accentColor).frame(width: 5, height: 5)
+            }
+        }
+        .layoutPriority(1)
     }
 
     /// Always laid out, so the row does not shift when the arrow appears.
@@ -86,6 +111,11 @@ struct AgentRow: View {
 
     private var accessibilityText: String {
         var parts = [row.agent.name]
+        if let checkout {
+            parts.insert(checkout.name, at: 0)
+            if checkout.repo?.isLinkedCheckout == true { parts.insert("worktree", at: 1) }
+            if checkout.isFocusedInSource { parts.append("focused") }
+        }
         if showsProject, !row.agent.project.isEmpty { parts.append(row.agent.project) }
         parts.append(row.isLive ? row.agent.statusText : "last seen \(row.agent.statusText), not live")
         if let spoken = Elapsed.spoken(row.agent.since, now: now) { parts.append(spoken) }

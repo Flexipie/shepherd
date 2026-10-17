@@ -149,9 +149,10 @@ import Testing
         let targets = PanelTarget.all(in: SampleHerd.contentWithRepo.sections)
         let project = { (local: String) in PanelAction.focusProject(ProjectID(source: "herdr", local: local)) }
         let agent = { (local: String) in PanelAction.jump(AgentID(source: "herdr", local: local)) }
-        // After the queue (3) and api (3): each checkout's header, then its agents.
-        #expect(Array(targets.dropFirst(6).prefix(7)).map(\.action) == [
-            project("w4"), agent("w4:p1"), project("w5"), agent("w5:p1"), agent("w5:p2"), project("w6"), agent("w6:p1"),
+        // After the queue (3) and api (3): each checkout's header, then its agents. A checkout
+        // with one agent is one row, which jumps to the agent.
+        #expect(Array(targets.dropFirst(6).prefix(5)).map(\.action) == [
+            agent("w4:p1"), project("w5"), agent("w5:p1"), agent("w5:p2"), agent("w6:p1"),
         ])
         #expect(Set(targets.map(\.id)).count == targets.count)
     }
@@ -212,7 +213,7 @@ import Testing
         let columns = BarColumn.layout(SampleHerd.contentWithRepo.sections)
         #expect(columns.map(\.id) == ["queue", "projects/herdr:w1", "projects/repo/herdr/repo-shop", "projects/herdr:w2"])
         let targets = PanelTarget.all(in: columns)
-        #expect(targets.filter { $0.column == 2 }.count == 7)
+        #expect(targets.filter { $0.column == 2 }.count == 5)
     }
 
     @Test func targetsAreLaidOutByColumn() {
