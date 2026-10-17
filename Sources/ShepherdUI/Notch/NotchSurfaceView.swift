@@ -30,6 +30,8 @@ public struct NotchSurfaceView: View {
     let expandedHeight: CGFloat
     let clock: PanelClock
     let barMaxHeight: CGFloat?
+    let tab: PanelTab
+    let onTab: (PanelTab) -> Void
     let perform: (PanelAction) -> Void
     let onStage: ((StageAction) -> Void)?
     let onExpand: () -> Void
@@ -40,9 +42,10 @@ public struct NotchSurfaceView: View {
 
     /// `expandedHeight` is the expanded shape's height, notch included; the view reports the
     /// height its bar wants through `onExpandedHeight`. `barMaxHeight` makes the bar's columns
-    /// scroll past that height.
+    /// scroll past that height. `tab` is the bar's tab.
     public init(mode: NotchSurfaceMode, metrics: NotchMetrics, expandedHeight: CGFloat, clock: PanelClock = .live,
-                barMaxHeight: CGFloat? = nil, perform: @escaping (PanelAction) -> Void = { _ in },
+                barMaxHeight: CGFloat? = nil, tab: PanelTab = .agents, onTab: @escaping (PanelTab) -> Void = { _ in },
+                perform: @escaping (PanelAction) -> Void = { _ in },
                 onStage: ((StageAction) -> Void)? = nil, onExpand: @escaping () -> Void = {},
                 onExpandedHeight: @escaping (CGFloat) -> Void = { _ in }) {
         self.mode = mode
@@ -50,6 +53,8 @@ public struct NotchSurfaceView: View {
         self.expandedHeight = expandedHeight
         self.clock = clock
         self.barMaxHeight = barMaxHeight
+        self.tab = tab
+        self.onTab = onTab
         self.perform = perform
         self.onStage = onStage
         self.onExpand = onExpand
@@ -137,7 +142,7 @@ public struct NotchSurfaceView: View {
         VStack(spacing: 0) {
             Color.clear.frame(height: metrics.notchHeight)
             NotchBarView(content: content, clock: clock, width: width, maxHeight: barMaxHeight, stage: stage,
-                         offersNewTask: offersNewTask, perform: perform, onStage: onStage)
+                         offersNewTask: offersNewTask, tab: tab, onTab: onTab, perform: perform, onStage: onStage)
         }
         // Its own height, not the shape's: the shape follows the content, not the other way.
         .fixedSize()

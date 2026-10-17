@@ -51,16 +51,27 @@ struct NotRunning: LocalizedError {
         #expect(module.panel?.emptyText == "Reading usage…")
     }
 
+    @Test func nothingIsReadOnTheAgentsTab() async {
+        let module = module()
+        presence.setPanel("menu", showing: .agents)
+        await settle()
+        #expect(reader.reads == 0)
+        #expect(module.panel?.tab == .gadgets)
+        presence.setPanel("menu", showing: .gadgets)
+        await until { reader.reads == 1 }
+        #expect(reader.reads == 1)
+    }
+
     @Test func openingReadsOnceUntilItExpires() async {
         let module = module()
-        presence.setPanel("notch", visible: true)
+        presence.setPanel("notch", showing: .gadgets)
         await until { module.panel?.items.count == 1 }
         #expect(reader.reads == 1)
         #expect(module.panel?.items.count == 1)
         // Closing and opening again within the report's lifetime reads nothing.
-        presence.setPanel("notch", visible: false)
+        presence.setPanel("notch", showing: nil)
         await settle()
-        presence.setPanel("menu", visible: true)
+        presence.setPanel("menu", showing: .gadgets)
         await settle()
         #expect(reader.reads == 1)
     }
@@ -68,12 +79,12 @@ struct NotRunning: LocalizedError {
     @Test func openingAfterItExpiredReadsAgain() async {
         reader.expiresIn = 0.1
         let module = module()
-        presence.setPanel("notch", visible: true)
+        presence.setPanel("notch", showing: .gadgets)
         await until { module.refreshAt != nil }
-        presence.setPanel("notch", visible: false)
+        presence.setPanel("notch", showing: nil)
         await settle(0.2)
         #expect(reader.reads == 1)
-        presence.setPanel("notch", visible: true)
+        presence.setPanel("notch", showing: .gadgets)
         await until { reader.reads == 2 }
         #expect(reader.reads == 2)
         _ = module
@@ -82,7 +93,7 @@ struct NotRunning: LocalizedError {
     @Test func whileOpenItReadsAgainAtExpiry() async {
         reader.expiresIn = 0.5
         let module = module()
-        presence.setPanel("notch", visible: true)
+        presence.setPanel("notch", showing: .gadgets)
         await until { module.refreshAt != nil }
         #expect(reader.reads == 1)
         await until { reader.reads == 2 }
@@ -93,9 +104,9 @@ struct NotRunning: LocalizedError {
     @Test func closingCancelsTheScheduledRead() async {
         reader.expiresIn = 0.2
         let module = module()
-        presence.setPanel("notch", visible: true)
+        presence.setPanel("notch", showing: .gadgets)
         await until { module.refreshAt != nil }
-        presence.setPanel("notch", visible: false)
+        presence.setPanel("notch", showing: nil)
         await settle(0.6)
         #expect(reader.reads == 1)
         _ = module
@@ -104,7 +115,7 @@ struct NotRunning: LocalizedError {
     @Test func aFailedReadIsANotice() async {
         reader.error = NotRunning()
         let module = module()
-        presence.setPanel("menu", visible: true)
+        presence.setPanel("menu", showing: .gadgets)
         await until { module.panel?.items.isEmpty == false }
         #expect(module.panel?.items == [.notice("OpenUsage is not running.")])
     }

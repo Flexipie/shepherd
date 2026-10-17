@@ -3,9 +3,9 @@ import ShepherdCore
 
 /// The context size of agents whose session a reader understands (Claude Code for now), shown on
 /// their rows and stage. It has no section of its own: it fills `ModuleContext.agentContext`,
-/// which row builders read. It reads only while a panel is open: every agent with a session on
-/// opening, then an agent again when its status changes. Closed, nothing is read. Turned off, the
-/// sizes go away with it.
+/// which row builders read. It reads only while a panel shows the Agents tab: every agent with a
+/// session on showing it, then an agent again when its status changes. Otherwise nothing is read.
+/// Turned off, the sizes go away with it.
 @MainActor
 public final class ContextModule: ShepherdModule {
     public static let id = "context"
@@ -30,7 +30,7 @@ public final class ContextModule: ShepherdModule {
 
     private func watchVisibility() {
         let visible = withObservationTracking {
-            context.presence.isPanelVisible
+            context.presence.isShowing(.agents)
         } onChange: { [weak self] in
             Task { @MainActor in self?.watchVisibility() }
         }
@@ -55,7 +55,7 @@ public final class ContextModule: ShepherdModule {
 
     /// Reads every agent with a session whose status differs from when it was last read.
     private func readChanged() {
-        guard context.contextReader != nil, context.presence.isPanelVisible else { return }
+        guard context.contextReader != nil, context.presence.isShowing(.agents) else { return }
         for agent in context.store.agents where readStatus[agent.id] != agent.status {
             guard let session = agent.session else { continue }
             readStatus[agent.id] = agent.status
@@ -76,7 +76,7 @@ public final class ContextModule: ShepherdModule {
             if context.store.agents.contains(where: { $0.id == agent }) {
                 context.agentContext.set(tokens, for: agent)
             }
-            if again.remove(agent) != nil, context.presence.isPanelVisible,
+            if again.remove(agent) != nil, context.presence.isShowing(.agents),
                let current = context.store.agents.first(where: { $0.id == agent }), let session = current.session {
                 read(agent, session)
             }

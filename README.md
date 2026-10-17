@@ -17,6 +17,10 @@ PR number, a diff, a review verdict), and lets you act on it without switching t
   then finished, longest waiting first), then one card per workspace with each agent's state and
   time in state, plus your plugins' tokens. Up and down move the selection, Return jumps, Escape
   or a click outside closes it. Click a card's title to switch herdr to that workspace.
+- **Agents | Gadgets.** The panel and the notch bar have two tabs at the top: Agents (the queue
+  and your projects, where each opening starts) and Gadgets (usage, This Mac). Click a tab or
+  press ⌘1 and ⌘2. With every gadget turned off there are no tabs. A gadget reads only while
+  its tab shows.
   Right-click the icon for a small menu with the connection state and Quit.
 - **"Next" hotkey.** ⌃⌥⌘N from any app jumps to the next agent that needs you; press again to
   walk the queue. Nothing waiting, nothing happens.
@@ -45,20 +49,20 @@ PR number, a diff, a review verdict), and lets you act on it without switching t
 - **New task.** The "+" after the project columns: pick a project, an agent and a prompt
   (a branch name is optional). Shepherd creates a git worktree from that project's repo, starts
   the agent in it and sends the prompt, then shows you the new agent.
-- **Usage.** A column next to the needs-you list shows your Claude Code plan limits (session,
+- **Usage.** On the Gadgets tab, a column shows your Claude Code plan limits (session,
   weekly, per model, extra usage) for every account, plus Codex and anything else you track, with
   when each resets. It reads them from [OpenUsage](https://github.com/robinebers/openusage), which
   must be running: Shepherd asks its local API on `127.0.0.1:6736` and nothing else, holds no
-  credentials and sends nothing anywhere. It reads only while the bar or panel is open, at most
+  credentials and sends nothing anywhere. It reads only while the Gadgets tab shows, at most
   once per OpenUsage refresh. Without OpenUsage the column says so. Turn it off by leaving `usage`
   out of `modules`.
 - **This Mac.** A small column after usage shows the whole Mac's CPU and memory as two bars
-  (memory as Activity Monitor's "Memory Used"). It samples every 2 seconds only while the bar or
-  panel is open; closed, nothing runs. Turn it off by leaving `system` out of `modules`.
+  (memory as Activity Monitor's "Memory Used"). It samples every 2 seconds only while the
+  Gadgets tab shows; otherwise nothing runs. Turn it off by leaving `system` out of `modules`.
 - **Context size.** A Claude Code agent's row and stage show how full its context is ("184k",
   the last turn's input and cache tokens). Shepherd finds the session herdr reports for the pane
   and reads only the tail of its file under `~/.claude/projects` (or `CLAUDE_CONFIG_DIR`),
-  read-only, when the bar or panel opens and when that agent's state changes; closed, nothing
+  read-only, when the Agents tab shows and when that agent's state changes; otherwise nothing
   is read. Other agents show none for now. Turn it off by leaving `context` out of `modules`.
 - **Notch pill** (a small floating bar on Macs without a notch). A blocked agent stays until it is
   handled; a finished one shows for a few seconds. Nothing shows for the pane you are already

@@ -11,11 +11,11 @@ import Testing
     let metrics = NotchMetrics(notchWidth: 200, notchHeight: 32, maxExpandedHeight: 300, maxExpandedWidth: 1000)
 
     func check(_ name: String, _ mode: NotchSurfaceMode, height: CGFloat, expandedHeight: CGFloat = 0,
-               sourceLocation: SourceLocation = #_sourceLocation) throws {
+               tab: PanelTab = .agents, sourceLocation: SourceLocation = #_sourceLocation) throws {
         let canvas = metrics.canvas
         try Snapshot.check(name, width: canvas.width, sourceLocation: sourceLocation) {
             NotchSurfaceView(mode: mode, metrics: metrics, expandedHeight: expandedHeight, clock: .fixed(SampleHerd.now),
-                             onStage: { _ in })
+                             tab: tab, onStage: { _ in })
                 // Only the top of the canvas, where the shape is.
                 .frame(width: canvas.width, height: height, alignment: .top)
                 .clipped()
@@ -43,13 +43,13 @@ import Testing
 
     /// The bar at its natural height, as the app sizes it.
     func checkExpanded(_ name: String, _ content: PanelContent, stage: BarStage? = nil, offersNewTask: Bool = false,
-                       sourceLocation: SourceLocation = #_sourceLocation) throws {
+                       tab: PanelTab = .agents, sourceLocation: SourceLocation = #_sourceLocation) throws {
         let width = metrics.body(.expanded, expandedHeight: 0).width
         let bar = NotchBarView(content: content, clock: .fixed(SampleHerd.now), width: width, stage: stage,
-                               offersNewTask: offersNewTask, perform: { _ in }, onStage: { _ in })
+                               offersNewTask: offersNewTask, tab: tab, perform: { _ in }, onStage: { _ in })
         let height = NSHostingView(rootView: bar.environment(\.colorScheme, .dark)).fittingSize.height + 32
         try check(name, .expanded(content, stage: stage, offersNewTask: offersNewTask), height: height + 8,
-                  expandedHeight: height, sourceLocation: sourceLocation)
+                  expandedHeight: height, tab: tab, sourceLocation: sourceLocation)
     }
 
     // ImageRenderer cannot draw the reply field (an AppKit text field): it shows as a yellow
@@ -115,18 +115,20 @@ import Testing
         try checkExpanded("notch-expanded", SampleHerd.content)
     }
 
-    @Test func expandedWithUsage() throws {
-        try checkExpanded("notch-bar-usage", SampleHerd.contentWithUsage)
+    /// The Agents tab, with the tab bar on top and the "+".
+    @Test func expandedOnAgents() throws {
+        try checkExpanded("notch-bar", SampleHerd.contentWithGadgets, offersNewTask: true)
     }
 
-    @Test func expandedWithSystem() throws {
-        try checkExpanded("notch-bar-system", SampleHerd.contentWithSystem)
+    /// Usage and This Mac side by side. No "+" off Agents.
+    @Test func expandedOnGadgets() throws {
+        try checkExpanded("notch-bar-gadgets", SampleHerd.contentWithGadgets, offersNewTask: true, tab: .gadgets)
     }
 
     @Test func expandedWithUsageNotRunning() throws {
-        let content = PanelContent(sections: [SampleHerd.queue, SampleHerd.usageNotRunning, SampleHerd.projects],
+        let content = PanelContent(sections: [SampleHerd.queue, SampleHerd.usageNotRunning, SampleHerd.system, SampleHerd.projects],
                                    statusLines: SampleHerd.content.statusLines)
-        try checkExpanded("notch-bar-usage-not-running", content)
+        try checkExpanded("notch-bar-usage-not-running", content, tab: .gadgets)
     }
 
     @Test func expandedEmptyAndDisconnected() throws {

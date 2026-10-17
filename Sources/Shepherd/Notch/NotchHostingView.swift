@@ -12,12 +12,15 @@ final class NotchSurfaceModel {
     var mode: NotchSurfaceMode?
     /// The expanded shape's height, notch included, as the panel last asked for it.
     var expandedHeight: CGFloat = 0
+    /// The bar's tab.
+    var tab: PanelTab = .agents
 }
 
 struct NotchSurfaceRoot: View {
     let model: NotchSurfaceModel
     let metrics: NotchMetrics
     let barMaxHeight: CGFloat?
+    let onTab: (PanelTab) -> Void
     let perform: (PanelAction) -> Void
     let onStage: (StageAction) -> Void
     let onExpand: () -> Void
@@ -26,7 +29,7 @@ struct NotchSurfaceRoot: View {
     var body: some View {
         if let mode = model.mode {
             NotchSurfaceView(mode: mode, metrics: metrics, expandedHeight: model.expandedHeight, barMaxHeight: barMaxHeight,
-                             perform: perform, onStage: onStage, onExpand: onExpand, onExpandedHeight: onExpandedHeight)
+                             tab: model.tab, onTab: onTab, perform: perform, onStage: onStage, onExpand: onExpand, onExpandedHeight: onExpandedHeight)
         }
     }
 }

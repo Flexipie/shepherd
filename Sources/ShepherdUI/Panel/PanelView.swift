@@ -23,12 +23,16 @@ public enum PanelClock: Sendable {
     case fixed(Date)
 }
 
-/// The panel under the menu bar icon: the needs-you queue, then a card per project, then status
-/// and problems. Up and down move the selection, Return chooses it, hovering selects.
+/// The panel under the menu bar icon: the Agents | Gadgets tabs (when any gadget is on), then the
+/// tab's sections (on Agents the needs-you queue and a card per project), then status and
+/// problems. Up and down move the selection, Return chooses it, hovering selects, ⌘1 and ⌘2
+/// switch tabs.
 public struct PanelView: View {
     let content: PanelContent
     let clock: PanelClock
     let maxHeight: CGFloat?
+    let tab: PanelTab
+    let onTab: (PanelTab) -> Void
     let perform: (PanelAction) -> Void
 
     @State private var selection: PanelTarget.ID?
@@ -39,11 +43,14 @@ public struct PanelView: View {
     public nonisolated static let width: CGFloat = 360
 
     /// `maxHeight` makes the sections scroll past that height; nil lets the view grow.
-    public init(content: PanelContent, clock: PanelClock = .live, maxHeight: CGFloat? = nil,
-                selection: PanelTarget.ID? = nil, perform: @escaping (PanelAction) -> Void) {
+    public init(content: PanelContent, clock: PanelClock = .live, maxHeight: CGFloat? = nil, tab: PanelTab = .agents,
+                onTab: @escaping (PanelTab) -> Void = { _ in }, selection: PanelTarget.ID? = nil,
+                perform: @escaping (PanelAction) -> Void) {
         self.content = content
         self.clock = clock
         self.maxHeight = maxHeight
+        self.tab = tab
+        self.onTab = onTab
         self.perform = perform
         _selection = State(initialValue: selection)
     }
@@ -63,11 +70,17 @@ public struct PanelView: View {
         .onKeyPress(.downArrow) { move(1) }
         .onKeyPress(.upArrow) { move(-1) }
         .onKeyPress(.return) { choose() }
+        .onKeyPress(characters: .decimalDigits) { press in switchTab(press) }
         .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: content)
     }
 
     private func panel(now: Date) -> some View {
         VStack(alignment: .leading, spacing: 0) {
+            if content.hasTabs {
+                PanelTabBar(selected: content.shownTab(tab), onTab: onTab)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 10)
+            }
             if let maxHeight {
                 ScrollView {
                     sections(now: now)
@@ -84,7 +97,7 @@ public struct PanelView: View {
 
     private func sections(now: Date) -> some View {
         VStack(alignment: .leading, spacing: 14) {
-            ForEach(content.sections) { section in
+            ForEach(visibleSections) { section in
                 PanelSectionView(section: section, now: now, selection: selection, perform: perform) { selection = $0 }
             }
         }
@@ -119,14 +132,25 @@ public struct PanelView: View {
         }
     }
 
+    private var visibleSections: [PanelSection] { content.sections(on: tab) }
+
     private func move(_ offset: Int) -> KeyPress.Result {
-        selection = PanelTarget.move(from: selection, by: offset, in: PanelTarget.all(in: content.sections))
+        selection = PanelTarget.move(from: selection, by: offset, in: PanelTarget.all(in: visibleSections))
         return .handled
     }
 
     private func choose() -> KeyPress.Result {
-        guard let target = PanelTarget.all(in: content.sections).first(where: { $0.id == selection }) else { return .ignored }
+        guard let target = PanelTarget.all(in: visibleSections).first(where: { $0.id == selection }) else { return .ignored }
         perform(target.action)
+        return .handled
+    }
+
+    /// ⌘1 and ⌘2 pick a tab.
+    private func switchTab(_ press: KeyPress) -> KeyPress.Result {
+        guard press.modifiers.contains(.command), content.hasTabs, let next = PanelTab.forDigit(press.characters) else {
+            return .ignored
+        }
+        if next != content.shownTab(tab) { onTab(next) }
         return .handled
     }
 }

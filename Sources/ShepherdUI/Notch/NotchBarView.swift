@@ -1,14 +1,16 @@
 import ShepherdCore
 import SwiftUI
 
-/// The notch's expanded state: a wide, short bar along the top of the screen. The needs-you queue
-/// is pinned on the left, then one column per project card (or per other section), scrolling
-/// sideways when there are many; each column scrolls on its own past `maxHeight`. Status lines
-/// and config problems share one quiet line along the bottom. Arrows move across the grid,
-/// Return chooses, hovering selects.
+/// The notch's expanded state: a wide, short bar along the top of the screen. The Agents | Gadgets
+/// tabs sit on top when any gadget is on. On Agents the needs-you queue is pinned on the left,
+/// then one column per project card (or per other section), scrolling sideways when there are
+/// many; on Gadgets each gadget is a column. Each column scrolls on its own past `maxHeight`.
+/// Status lines and config problems share one quiet line along the bottom. Arrows move across
+/// the grid, Return chooses, hovering selects, ⌘1 and ⌘2 switch tabs.
 ///
 /// With `onStage`, choosing an agent's row opens its stage in place of the project columns
 /// instead of jumping, and `offersNewTask` adds a "+" after the columns for the new task form.
+/// Both are on the Agents tab only.
 /// Escape or Left goes back, a digit picks one of a stage's choices. The arrow on a hovered or
 /// selected row, ⌘-click and ⌘Return jump straight to the agent.
 public struct NotchBarView: View {
@@ -18,6 +20,8 @@ public struct NotchBarView: View {
     let maxHeight: CGFloat?
     let stage: BarStage?
     let offersNewTask: Bool
+    let tab: PanelTab
+    let onTab: (PanelTab) -> Void
     let perform: (PanelAction) -> Void
     let onStage: ((StageAction) -> Void)?
 
@@ -35,14 +39,18 @@ public struct NotchBarView: View {
     /// `maxHeight` makes each column scroll past that height; nil lets the columns grow (and,
     /// for snapshots, cuts off the columns that do not fit instead of scrolling them).
     public init(content: PanelContent, clock: PanelClock = .live, width: CGFloat, maxHeight: CGFloat? = nil,
-                stage: BarStage? = nil, offersNewTask: Bool = false, selection: PanelTarget.ID? = nil,
+                stage: BarStage? = nil, offersNewTask: Bool = false, tab: PanelTab = .agents,
+                onTab: @escaping (PanelTab) -> Void = { _ in }, selection: PanelTarget.ID? = nil,
                 perform: @escaping (PanelAction) -> Void, onStage: ((StageAction) -> Void)? = nil) {
         self.content = content
         self.clock = clock
         self.width = width
         self.maxHeight = maxHeight
-        self.stage = stage
         self.offersNewTask = offersNewTask
+        self.tab = tab
+        self.onTab = onTab
+        // A stage replaces the project columns, which only Agents has.
+        self.stage = content.shownTab(tab) == .agents ? stage : nil
         self.perform = perform
         self.onStage = onStage
         _selection = State(initialValue: selection)
@@ -65,18 +73,25 @@ public struct NotchBarView: View {
         .onKeyPress(.leftArrow) { stage == nil ? move(.left) : closeStage() }
         .onKeyPress(.rightArrow) { stage == nil ? move(.right) : .handled }
         .onKeyPress(.escape) { stage == nil ? .ignored : closeStage() }
-        .onKeyPress(characters: .decimalDigits) { press in pick(press.characters) }
+        .onKeyPress(characters: .decimalDigits) { press in
+            press.modifiers.contains(.command) ? switchTab(press.characters) : pick(press.characters)
+        }
         .onKeyPress(.return, phases: .down) { press in choose(command: press.modifiers.contains(.command)) }
         .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: content)
     }
 
-    private var columns: [BarColumn] { BarColumn.layout(content.sections) }
+    private var columns: [BarColumn] { BarColumn.layout(content.sections(on: tab)) }
 
     private func bar(now: Date) -> some View {
         let columns = self.columns
         let pinned = columns.first.flatMap { $0.isQueue ? $0 : nil }
         let rest = pinned == nil ? columns : Array(columns.dropFirst())
         return VStack(alignment: .leading, spacing: 0) {
+            if content.hasTabs {
+                PanelTabBar(selected: content.shownTab(tab), onTab: onTab)
+                    .padding(.horizontal, 18)
+                    .padding(.top, 6)
+            }
             HStack(alignment: .top, spacing: Self.spacing) {
                 if let pinned {
                     column(pinned, now: now)
@@ -162,7 +177,7 @@ public struct NotchBarView: View {
     /// Room the stage needs around its lines: its header and an error line.
     static let stageChrome: CGFloat = 58
 
-    private var newTaskButton: Bool { offersNewTask && onStage != nil }
+    private var newTaskButton: Bool { offersNewTask && onStage != nil && content.shownTab(tab) == .agents }
 
     /// Agent rows open their stage when there is one to open; anything else, such as a project
     /// header, does what it always does.
@@ -219,6 +234,13 @@ public struct NotchBarView: View {
 
     private func closeStage() -> KeyPress.Result {
         onStage?(.close)
+        return .handled
+    }
+
+    /// ⌘1 and ⌘2 pick a tab.
+    private func switchTab(_ characters: String) -> KeyPress.Result {
+        guard content.hasTabs, let next = PanelTab.forDigit(characters) else { return .ignored }
+        if next != content.shownTab(tab) { onTab(next) }
         return .handled
     }
 

@@ -90,3 +90,8 @@ Oldest first.
 - Palette prompt focus: after Tab the prompt field takes the keyboard (focusing in `onAppear` came
   too early once the search field it replaced was gone, so typing went nowhere). The field sits
   in a visible box and stays enabled while a send is on its way. Default hotkey moved to ⌥Space.
+- Agents | Gadgets tabs: the menu bar panel and the notch bar have a tab bar at the top (Agents,
+  the queue and projects, where each opening starts; Gadgets, usage and This Mac), clicked or
+  ⌘1 and ⌘2. `PanelSection.tab` says where a section goes, so gadgets need no central list.
+  `Presence` tracks the tab each surface shows; `usage` and `system` read only while Gadgets
+  shows and `context` only while Agents shows. No gadgets enabled, no tab bar.

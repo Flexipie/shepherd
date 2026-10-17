@@ -39,9 +39,24 @@ final class StubSystemSampler: SystemSampler {
         #expect(module.panel?.emptyText == "Measuring…")
     }
 
+    @Test func switchingToAgentsStopsSampling() async {
+        let module = module()
+        presence.setPanel("menu", showing: .agents)
+        try? await Task.sleep(for: .milliseconds(150))
+        #expect(sampler.samples == 0)
+        #expect(module.panel?.tab == .gadgets)
+        presence.setPanel("menu", showing: .gadgets)
+        await until { sampler.samples >= 2 }
+        presence.setPanel("menu", showing: .agents)
+        try? await Task.sleep(for: .milliseconds(30))
+        let after = sampler.samples
+        try? await Task.sleep(for: .milliseconds(250))
+        #expect(sampler.samples == after)
+    }
+
     @Test func openingSamplesAndKeepsSampling() async {
         let module = module()
-        presence.setPanel("notch", visible: true)
+        presence.setPanel("notch", showing: .gadgets)
         await until { sampler.samples >= 1 }
         // The first sample of an opening only primes the CPU reading.
         #expect(module.sample?.cpu == nil)
@@ -52,9 +67,9 @@ final class StubSystemSampler: SystemSampler {
 
     @Test func closingStopsSampling() async {
         let module = module()
-        presence.setPanel("notch", visible: true)
+        presence.setPanel("notch", showing: .gadgets)
         await until { sampler.samples >= 2 }
-        presence.setPanel("notch", visible: false)
+        presence.setPanel("notch", showing: nil)
         try? await Task.sleep(for: .milliseconds(30))
         let after = sampler.samples
         try? await Task.sleep(for: .milliseconds(250))

@@ -60,16 +60,24 @@ import Testing
         }
     }
 
+    /// The Agents tab, with the tab bar on top.
     @Test func wholePanel() throws {
         try Snapshot.check("panel", width: PanelView.width) {
-            PanelView(content: SampleHerd.content, clock: .fixed(SampleHerd.now),
+            PanelView(content: SampleHerd.contentWithGadgets, clock: .fixed(SampleHerd.now),
                       selection: PanelTarget.all(in: SampleHerd.content.sections).first?.id) { _ in }
         }
     }
 
-    @Test func panelWithUsage() throws {
-        try Snapshot.check("panel-usage", width: PanelView.width) {
-            PanelView(content: SampleHerd.contentWithUsage, clock: .fixed(SampleHerd.now)) { _ in }
+    @Test func panelOnGadgets() throws {
+        try Snapshot.check("panel-gadgets", width: PanelView.width) {
+            PanelView(content: SampleHerd.contentWithGadgets, clock: .fixed(SampleHerd.now), tab: .gadgets) { _ in }
+        }
+    }
+
+    /// With every gadget turned off there is no tab bar.
+    @Test func panelWithoutGadgets() throws {
+        try Snapshot.check("panel-no-gadgets", width: PanelView.width) {
+            PanelView(content: SampleHerd.content, clock: .fixed(SampleHerd.now)) { _ in }
         }
     }
 
@@ -84,6 +92,37 @@ import Testing
         try Snapshot.check("notch-pill-floating", width: 340) {
             NotchPillView(item: item) {}.frame(height: NotchPillView.contentHeight).padding(6)
         }
+    }
+}
+
+@Suite struct PanelTabTests {
+    let content = SampleHerd.contentWithGadgets
+
+    @Test func eachTabShowsItsSections() {
+        #expect(content.hasTabs)
+        #expect(content.sections(on: .agents).map(\.id) == ["queue", "projects"])
+        #expect(content.sections(on: .gadgets).map(\.id) == ["usage", "system"])
+    }
+
+    @Test func withoutGadgetsThereAreNoTabs() {
+        #expect(!SampleHerd.content.hasTabs)
+        #expect(SampleHerd.content.shownTab(.gadgets) == .agents)
+        #expect(SampleHerd.content.sections(on: .gadgets).map(\.id) == ["queue", "projects"])
+    }
+
+    @Test func navigationTargetsTheVisibleTabOnly() {
+        let agents = PanelTarget.all(in: content.sections(on: .agents))
+        #expect(agents == PanelTarget.all(in: SampleHerd.content.sections))
+        // Usage and This Mac cards are not selectable, so Gadgets has nothing to move through.
+        #expect(PanelTarget.all(in: content.sections(on: .gadgets)).isEmpty)
+        #expect(BarColumn.layout(content.sections(on: .gadgets)).map(\.id) == ["usage", "system"])
+    }
+
+    @Test func commandDigitsPickTabs() {
+        #expect(PanelTab.forDigit("1") == .agents)
+        #expect(PanelTab.forDigit("2") == .gadgets)
+        #expect(PanelTab.forDigit("3") == nil)
+        #expect(PanelTab.forDigit("0") == nil)
     }
 }
 

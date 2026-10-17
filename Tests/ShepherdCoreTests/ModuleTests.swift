@@ -36,6 +36,23 @@ final class RecordingActions: AgentActions {
         herdAgent("herdr", local, status, since: Date(), focused: focused)
     }
 
+    @Test func presenceTracksTheTabOfEachSurface() {
+        #expect(!presence.isPanelVisible)
+        #expect(!presence.isShowing(.agents))
+        presence.setPanel("menu", showing: .agents)
+        presence.setPanel("notch", showing: .gadgets)
+        #expect(presence.isPanelVisible)
+        #expect(presence.isShowing(.agents))
+        #expect(presence.isShowing(.gadgets))
+        presence.setPanel("menu", showing: .gadgets)
+        #expect(!presence.isShowing(.agents))
+        presence.setPanel("notch", showing: nil)
+        #expect(presence.isShowing(.gadgets))
+        presence.setPanel("menu", showing: nil)
+        #expect(!presence.isPanelVisible)
+        #expect(!presence.isShowing(.gadgets))
+    }
+
     @Test func statusCountsWaitingAgentsAndDimsWhenNotLive() {
         let module = StatusModule(context: context)
         show([agent("a", .working), agent("b", .blocked), agent("c", .done)])

@@ -1,3 +1,19 @@
+/// The tabs at the top of the menu bar panel and the notch bar. Each section says which one it
+/// sits on, so a new gadget needs no list here.
+public enum PanelTab: String, Sendable, Hashable, CaseIterable {
+    /// The needs-you queue and the projects: what the surfaces are for.
+    case agents
+    /// Usage, This Mac and other gadgets.
+    case gadgets
+
+    public var title: String {
+        switch self {
+        case .agents: "Agents"
+        case .gadgets: "Gadgets"
+        }
+    }
+}
+
 /// What a module puts in the panel: a titled section of items. Values only; the app draws them.
 public struct PanelSection: Sendable, Equatable, Identifiable {
     /// The module's id.
@@ -6,12 +22,15 @@ public struct PanelSection: Sendable, Equatable, Identifiable {
     public let items: [PanelItem]
     /// Shown when `items` is empty.
     public let emptyText: String
+    /// The tab the section shows on.
+    public let tab: PanelTab
 
-    public init(id: String, title: String, items: [PanelItem], emptyText: String) {
+    public init(id: String, title: String, items: [PanelItem], emptyText: String, tab: PanelTab = .agents) {
         self.id = id
         self.title = title
         self.items = items
         self.emptyText = emptyText
+        self.tab = tab
     }
 }
 
