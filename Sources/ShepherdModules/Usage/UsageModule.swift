@@ -3,9 +3,10 @@ import Observation
 import ShepherdCore
 
 /// Plan usage for the user's coding agent accounts, as a panel section with one card per
-/// account. It reads only while a panel is open: once on opening when the last report is
-/// missing or past its `expiresAt`, and again at that time if the panel is still open. Closed,
-/// nothing runs: no timer and no request. With no reader in the context it has no section.
+/// account, on the Gadgets tab. It reads only while a panel shows that tab: once on showing it
+/// when the last report is missing or past its `expiresAt`, and again at that time if it still
+/// shows. Otherwise nothing runs: no timer and no request. With no reader in the context it has
+/// no section.
 @MainActor
 @Observable
 public final class UsageModule: ShepherdModule {
@@ -37,12 +38,12 @@ public final class UsageModule: ShepherdModule {
         let notices = [problem].compactMap { $0 } + (report?.problems ?? [])
         items.insert(contentsOf: notices.map(PanelItem.notice), at: 0)
         let empty = report == nil && problem == nil ? "Reading usage…" : "No accounts in OpenUsage"
-        return PanelSection(id: Self.id, title: "Usage", items: items, emptyText: empty)
+        return PanelSection(id: Self.id, title: "Usage", items: items, emptyText: empty, tab: .gadgets)
     }
 
     private func watchVisibility() {
         let visible = withObservationTracking {
-            context.presence.isPanelVisible
+            context.presence.isShowing(.gadgets)
         } onChange: { [weak self] in
             Task { @MainActor in self?.watchVisibility() }
         }
@@ -74,11 +75,11 @@ public final class UsageModule: ShepherdModule {
                 refreshAt = now.addingTimeInterval(errorLifetime)
             }
             isReading = false
-            if context.presence.isPanelVisible { schedule() }
+            if context.presence.isShowing(.gadgets) { schedule() }
         }
     }
 
-    /// One read at `refreshAt`, while the panel stays open.
+    /// One read at `refreshAt`, while the Gadgets tab stays shown.
     private func schedule() {
         scheduled?.cancel()
         guard let refreshAt else { return }
@@ -86,7 +87,7 @@ public final class UsageModule: ShepherdModule {
         scheduled = Task { @MainActor [weak self] in
             try? await Task.sleep(for: .seconds(delay))
             // Presence, not `isVisible`: a close may not have reached `watchVisibility` yet.
-            guard !Task.isCancelled, let self, self.context.presence.isPanelVisible else { return }
+            guard !Task.isCancelled, let self, self.context.presence.isShowing(.gadgets) else { return }
             self.scheduled = nil
             self.read()
         }

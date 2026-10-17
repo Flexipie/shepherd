@@ -45,17 +45,25 @@ public final class ModuleContext {
 public final class Presence {
     /// Sources whose host app is frontmost, so the agent each has focused is on screen.
     public var frontmostSources: Set<SourceID> = []
-    /// The surfaces showing the panel's content right now: the menu bar panel, the notch bar.
-    public private(set) var visiblePanels: Set<String> = []
+    /// The surfaces showing the panel's content right now (the menu bar panel, the notch bar),
+    /// and the tab each shows.
+    public private(set) var visiblePanels: [String: PanelTab] = [:]
 
     public init() {}
 
-    /// Whether any panel is open, so a module that reads something only while shown can read.
+    /// Whether any panel is open.
     public var isPanelVisible: Bool { !visiblePanels.isEmpty }
 
-    public func setPanel(_ surface: String, visible: Bool) {
-        guard visiblePanels.contains(surface) != visible else { return }
-        if visible { visiblePanels.insert(surface) } else { visiblePanels.remove(surface) }
+    /// Whether any open panel shows `tab`, so a module that reads something only while its
+    /// section is on screen can read.
+    public func isShowing(_ tab: PanelTab) -> Bool {
+        visiblePanels.values.contains(tab)
+    }
+
+    /// Records the tab `surface` shows; nil when it is closed.
+    public func setPanel(_ surface: String, showing tab: PanelTab?) {
+        guard visiblePanels[surface] != tab else { return }
+        visiblePanels[surface] = tab
     }
 
     /// Whether the user is probably looking at this agent right now.

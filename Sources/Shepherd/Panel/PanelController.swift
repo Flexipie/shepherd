@@ -16,6 +16,8 @@ final class PanelController: NSObject, NSWindowDelegate {
     private var hosting: PanelHostingView<PanelView>?
     private var anchor: NSRect = .zero
     private var screen: NSScreen?
+    /// The tab shown. Each opening starts on Agents; the tab is not saved.
+    private var tab: PanelTab = .agents
     private let host = FloatingPanelHost()
     /// Bumps on every open, so a stale observation callback from an earlier opening is ignored.
     private var generation = 0
@@ -35,6 +37,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         guard panel == nil else { return }
         self.anchor = anchor
         self.screen = screen
+        tab = .agents
         generation += 1
         let panel = ShepherdPanel()
         panel.delegate = self
@@ -52,7 +55,7 @@ final class PanelController: NSObject, NSWindowDelegate {
         panel.makeKeyAndOrderFront(nil)
         host.startMonitoring { [weak self] in self?.close() }
         render(generation)
-        presence.setPanel("menu", visible: true)
+        presence.setPanel("menu", showing: tab)
         onVisibilityChange?(true)
     }
 
@@ -65,16 +68,25 @@ final class PanelController: NSObject, NSWindowDelegate {
         self.panel = nil
         hosting = nil
         closedAt = Date()
-        presence.setPanel("menu", visible: false)
+        presence.setPanel("menu", showing: nil)
         onVisibilityChange?(false)
     }
 
     // MARK: Content
 
     private func view(_ content: PanelContent) -> PanelView {
-        PanelView(content: content, maxHeight: maxSectionsHeight) { [weak self] action in
+        PanelView(content: content, maxHeight: maxSectionsHeight, tab: tab, onTab: { [weak self] tab in
+            self?.show(tab)
+        }) { [weak self] action in
             self?.perform(action)
         }
+    }
+
+    private func show(_ tab: PanelTab) {
+        guard let hosting, tab != self.tab else { return }
+        self.tab = tab
+        presence.setPanel("menu", showing: tab)
+        hosting.rootView = view(content.current())
     }
 
     /// Re-renders when anything the content reads changes, for as long as this opening lasts.

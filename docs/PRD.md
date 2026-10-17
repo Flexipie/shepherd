@@ -220,6 +220,16 @@ This is the herdr source. herdr speaks newline-delimited JSON over a Unix socket
 
 Every surface is optional and degrades on its own.
 
+The menu bar panel and the notch bar have two tabs at the top (`PanelTab`): **Agents**, the
+needs-you queue and the project cards, and **Gadgets**, usage, This Mac and future gadgets. Each
+section says its tab (`PanelSection.tab`, Agents by default), so a new gadget needs no list. A
+surface draws the tab bar, then only the current tab's sections, and its keyboard navigation
+covers only those. Each opening starts on Agents; the tab is not saved. ⌘1 and ⌘2 switch tabs
+while the surface has the keyboard. With no section off Agents (every gadget turned off) there
+is no tab bar. The stage and the "+" live on Agents; switching away closes a stage. The footer
+shows on both tabs. Each surface reports its tab to `Presence`, so a module reads only while
+its tab shows (`Presence.isShowing(_:)`).
+
 - **Menu bar.** Counts (working, needs you) and a disconnected state. On a MacBook a crowded menu
   bar can hide the item behind the notch, which is one more reason the notch surface exists.
 - **Notch surface.** One black shape around the notch, flush with the top of the screen, with
@@ -260,22 +270,22 @@ Every surface is optional and degrades on its own.
     and `agents.<kind>.args` from config), then `agent.prompt`, and opens the new agent's stage.
     A step that fails after an earlier one worked says what was left behind ("Created worktree
     x, but claude did not start: ...").
-- **Usage** (the `usage` module), a column right after the needs-you queue in the bar and a
-  section in the menu bar panel: one card per OpenUsage provider (Claude accounts first), each
-  limit as a thin bar (orange from 80%) with its value and "resets in", notes below, dimmed when
-  stale. It reads only while a panel is open (`Presence.isPanelVisible`): on opening when the
+- **Usage** (the `usage` module), on the Gadgets tab, a column in the bar and a section in the
+  menu bar panel: one card per OpenUsage provider (Claude accounts first), each limit as a thin
+  bar (orange from 80%) with its value and "resets in", notes below, dimmed when stale. It reads
+  only while a surface shows Gadgets (`Presence.isShowing(.gadgets)`): on showing it when the
   last report is missing or past its earliest future `expiresAt`, then once more at that time if
-  still open; closing cancels it. Without OpenUsage running the column says so.
-- **This Mac** (the `system` module), a column after usage: one card with CPU and memory as
-  bars, reusing the usage card. While a panel is open it samples on opening (which only primes
-  the CPU reading), after 0.5 s, then every 2 s; closing cancels the task, so nothing runs
-  while closed.
+  still shown; leaving the tab or closing cancels it. Without OpenUsage running the column says so.
+- **This Mac** (the `system` module), on the Gadgets tab, a column after usage: one card with CPU
+  and memory as bars, reusing the usage card. While Gadgets shows it samples once (which only
+  primes the CPU reading), after 0.5 s, then every 2 s; leaving the tab or closing cancels the
+  task, so nothing runs otherwise.
 - **Context size** (the `context` module, no section of its own): a Claude Code agent's
   context size on its row ("184k", before the time; help "Context: 184,213 tokens") and in its
-  stage header ("184k context"). While a panel is open the module reads every agent with a
-  session on opening, then an agent again when its status changes, into
+  stage header ("184k context"). While a surface shows Agents the module reads every agent with
+  a session on showing it, then an agent again when its status changes, into
   `ModuleContext.agentContext` (`AgentContextStore`), which `queue` and `projects` read into
-  `PanelAgentRow.contextTokens`. Closed, nothing is read; gone agents drop out; turned off, the
+  `PanelAgentRow.contextTokens`. Otherwise nothing is read; gone agents drop out; turned off, the
   store empties and rows show no size.
 - **Notifications** (the `notifications` module, off by default). When an agent becomes
   `blocked` (a change seen happening, from a live source) while the user is not looking at it
@@ -384,11 +394,12 @@ Contributions are value types (`StatusContribution`, `NotchItem`, `PanelSection`
 observable state; the app reads them inside observation tracking, so a surface redraws only when
 what it shows changes. A panel section holds agent rows and project cards, each with its token
 lines already styled and the `PanelAction` it performs (jump to an agent, focus a project), or
-none when the source cannot. Built in: `status`, `notch`, `queue` (the needs-you queue, live
-sources only), `usage` (plan usage, read through `ModuleContext.usage` only while a panel is
-open), `system` (CPU and memory, sampled through `ModuleContext.system` only while a panel is
-open), `context` (context sizes, read through `ModuleContext.contextReader` only while a
-panel is open), `notifications` and `projects` (the cards; a source that is not live shows its last known state,
+none when the source cannot. A section names its tab (`PanelSection.tab`); a gadget sets
+`.gadgets` and reads only while `Presence.isShowing(.gadgets)`. Built in: `status`, `notch`, `queue` (the needs-you queue, live
+sources only), `usage` (plan usage, read through `ModuleContext.usage` only while Gadgets
+shows), `system` (CPU and memory, sampled through `ModuleContext.system` only while Gadgets
+shows), `context` (context sizes, read through `ModuleContext.contextReader` only while Agents
+shows), `notifications` and `projects` (the cards; a source that is not live shows its last known state,
 dimmed, never as current).
 
 `ModuleRegistry` builds the enabled modules from `config.modules` (all, in default order, when

@@ -101,13 +101,11 @@ enum SampleHerd {
     ])
 
     static let usage = PanelSection(id: "usage", title: "Usage", items: [.usage(personal), .usage(team), .usage(codex)],
-                                    emptyText: "Reading usage…")
+                                    emptyText: "Reading usage…", tab: .gadgets)
 
     static let usageNotRunning = PanelSection(id: "usage", title: "Usage", items: [
         .notice("OpenUsage is not running. Shepherd reads Claude and Codex usage from it: github.com/robinebers/openusage"),
-    ], emptyText: "")
-
-    static let contentWithUsage = PanelContent(sections: [queue, usage, projects], statusLines: content.statusLines)
+    ], emptyText: "", tab: .gadgets)
 
     // MARK: This Mac
 
@@ -116,8 +114,9 @@ enum SampleHerd {
             meter("cpu", "CPU", 0.23),
             meter("memory", "Memory", 0.86, "31.0 of 36 GB"),
         ])),
-    ], emptyText: "Measuring…")
+    ], emptyText: "Measuring…", tab: .gadgets)
 
-    static let contentWithSystem = PanelContent(sections: [queue, usage, system, projects], statusLines: content.statusLines)
+    /// Every module on, in default order: the Agents and Gadgets tabs.
+    static let contentWithGadgets = PanelContent(sections: [queue, usage, system, projects], statusLines: content.statusLines)
 }
 

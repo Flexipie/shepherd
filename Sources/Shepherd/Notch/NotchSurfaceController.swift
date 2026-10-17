@@ -28,7 +28,7 @@ final class NotchSurfaceController: NSObject, NSWindowDelegate {
     private var hosting: NotchHostingView?
     private let presence: Presence
     private var expanded = false {
-        didSet { presence.setPanel("notch", visible: expanded) }
+        didSet { presence.setPanel("notch", showing: expanded ? model.tab : nil) }
     }
     private var hoverTask: Task<Void, Never>?
     /// Bumps on every render, so a stale observation callback is ignored.
@@ -69,6 +69,8 @@ final class NotchSurfaceController: NSObject, NSWindowDelegate {
     private func expand() {
         cancelHover()
         guard !expanded, geometry?.metrics != nil else { return }
+        // Each opening starts on Agents; the tab is not saved.
+        model.tab = .agents
         expanded = true
         render()
     }
@@ -91,6 +93,7 @@ final class NotchSurfaceController: NSObject, NSWindowDelegate {
         panel.onCancel = { [weak self] in self?.collapse() }
         let root = NotchSurfaceRoot(
             model: model, metrics: metrics, barMaxHeight: barMaxHeight,
+            onTab: { [weak self] tab in self?.show(tab) },
             perform: { [weak self] action in self?.perform(action) },
             onStage: { [weak self] action in self?.stageAction(action) },
             onExpand: { [weak self] in self?.expand() },
@@ -264,6 +267,14 @@ final class NotchSurfaceController: NSObject, NSWindowDelegate {
     private func cancelHover() {
         hoverTask?.cancel()
         hoverTask = nil
+    }
+
+    private func show(_ tab: PanelTab) {
+        guard expanded, tab != model.tab else { return }
+        // A stage reads its agent while open; it lives on Agents only.
+        if tab != .agents { stage.close() }
+        model.tab = tab
+        presence.setPanel("notch", showing: tab)
     }
 
     private func perform(_ action: PanelAction) {

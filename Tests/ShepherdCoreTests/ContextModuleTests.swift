@@ -60,12 +60,25 @@ final class StubContextReader: AgentContextReader {
         _ = module
     }
 
+    @Test func nothingIsReadOnTheGadgetsTab() async {
+        let (module, _) = module()
+        send([agent("p1", .working)])
+        await until { store.agents.count == 1 }
+        presence.setPanel("notch", showing: .gadgets)
+        await settle()
+        #expect(reader.reads.isEmpty)
+        presence.setPanel("notch", showing: .agents)
+        await until { reader.reads.count == 1 }
+        #expect(reader.reads == ["session-p1"])
+        _ = module
+    }
+
     @Test func openingReadsEveryAgentWithASession() async {
         let (module, context) = module()
         let plain = HerdAgent(id: AgentID(source: "herdr", local: "p3"), kind: "claude", name: "p3", status: .idle)
         send([agent("p1", .working), agent("p2", .idle, kind: "codex"), plain])
         await until { store.agents.count == 3 }
-        presence.setPanel("notch", visible: true)
+        presence.setPanel("notch", showing: .agents)
         await until { reader.reads.count == 2 }
         await settle()
         #expect(reader.reads.sorted() == ["session-p1", "session-p2"])
@@ -77,7 +90,7 @@ final class StubContextReader: AgentContextReader {
         let (module, context) = module()
         send([agent("p1", .working), agent("p2", .idle)])
         await until { store.agents.count == 2 }
-        presence.setPanel("notch", visible: true)
+        presence.setPanel("notch", showing: .agents)
         await until { reader.reads.count == 2 }
         reader.tokens = 190_000
         send([agent("p1", .idle), agent("p2", .idle)])
@@ -93,7 +106,7 @@ final class StubContextReader: AgentContextReader {
         let (module, context) = module()
         send([agent("p1", .idle)])
         await until { store.agents.count == 1 }
-        presence.setPanel("menu", visible: true)
+        presence.setPanel("menu", showing: .agents)
         await until { !context.agentContext.tokens.isEmpty }
         send([])
         await until { context.agentContext.tokens.isEmpty }
@@ -106,7 +119,7 @@ final class StubContextReader: AgentContextReader {
         var module: ContextModule? = ContextModule(context: context)
         send([agent("p1", .idle)])
         await until { store.agents.count == 1 }
-        presence.setPanel("menu", visible: true)
+        presence.setPanel("menu", showing: .agents)
         await until { !context.agentContext.tokens.isEmpty }
         #expect(module != nil)
         module = nil
@@ -120,7 +133,7 @@ final class StubContextReader: AgentContextReader {
         let context2 = ContextModule(context: context)
         send([agent("p1", .idle)])
         await until { store.agents.count == 1 }
-        presence.setPanel("menu", visible: true)
+        presence.setPanel("menu", showing: .agents)
         await until { !context.agentContext.tokens.isEmpty }
         guard case .project(let card)? = projects.panel?.items.first else {
             Issue.record("no card")

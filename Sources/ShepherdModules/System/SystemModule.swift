@@ -2,9 +2,9 @@ import Foundation
 import Observation
 import ShepherdCore
 
-/// The whole Mac's CPU and memory, as a panel section with one meter card. It samples only while
-/// a panel is open: once on opening, then every `interval`. Closed, nothing runs. With no sampler
-/// in the context it has no section.
+/// The whole Mac's CPU and memory, as a panel section with one meter card on the Gadgets tab. It
+/// samples only while a panel shows that tab: once on showing it, then every `interval`.
+/// Otherwise nothing runs. With no sampler in the context it has no section.
 @MainActor
 @Observable
 public final class SystemModule: ShepherdModule {
@@ -16,7 +16,7 @@ public final class SystemModule: ShepherdModule {
     @ObservationIgnored private var isVisible = false
     @ObservationIgnored private var sampling: Task<Void, Never>?
     /// The sampler's CPU share covers the time since its last sample, which after a close is
-    /// the whole closed spell. So the first sample of an opening only primes it, and the next
+    /// the whole hidden spell. So the first sample of an opening only primes it, and the next
     /// comes sooner than the rest.
     @ObservationIgnored var firstInterval: TimeInterval = 0.5
     @ObservationIgnored var interval: TimeInterval = 2
@@ -29,12 +29,12 @@ public final class SystemModule: ShepherdModule {
     public var panel: PanelSection? {
         guard context.system != nil else { return nil }
         let items = sample.map { [PanelItem.usage(Self.provider($0))] } ?? []
-        return PanelSection(id: Self.id, title: "This Mac", items: items, emptyText: "Measuring…")
+        return PanelSection(id: Self.id, title: "This Mac", items: items, emptyText: "Measuring…", tab: .gadgets)
     }
 
     private func watchVisibility() {
         let visible = withObservationTracking {
-            context.presence.isPanelVisible
+            context.presence.isShowing(.gadgets)
         } onChange: { [weak self] in
             Task { @MainActor in self?.watchVisibility() }
         }
@@ -50,7 +50,7 @@ public final class SystemModule: ShepherdModule {
             while true {
                 try? await Task.sleep(for: .seconds(delay))
                 // Presence, not `isVisible`: a close may not have reached `watchVisibility` yet.
-                guard !Task.isCancelled, let self, self.context.presence.isPanelVisible else { return }
+                guard !Task.isCancelled, let self, self.context.presence.isShowing(.gadgets) else { return }
                 self.sample = sampler.sample()
                 delay = interval
             }
