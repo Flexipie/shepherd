@@ -9,20 +9,43 @@ Shepherd is a real product, built to be published on GitHub for every developer 
 agents in parallel. Not a personal script, not a demo. Someone should be able to find the repo,
 install it in a minute, and keep it running because it makes their day better.
 
-The one-line pitch: **run a herd of coding agents from anywhere on your Mac. One queue for
-everything that needs you, from every agent you use.**
+The one-line pitch: **land more of your agents' work, with confidence, from anywhere on your Mac.
+Start, unblock and decide on work from every coding agent you use, without living in their
+terminals.**
 
-Shepherd is a power tool for running many agents, not a companion that watches one. Think inbox
-zero for your agents, with the keyboard flow of the best Mac apps. herdr is the first and richest
-source of agents; others follow as source adapters (see [STRATEGY.md](STRATEGY.md) and
-PRD "Sources").
+Shepherd is a general tool for developers who run coding agents, not a herdr tool. herdr is the
+first source of agents; Claude Code, Codex and cloud agents follow as source adapters (see
+[STRATEGY.md](STRATEGY.md) and PRD "Sources"). Shepherd does not run agents itself. It owns the
+developer's attention and the decisions between the agents.
+
+## The core: confident merges per minute of attention
+
+Agents are no longer the scarce part. Running five of them is easy, and the agent tools now ship
+their own dashboards. What is scarce is the developer's attention, and the step that eats it is
+deciding: is this finished work right, and is it safe to merge? Before merging, people go to the
+agent and ask it what it changed, what it thinks is best, and what is risky. Studies of teams
+using agents find more code but not more finished work, because review and verification became
+the bottleneck.
+
+So the number Shepherd maximises is **changes the developer is confident to merge, per minute of
+their attention.** Every feature should help with one step of that loop:
+
+1. **Start** work from anywhere in a few keys, in whichever agent and checkout fits.
+2. **Stay quiet** while agents work, and earn every interruption.
+3. **Unblock** an agent that needs a yes or an answer without leaving the app you are in.
+4. **Decide** on finished work with what you would otherwise go to the terminal for: the agent's
+   own account of what it did, its answers to your usual questions, and the facts (diff, tests,
+   PR, other agents touching the same files). Then merge, follow up or send it back.
+
+A feature that only shows the same state somewhere else is not enough on its own; the agent tools
+already do that. The palette (⌥Space) is the centre of the loop.
 
 ## Who it is for
 
-- **The parallel-agent developer.** Runs five to fifteen agents at once across workspaces and
-  worktrees. Their problem is attention: which agent needs me, which one finished, which one is
-  stuck, and what did each change. They work in other apps (browser, Slack, editor) between
-  checks.
+- **The parallel-agent developer.** Runs a few to fifteen agents at once across worktrees, in
+  Claude Code, Codex, herdr or a mix. Their problem is attention: which agent needs me, which one
+  finished, which one is stuck, what did each change, and can I trust it. They work in other apps
+  (browser, Slack, editor) between checks.
 - **The herdr power user.** Writes plugins and tunes `config.toml`. Wants a surface that renders
   what their plugins publish, and actions they can define without forking.
 - **The contributor.** Wants to add a module or a source in an afternoon without understanding

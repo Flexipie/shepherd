@@ -56,8 +56,28 @@ their workspace or project, time in state, tokens, and the transitions Shepherd 
   stale state as current).
 - Hooks are allowed only inside a source adapter, for an agent that has no API. Nothing outside
   the adapter knows a hook exists.
-- Order: herdr through public 0.1, then Claude Code directly, then cloud agents through their
-  APIs (opt-in, the first network-using sources).
+- Order: herdr first, then Claude Code directly, then cloud agents through their APIs (opt-in,
+  the first network-using sources).
+
+What a Claude Code source can use (checked October 17, 2026 on Claude Code 2.1.299, read only):
+
+- `claude agents --json` (add `--all` for completed background sessions) prints every Claude
+  session on the machine, interactive and background, as a JSON array and exits: `id`,
+  `sessionId`, `name`, `kind` (`interactive` or `background`), `cwd`, `pid`, `startedAt`, `status`
+  (`busy`, `idle`, `waiting`), `state` (`blocked`, `done`, `failed`) and `waitingFor`. It is a
+  snapshot, not a stream; one read takes about 0.2 s and 0.16 s of CPU.
+- Claude Code keeps one file per running process in `~/.claude/sessions/<pid>.json`, rewritten as
+  its status changes (`status`, `statusUpdatedAt`). The plan: watch that directory as the event
+  (no polling), then re-read with `claude agents --json`, debounced, as herdr's events trigger a
+  `session.snapshot`. The file's fields are internal, so only the change matters, not its
+  contents. The `.key` files beside them are never read.
+- `claude --bg "<prompt>"` starts a background session in its own worktree; `claude attach`,
+  `logs`, `stop` and `rm` manage it. That gives start, read and focus (attach in a terminal).
+- Interactive sessions include ones running inside herdr panes, so one agent can appear from
+  both sources. They share Claude's session id (herdr's `agent_session`), which is how the store
+  will tell them apart.
+- Agent view is a research preview: the source must tolerate missing fields and a missing
+  command, and say so in its status line.
 
 As built:
 

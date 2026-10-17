@@ -11,6 +11,27 @@ that order: never trade daily usefulness for reach.
 
 ## The landscape
 
+Updated October 17, 2026, after a survey of the field.
+
+**The field is crowded where Shepherd started.** The awesome-agent-orchestrators list has about 275
+projects, about 80 of them desktop or web apps for parallel agents (herdr is on it). Menu bar
+status apps on Claude Code's hooks are common (Claude Island, Hawky, AgentBar, claude-status-bar),
+one shows permission prompts in the notch (DockTerm), and worktree apps (Conductor, Superset,
+Nimbalyst, Claude Squad) are many.
+
+**The agent tools are absorbing the basics.** Claude Code's agent view (`claude agents`, research
+preview since May 2026) groups sessions by state, writes a one-line summary per session, and lets
+you peek, reply, dispatch new background sessions and see PR status, each session in its own
+worktree. Auto mode (March 2026) answers most approval prompts with a classifier; users accepted
+about 93% of prompts anyway. So seeing state, jumping, replying and fewer approvals are becoming
+free inside each tool. They cover one tool, in its terminal.
+
+**The bottleneck moved to review and trust.** A Harvard working paper on 718 firms found about 30%
+more code but no measurable rise in finished work, with review taking 49% longer; developer
+surveys agree. Practitioners put their limit at two or three parallel threads and describe
+hopping between terminals as burnout. Simon Willison can review and land one significant change
+at a time, and runs research and small tasks in parallel.
+
 [Coucou](https://github.com/Louis-CFM/coucou) is a notch companion for agent sessions. It reached
 about 4,200 stars in its first eleven days (released Sep 27, 2026) and ships near daily. It
 already has:
@@ -24,10 +45,13 @@ Why it took off: a character (Mochi) that makes people smile and makes the GIF; 
 whatever agent you already use; one "wow" moment (approve from the Lock Screen); a shareable
 image; a story ("the open version of what studios teased") and a fast release pace.
 
-Where it is weak, which is our opening:
+Where it and the rest of the field are weak, which is our opening:
 
-- It watches one session at a time. It does not help you run eight agents in parallel: no triage,
-  no keyboard flow through a queue, no launching work, no reviewing what finished.
+- Nobody helps with the merge decision. Tools show state and diffs; none bring the agent's own
+  account, your usual questions and the facts together so you can decide without the terminal.
+- They are one tool each. Agent view is Claude only and in a terminal; the notifiers watch, they
+  do not let you start, unblock and decide across tools from anywhere on the Mac.
+- Coucou watches one session at a time: no triage, no launching work, no reviewing what finished.
 - It is a kitchen sink (music, payments, LLM chat). Charming, not a serious work tool.
 - Per-agent hooks spread through the app, which break as agents change.
 
@@ -36,21 +60,26 @@ the job.
 
 ## Positioning
 
-> **Coucou is a friend that tells you when an agent needs you. Shepherd is how you run a herd of
-> them.**
+> **The agent tools run your agents. Shepherd is where you decide on their work: start, unblock
+> and land it from anywhere on your Mac, across every agent you use.**
 
-A power tool for people running five to fifteen agents, with the polish of Linear or Superhuman:
-inbox zero for your agents.
+What it maximises: changes you are confident to merge, per minute of your attention (VISION
+"The core"). With the polish of Linear or Superhuman: inbox zero for your agents' work.
 
 ## Pillars
 
-1. **The queue.** Everything that needs you, ranked: quick approvals, then questions, then
-   finished work. Keyboard first. Answering eight agents takes thirty seconds.
-2. **Launch.** Hotkey, pick a repo, type a task: a worktree and an agent, running.
-3. **Review inbox.** Finished work with diff stats, one key to open, test or turn into a PR.
-4. **Fewer interruptions over time.** Spot repeated approvals and suggest allowlisting them.
-5. **Local and cloud agents in one place.** Parallel work is moving to background and cloud
-   agents; Shepherd shows them next to local ones.
+1. **Ready to land.** For finished work, what you would go to the terminal for: the agent's final
+   message, its answers to your saved questions (one key, or automatic as a setting), and the
+   facts (diff, tests, PR, overlap with other agents). One key to merge, follow up or send back.
+2. **Start from anywhere.** ⌥Space, a repo, a prompt: an agent running in herdr, in a Claude Code
+   background session or in a new terminal window. Scouts too: a question whose answer comes
+   back to the palette, not a diff.
+3. **The queue.** Everything that needs you, ranked, keyboard first, answered without leaving the
+   app you are in.
+4. **Every agent in one place.** herdr, Claude Code and Codex locally, cloud agents later.
+
+Dropped as a pillar: fewer approvals by suggesting allowlists. Auto mode now does most of that
+inside Claude Code.
 
 Ideas behind each pillar are in [IDEAS.md](IDEAS.md); decided ones are in
 [ROADMAP.md](ROADMAP.md).
@@ -62,8 +91,8 @@ Shepherd is not herdr-only. Agents arrive through source adapters onto one herd 
 
 1. **herdr** through public 0.1. The richest source (state, control, worktrees), and the one the
    author uses daily, so dogfooding stays honest.
-2. **Claude Code directly**, after 0.1. Where most of the audience is. Uses hooks, contained in
-   its adapter.
+2. **Claude Code directly**, next. Where most of the audience is. Through its own session
+   interface (`claude agents --json`, `claude --bg`), not hooks; see PRD "Sources".
 3. **Cloud agents** through their APIs. The clearest differentiator.
 
 The seam goes in during milestone 1, while it is cheap.
