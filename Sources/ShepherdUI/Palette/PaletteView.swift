@@ -162,7 +162,7 @@ public struct PaletteView: View {
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 14)
-        .onAppear { fieldFocused = true }
+        .focusOnAppear($fieldFocused)
     }
 
     private func list(_ results: [PaletteResult], selected: PaletteItem.ID?, now: Date) -> some View {

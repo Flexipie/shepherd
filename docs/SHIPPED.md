@@ -87,3 +87,6 @@ Oldest first.
   new task form in the palette with the project picked; a started task becomes the new agent's
   prompt page. Escape or ← in an empty field goes back with the query kept; the page keys are
   the pure `PaletteMode` in Core.
+- Palette prompt focus: after Tab the prompt field takes the keyboard (focusing in `onAppear` came
+  too early once the search field it replaced was gone, so typing went nowhere). The field sits
+  in a visible box and stays enabled while a send is on its way. Default hotkey moved to ⌥Space.
