@@ -26,10 +26,19 @@ public struct PanelTarget: Sendable, Hashable, Identifiable {
         items.flatMap { item -> [PanelAction] in
             switch item {
             case .agent(let row): [row.action].compactMap { $0 }
-            case .project(let card): ([card.action] + card.agents.map(\.action)).compactMap { $0 }
+            case .project(let card): actions(in: card)
+            case .repo(let card):
+                card.projects.flatMap { project in
+                    RepoCard.soleAgent(project).map { [$0.action].compactMap { $0 } } ?? actions(in: project)
+                }
             case .usage, .notice: []
             }
         }
+    }
+
+    /// A project's header, then its agents.
+    static func actions(in card: PanelProjectCard) -> [PanelAction] {
+        ([card.action] + card.agents.map(\.action)).compactMap { $0 }
     }
 
     /// Every selectable item, top to bottom, as one column.

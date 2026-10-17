@@ -1,21 +1,23 @@
 import Foundation
 import HerdrKit
 
-/// New tasks: `worktree.create` opens a workspace with one shell pane, and `agent.start` runs an
-/// agent in a shell pane, with herdr's checks on names and panes.
+/// New tasks: `worktree.create` opens a workspace with one shell pane (a linked worktree of the
+/// source workspace's repo, when it has one), and `agent.start` runs an agent in a shell pane,
+/// with herdr's checks on names and panes.
 extension FakeHerdrServer {
     static let agentKinds: Set<String> = ["claude", "codex", "pi", "opencode", "gemini", "copilot", "amp"]
 
     func serveTask(_ method: String, _ params: [String: Any], _ connection: LineConnection, _ requestID: String) {
         if method == "worktree.create" {
             let source = params["workspace_id"] as? String ?? ""
-            guard herd.workspaces.contains(where: { $0.id == source }) else {
+            guard let origin = herd.workspaces.first(where: { $0.id == source }) else {
                 return replyError(connection, requestID, code: "workspace_not_found", message: "workspace \(source) not found")
             }
             let branch = (params["branch"] as? String) ?? "worktree-\(herd.workspaces.count + 1)"
             let workspace = "w\(herd.workspaces.count + 1)"
             let pane = "\(workspace):p1"
-            herd.workspaces.append(FakeHerd.Workspace(id: workspace, label: branch))
+            let repo = origin.repo.map { FakeHerd.Repo(name: $0.name, isLinked: true, checkoutPath: "/work/\(branch)") }
+            herd.workspaces.append(FakeHerd.Workspace(id: workspace, label: branch, repo: repo))
             herd.panes.append(FakeHerd.Pane(id: pane, workspaceID: workspace, agent: nil))
             createdWorktrees.append((source, branch))
             reply(connection, requestID, [

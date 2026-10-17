@@ -37,6 +37,8 @@ public struct PanelSection: Sendable, Equatable, Identifiable {
 public enum PanelItem: Sendable, Equatable {
     case agent(PanelAgentRow)
     case project(PanelProjectCard)
+    /// Two or more checkouts of one repo, under one header.
+    case repo(PanelRepoCard)
     /// One account's plan usage.
     case usage(UsageProvider)
     case notice(String)
@@ -84,5 +86,19 @@ public struct PanelProjectCard: Sendable, Equatable {
         self.agents = agents
         self.isLive = isLive
         self.action = action
+    }
+}
+
+/// The checkouts of one repo, main checkout first: one card with a sub-header per checkout.
+public struct PanelRepoCard: Sendable, Equatable {
+    /// Unique within the section.
+    public let key: String
+    public let name: String
+    public let projects: [PanelProjectCard]
+
+    public init(key: String, name: String, projects: [PanelProjectCard]) {
+        self.key = key
+        self.name = name
+        self.projects = projects
     }
 }

@@ -156,6 +156,13 @@ public actor FakeHerdrServer {
         }
     }
 
+    /// Makes a workspace the main checkout of repo `name`; nil takes it out of git.
+    public func setRepo(_ workspace: String, name: String?) {
+        guard let index = herd.workspaces.firstIndex(where: { $0.id == workspace }) else { return }
+        herd.workspaces[index].repo = name.map { FakeHerd.Repo(name: $0) }
+        emit("workspace_updated", data: ["workspace_id": workspace])
+    }
+
     /// Sets a token on a workspace or a pane (an id with a `:` is a pane); an empty value removes
     /// it, as `report_metadata` does.
     public func setToken(_ target: String, _ key: String, _ value: String) {

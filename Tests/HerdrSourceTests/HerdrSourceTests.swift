@@ -151,6 +151,38 @@ import Testing
         await fake.stop()
     }
 
+    @Test func workspacesCarryTheirRepo() async throws {
+        let fake = FakeHerdrServer()
+        await fake.serve(try RecordedFixture.named("basic"))
+        try await fake.start()
+        let (store, _) = running(fake)
+        try await until(store) { $0.overallState == .live && !$0.projects.isEmpty }
+        let repos = Dictionary(uniqueKeysWithValues: store.projects.map { ($0.id.local, $0.repo) })
+        // w1 is the main checkout; w5 and w6 are linked worktrees of the same repo.
+        #expect(repos["w1"] == HerdRepo(key: "repo_key-1", name: "repo_name-1"))
+        #expect(repos["w5"] == HerdRepo(key: "repo_key-1", name: "repo_name-1", isLinkedCheckout: true))
+        #expect(repos["w6"] == HerdRepo(key: "repo_key-1", name: "repo_name-1", isLinkedCheckout: true))
+        // Outside git, no repo.
+        #expect(repos["w2"] == .some(nil))
+        await store.stop()
+        await fake.stop()
+    }
+
+    @Test func aNewTaskIsALinkedWorktreeOfItsRepo() async throws {
+        let fake = FakeHerdrServer()
+        try await fake.start()
+        await fake.setRepo("w1", name: "repo-1")
+        let (store, _) = running(fake)
+        try await until(store) { $0.projects.first?.repo != nil }
+        let task = NewTask(project: ProjectID(source: "herdr", local: "w1"), branch: "feature/a", kind: "claude", prompt: "go")
+        _ = try await store.startTask(task, args: [])
+        try await until(store) { $0.projects.count == 3 }
+        #expect(store.projects.map(\.repo) == [HerdRepo(key: "/tmp/repo-1/.git", name: "repo-1"), nil,
+                                               HerdRepo(key: "/tmp/repo-1/.git", name: "repo-1", isLinkedCheckout: true)])
+        await store.stop()
+        await fake.stop()
+    }
+
     @Test func onlyASessionIDBecomesASession() {
         let id = Agent(id: "p1", workspaceID: "w1", agent: "claude", status: .idle, cwd: "/tmp/project-1",
                        session: Agent.Session(agent: "claude", kind: "id", value: "session-1"))

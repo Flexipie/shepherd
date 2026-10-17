@@ -24,7 +24,8 @@ public enum PaletteIndex {
         let canPrompt = can(agent.status == .blocked ? .sendText : .prompt, agent.id.source, context)
         let row = PanelAgentRow(agent: agent, tokens: context.tokenLines(.agents, values: agent.tokens, source: agent.id.source),
                                 action: canFocus ? .jump(agent.id) : nil, contextTokens: context.agentContext.tokens[agent.id])
-        let words = [agent.kind ?? "", agent.project, agent.statusText] + values(agent.tokens) + values(project?.tokens ?? [:])
+        let words = [agent.kind ?? "", agent.project, project?.repo?.name ?? "", agent.statusText] + values(agent.tokens)
+            + values(project?.tokens ?? [:])
         return PaletteItem(id: "agent/\(agent.id)", kind: .agent(row), searchText: [agent.name] + words.filter { !$0.isEmpty },
                            action: canFocus ? .jump(agent.id) : nil, canPrompt: canPrompt)
     }
@@ -34,7 +35,7 @@ public enum PaletteIndex {
         let tokens = context.tokenLines(.projects, values: project.tokens, source: source)
         return PaletteItem(id: "project/\(project.id)",
                            kind: .project(project, agentCount: context.store.agents(in: project.id).count, tokens: tokens),
-                           searchText: [project.name] + values(project.tokens).filter { !$0.isEmpty },
+                           searchText: [project.name] + ([project.repo?.name ?? ""] + values(project.tokens)).filter { !$0.isEmpty },
                            action: can(.focusProject, source, context) ? .focusProject(project.id) : nil)
     }
 

@@ -17,6 +17,10 @@ PR number, a diff, a review verdict), and lets you act on it without switching t
   then finished, longest waiting first), then one card per workspace with each agent's state and
   time in state, plus your plugins' tokens. Up and down move the selection, Return jumps, Escape
   or a click outside closes it. Click a card's title to switch herdr to that workspace.
+  Worktrees of one repo share a card (and a column in the notch bar): the repo's name on top,
+  then the main checkout and each worktree with its own label, tokens and agents (one row when
+  it has one agent). Click a worktree's line to switch herdr to it, and type the repo's name in the palette to find them
+  all.
 - **Agents | Gadgets.** The panel and the notch bar have two tabs at the top: Agents (the queue
   and your projects, where each opening starts) and Gadgets (usage, This Mac). Click a tab or
   press ⌘1 and ⌘2. With every gadget turned off there are no tabs. A gadget reads only while
