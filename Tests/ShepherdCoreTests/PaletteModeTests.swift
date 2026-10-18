@@ -20,6 +20,16 @@ import Testing
         #expect(PaletteMode.prompt.handle(.tab, canPromptSelection: true, fieldEmpty: true) == .swallow)
     }
 
+    @Test func pluginPagesGoBackOnEscape() {
+        for mode in [PaletteMode.actions, .result] {
+            #expect(mode.handle(.escape, canPromptSelection: false, fieldEmpty: false) == .back)
+            #expect(mode.handle(.tab, canPromptSelection: true, fieldEmpty: true) == .swallow)
+            #expect(mode.handle(.right, canPromptSelection: true, fieldEmpty: true) == .pass)
+        }
+        #expect(PaletteMode.actions.handle(.left, canPromptSelection: false, fieldEmpty: true) == .back)
+        #expect(PaletteMode.actions.handle(.left, canPromptSelection: false, fieldEmpty: false) == .pass)
+    }
+
     @Test func theFormKeepsItsKeysButEscape() {
         #expect(PaletteMode.newTask.handle(.escape, canPromptSelection: false, fieldEmpty: true) == .back)
         for key in [PaletteMode.Key.tab, .left, .right] {

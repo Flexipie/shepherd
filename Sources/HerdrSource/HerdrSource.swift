@@ -191,7 +191,8 @@ public final class HerdrSource: AgentSource {
         let projects = snapshot.workspaces.map { workspace in
             HerdProject(id: ProjectID(source: id, local: workspace.id), name: workspace.label, tokens: workspace.tokens,
                         isFocusedInSource: workspace.focused || workspace.id == snapshot.focusedWorkspaceID,
-                        repo: workspace.worktree.map { HerdRepo(key: $0.repoKey, name: $0.repoName, isLinkedCheckout: $0.isLinked) })
+                        repo: workspace.worktree.map { HerdRepo(key: $0.repoKey, name: $0.repoName, isLinkedCheckout: $0.isLinked) },
+                        path: workspace.worktree?.checkoutPath)
         }
         let agents = update.session.agents.map { state -> HerdAgent in
             let agent = state.agent

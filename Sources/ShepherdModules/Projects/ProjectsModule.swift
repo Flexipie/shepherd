@@ -64,11 +64,11 @@ public final class ProjectsModule: ShepherdModule {
         let live = context.store.sourceStates[source]?.isLive == true
         let canJump = can(.focus, source)
         let rows = agents.map { agent in
-            PanelAgentRow(agent: agent, tokens: context.tokenLines(.agents, values: agent.tokens, source: source),
+            PanelAgentRow(agent: agent, tokens: context.tokenLines(.agents, values: context.tokens(of: agent), source: source),
                           isLive: live, action: canJump ? .jump(agent.id) : nil,
                           contextTokens: context.agentContext.tokens[agent.id])
         }
-        return PanelProjectCard(project: project, tokens: context.tokenLines(.projects, values: project.tokens, source: source),
+        return PanelProjectCard(project: project, tokens: context.tokenLines(.projects, values: context.tokens(of: project), source: source),
                                 agents: rows, isLive: live, action: action)
     }
 

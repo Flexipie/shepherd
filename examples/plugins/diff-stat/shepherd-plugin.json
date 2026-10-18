@@ -1,0 +1,10 @@
+{
+  "id": "diff-stat",
+  "name": "Diff stat",
+  "actions": [
+    {"id": "project", "title": "Show what changed", "context": "project", "symbol": "plus.forwardslash.minus",
+     "command": ["sh", "diff-stat.sh"]},
+    {"id": "agent", "title": "Show what changed", "context": "agent", "symbol": "plus.forwardslash.minus",
+     "command": ["sh", "diff-stat.sh"]}
+  ]
+}

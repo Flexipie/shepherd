@@ -15,17 +15,22 @@ public struct PaletteContent: Sendable, Equatable {
     }
 }
 
-/// The palette's page: the list, a prompt for one agent, or the new task form.
+/// The palette's page: the list, a prompt for one agent, the new task form, an agent's or
+/// project's plugin actions, or a plugin action's result.
 public enum PalettePage: Sendable, Equatable {
     case list
     case prompt(AgentStage)
     case newTask(NewTaskStage)
+    case actions(PluginActionsPage)
+    case result(PluginResultPage)
 
-    var mode: PaletteMode {
+    public var mode: PaletteMode {
         switch self {
         case .list: .list
         case .prompt: .prompt
         case .newTask: .newTask
+        case .actions: .actions
+        case .result: .result
         }
     }
 }
@@ -36,6 +41,8 @@ public enum PaletteEvent: Sendable, Equatable {
     case perform(PaletteAction)
     /// Prompt this agent.
     case prompt(AgentID)
+    /// Show the plugin actions for this agent or project.
+    case actions(PluginTarget)
     /// Back to the list.
     case back
     /// Send to the prompted agent, or start the task.
@@ -43,8 +50,9 @@ public enum PaletteEvent: Sendable, Equatable {
 }
 
 /// The palette: a search field over every agent, project and command. Typing filters, up and
-/// down move the selection, Return chooses it, Tab (or right) prompts the selected agent,
-/// hovering selects and clicking chooses. The query is kept while another page shows.
+/// down move the selection, Return chooses it, Tab (or right) prompts the selected agent, ⌘K
+/// shows the selected agent's or project's plugin actions, hovering selects and clicking chooses.
+/// The query is kept while another page shows.
 public struct PaletteView: View {
     let content: PaletteContent
     let clock: PanelClock
@@ -95,6 +103,10 @@ public struct PaletteView: View {
             case .newTask(let stage):
                 NewTaskView(stage: stage) { action in onEvent(action == .close ? .back : .stage(action)) }
                     .padding(16)
+            case .actions(let page):
+                PaletteActionsPageView(page: page, now: now, maxListHeight: maxListHeight, onEvent: onEvent)
+            case .result(let page):
+                PaletteResultPageView(page: page, maxHeight: maxListHeight)
             }
             footer
         }
@@ -140,12 +152,17 @@ public struct PaletteView: View {
     }
 
     private func field(_ results: [PaletteResult], selected: PaletteItem.ID?) -> some View {
-        let promptable = results.first { $0.id == selected }.flatMap { result -> AgentID? in
-            guard result.item.canPrompt, case .agent(let row) = result.item.kind else { return nil }
+        let selectedItem = results.first { $0.id == selected }?.item
+        let promptable = selectedItem.flatMap { item -> AgentID? in
+            guard item.canPrompt, case .agent(let row) = item.kind else { return nil }
             return row.agent.id
         }
-        return
-        HStack(spacing: 10) {
+        let target: PluginTarget? = switch selectedItem?.kind {
+        case .agent(let row)?: .agent(row.agent.id)
+        case .project(let project, _, _)?: .project(project.id)
+        default: nil
+        }
+        return HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 16, weight: .medium))
                 .foregroundStyle(.secondary)
@@ -163,6 +180,13 @@ public struct PaletteView: View {
         .padding(.horizontal, 18)
         .padding(.vertical, 14)
         .focusOnAppear($fieldFocused)
+        .background {
+            // ⌘K, as a shortcut so the text field does not take it first.
+            Button("Actions") { if let target { onEvent(.actions(target)) } }
+                .keyboardShortcut("k", modifiers: .command)
+                .opacity(0)
+                .accessibilityHidden(true)
+        }
     }
 
     private func list(_ results: [PaletteResult], selected: PaletteItem.ID?, now: Date) -> some View {
@@ -199,12 +223,14 @@ public struct PaletteView: View {
 
     private var hint: String {
         switch content.page {
-        case .list: "↩ jump · ⇥ prompt · esc close"
+        case .list: "↩ jump · ⇥ prompt · ⌘K actions · esc close"
         case .prompt(let stage):
             [stage.canReply ? (stage.prompts ? "↩ prompt" : "↩ reply") : nil,
              stage.canSendKeys && !stage.choices.isEmpty ? "⌘digit choose" : nil, "esc back"]
                 .compactMap { $0 }.joined(separator: " · ")
         case .newTask: "esc back"
+        case .actions: "↩ run · esc back"
+        case .result: "esc back"
         }
     }
 

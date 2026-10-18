@@ -66,6 +66,7 @@ Point a dev run at the fake and away from your real files with environment varia
 - `SHEPHERD_TRANSITION_LOG=<path>`: the transition log, so fake runs do not mix into real history.
 - `SHEPHERD_CONFIG_PATH=<path>`: Shepherd's config (default `~/.config/shepherd/config.json`).
 - `HERDR_CONFIG_PATH=<path>`: herdr's config, read for sidebar token styling.
+- `SHEPHERD_PLUGINS_PATH=<path>`: the plugins folder (default `~/.config/shepherd/plugins`).
 - `SHEPHERD_OPENUSAGE_URL=<url>`: OpenUsage's local API for the usage column (loopback only;
   default `http://127.0.0.1:6736`). `SHEPHERD_LIVE=1 swift test --filter LiveOpenUsage` reads the
   real one.

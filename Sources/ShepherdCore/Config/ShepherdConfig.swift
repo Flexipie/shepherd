@@ -20,6 +20,8 @@ public struct ShepherdConfig: Sendable, Equatable {
     /// When Shepherd posts system notifications. Off by default: the notch is the alert, and
     /// nothing asks for permission until the user turns them on.
     public var notifications: Notifications
+    /// Plugin ids to skip. Every plugin in the plugins folder is on otherwise.
+    public var disabledPlugins: [String]
 
     public enum Notifications: String, Sendable, Equatable, CaseIterable {
         /// Unless a source already posts its own (herdr with `ui.toast.delivery` "system" or
@@ -41,13 +43,14 @@ public struct ShepherdConfig: Sendable, Equatable {
     public init(modules: [String]? = nil, tokens: TokenLayout = TokenLayout(),
                 nextHotkey: String? = ShepherdConfig.defaultNextHotkey,
                 paletteHotkey: String? = ShepherdConfig.defaultPaletteHotkey, agents: [String: AgentConfig] = [:],
-                notifications: Notifications = .off) {
+                notifications: Notifications = .off, disabledPlugins: [String] = []) {
         self.modules = modules
         self.tokens = tokens
         self.nextHotkey = nextHotkey
         self.paletteHotkey = paletteHotkey
         self.agents = agents
         self.notifications = notifications
+        self.disabledPlugins = disabledPlugins
     }
 
     public static let defaults = ShepherdConfig()
@@ -71,7 +74,7 @@ public struct ShepherdConfig: Sendable, Equatable {
 
         var config = ShepherdConfig()
         var problems: [String] = []
-        for key in table.keys.sorted() where !["modules", "tokens", "hotkeys", "agents", "notifications"].contains(key) {
+        for key in table.keys.sorted() where !["modules", "tokens", "hotkeys", "agents", "notifications", "plugins"].contains(key) {
             problems.append("config: unknown key \"\(key)\"")
         }
         if let modules = table["modules"] {
@@ -149,6 +152,24 @@ public struct ShepherdConfig: Sendable, Equatable {
                 config.notifications = value
             } else {
                 problems.append("config: notifications must be \"auto\", \"on\" or \"off\"")
+            }
+        }
+        if let plugins = table["plugins"] {
+            if case .table(let keys) = plugins {
+                for key in keys.keys.sorted() where key != "disabled" {
+                    problems.append("config: unknown key \"plugins.\(key)\"")
+                }
+                if let disabled = keys["disabled"] {
+                    let items = if case .array(let items) = disabled { items } else { [ConfigValue]() }
+                    let ids = items.compactMap { item -> String? in if case .string(let id) = item { id } else { nil } }
+                    if case .array = disabled, ids.count == items.count {
+                        config.disabledPlugins = ids
+                    } else {
+                        problems.append("config: plugins.disabled must be a list of plugin ids")
+                    }
+                }
+            } else {
+                problems.append("config: plugins must be an object")
             }
         }
         return (config, problems)

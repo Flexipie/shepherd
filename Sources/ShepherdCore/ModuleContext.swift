@@ -18,10 +18,12 @@ public final class ModuleContext {
     public let contextReader: (any AgentContextReader)?
     /// Context sizes by agent, filled by the module that reads them.
     public let agentContext = AgentContextStore()
+    /// The user's plugins; nil where there are none (tests, or before the app sets one).
+    public let plugins: PluginHost?
 
     public init(store: HerdStore, presence: Presence, actions: any AgentActions, config: ConfigStore = ConfigStore(fixed: .defaults),
                 notifier: (any Notifier)? = nil, usage: (any UsageReader)? = nil, system: (any SystemSampler)? = nil,
-                contextReader: (any AgentContextReader)? = nil) {
+                contextReader: (any AgentContextReader)? = nil, plugins: PluginHost? = nil) {
         self.store = store
         self.presence = presence
         self.actions = actions
@@ -30,12 +32,23 @@ public final class ModuleContext {
         self.usage = usage
         self.system = system
         self.contextReader = contextReader
+        self.plugins = plugins
     }
 
     /// Token lines for a project's or an agent's values: the config's layout for that section,
     /// else the source's, else every token on one line.
     public func tokenLines(_ section: TokenLayout.Section, values: [String: String], source: SourceID) -> [[StyledToken]] {
         TokenLayout.lines(section, values: values, layouts: [config.config.tokens, store.tokenLayouts[source]])
+    }
+
+    /// An agent's own tokens, with any its plugins set on top.
+    public func tokens(of agent: HerdAgent) -> [String: String] {
+        agent.tokens.merging(plugins?.tokenValues(for: .agent(agent.id)) ?? [:]) { _, plugin in plugin }
+    }
+
+    /// A project's own tokens, with any its plugins set on top.
+    public func tokens(of project: HerdProject) -> [String: String] {
+        project.tokens.merging(plugins?.tokenValues(for: .project(project.id)) ?? [:]) { _, plugin in plugin }
     }
 }
 
