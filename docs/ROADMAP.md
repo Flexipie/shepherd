@@ -37,6 +37,31 @@ Done before any new gadget.
 
 Done when: the user's list is done, and adding a gadget touches only its module and one view.
 
+## Next: ready to land
+
+The core loop's decide step (VISION "The core"). Comes before milestone 6, which becomes part of
+"start from anywhere" below.
+
+- The agent's final message, read from its session (Claude Code's session file first, Codex's
+  next), on the row as a short preview and in full in the palette and the stage.
+- Saved questions in config ("What did you change, what is risky, would you merge?"): one key on
+  an agent sends one, waits for the reply and shows it in the palette. Not automatic by default;
+  a setting asks a chosen question automatically when an agent finishes.
+- The facts on finished work: diff size and files touched, read from git only while shown; the
+  PR and CI from tokens when a plugin publishes them.
+- Then one key to act: follow up, send back with a note, or open the PR.
+
+Done when: the user decides on a finished agent's work from the palette, without opening its
+terminal, on most days.
+
+## Next after that: start from anywhere, and Claude Code as a source
+
+- Claude Code as a source through its session interface (PRD "Sources"), merged with herdr's
+  view of the same sessions.
+- New task from the palette into any source that can start one: herdr, a Claude Code background
+  session (`claude --bg`), or a new terminal window.
+- Scouts: a task whose answer comes back to the palette.
+
 ## Milestone 6: more from anywhere
 
 - Drop onto the notch: drag a file, screenshot or URL onto an agent to send it as a prompt.
@@ -52,8 +77,10 @@ while shown, and never polls in the background. Everything stays local.
 
 ## Milestone 7: a second source
 
-- Claude Code as a source without herdr, through its hooks, contained in its own adapter (PRD
-  "Sources"). Capabilities it cannot offer are hidden, not faked.
+- Claude Code as a source without herdr ships in "start from anywhere" above, through its
+  session interface rather than hooks. Here: whatever it still lacks after daily use, and hooks
+  only for an agent with no such interface. Capabilities a source cannot offer are hidden, not
+  faked.
 - First run detects which sources are present and explains each.
 - Demo mode covers both sources.
 

@@ -25,7 +25,8 @@ know it.
 - **Away mode.** When the Mac has been locked for N minutes, forward needs-you to your phone
   through a user-configured action (for example a self-hosted ntfy topic or a Pushover webhook).
   Nothing leaves the Mac unless the user sets it up.
-- **Fewer interruptions at the source.** Shepherd sees every approval. When the same one keeps
+- **Fewer interruptions at the source.** Mostly covered by Claude Code's auto mode (March 2026);
+  kept for agents without one. Shepherd sees every approval. When the same one keeps
   coming back ("you approved `swift test` 14 times this week"), it suggests adding it to that
   agent's allowlist, with the exact config line. Calm by design: fewer interruptions, not just
   better ones.
@@ -84,7 +85,10 @@ know it.
 - **Rules.** Small JSON rules: "when <state or token condition>, run <action>", for example "when
   `review` becomes `changes_requested` and the agent is done, prompt it to address the review".
   Off by default, every automatic send logged and visible, one switch pauses all rules.
-- **Review inbox.** "Done" is where the human's work starts. A lane of finished workspaces with
+- **Separate reviews.** Beyond the ready-to-land card (roadmap): hand a finished change to a
+  second agent, or another model, to review before you decide, and show its verdict on the card.
+  The user wants this later, and deeper integration with how teams review.
+- **Review inbox.** Now the "ready to land" milestone in the roadmap. "Done" is where the human's work starts. A lane of finished workspaces with
   diff stats and one key each to open in the editor, run tests, or hand off to a PR action.
   Open question: diff data from plugin tokens only, or may Shepherd read git directly?
 - **Prompt snippets.** Reusable prompts in the palette with placeholders (`{branch}`,
