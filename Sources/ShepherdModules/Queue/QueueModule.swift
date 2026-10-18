@@ -16,7 +16,7 @@ public final class QueueModule: ShepherdModule {
         let rows = store.needsYou
             .filter { store.sourceStates[$0.id.source]?.isLive == true }
             .map { agent in
-                PanelAgentRow(agent: agent, tokens: context.tokenLines(.agents, values: agent.tokens, source: agent.id.source),
+                PanelAgentRow(agent: agent, tokens: context.tokenLines(.agents, values: context.tokens(of: agent), source: agent.id.source),
                               action: canFocus(agent.id.source) ? .jump(agent.id) : nil,
                               contextTokens: context.agentContext.tokens[agent.id])
             }

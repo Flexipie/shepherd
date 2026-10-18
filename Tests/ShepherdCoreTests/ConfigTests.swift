@@ -50,6 +50,14 @@ import Testing
         #expect(problems == ["config: notifications must be \"auto\", \"on\" or \"off\""])
     }
 
+    @Test func disabledPlugins() throws {
+        #expect(try read("{}").config.disabledPlugins == [])
+        #expect(try read(#"{"plugins": {"disabled": ["a", "b"]}}"#).config.disabledPlugins == ["a", "b"])
+        #expect(try read(#"{"plugins": {"disabled": "a", "x": 1}}"#).problems
+            == ["config: unknown key \"plugins.x\"", "config: plugins.disabled must be a list of plugin ids"])
+        #expect(try read(#"{"plugins": []}"#).problems == ["config: plugins must be an object"])
+    }
+
     @Test func nullTurnsTheHotkeyOff() throws {
         #expect(try read(#"{"hotkeys": {"next": null}}"#).config.nextHotkey == nil)
         let palette = try read(#"{"hotkeys": {"palette": null}}"#).config

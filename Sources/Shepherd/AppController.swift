@@ -2,6 +2,7 @@ import AppKit
 import ClaudeSessionSource
 import HerdrSource
 import OpenUsageSource
+import ShellPlugins
 import ShepherdCore
 import ShepherdModules
 import SystemSource
@@ -30,9 +31,10 @@ final class AppController {
         store = HerdStore(log: log)
         actions = AppActions(store: store, presence: presence, config: config)
         notifier = SystemNotifier(store: store, actions: actions, config: config)
+        let plugins = PluginHost(runner: ProcessPluginRunner(), store: store, config: config)
         context = ModuleContext(store: store, presence: presence, actions: actions, config: config, notifier: notifier,
                                     usage: OpenUsageReader(), system: MachSystemSampler(),
-                                    contextReader: ClaudeContextReader())
+                                    contextReader: ClaudeContextReader(), plugins: plugins)
         registry = ModuleRegistry(available: BuiltinModules.all, context: context)
     }
 

@@ -1,0 +1,5 @@
+{
+  "id": "herdr-actions",
+  "name": "herdr plugin actions",
+  "listActions": ["sh", "list.sh"]
+}

@@ -1,6 +1,7 @@
 import AppKit
 import Observation
 import ShepherdCore
+import ShepherdModules
 import ShepherdUI
 import SwiftUI
 
@@ -9,13 +10,16 @@ import SwiftUI
 /// Its prompt and new task pages are its own `StageModel`, which reads an agent's lines only
 /// while that agent's prompt shows. It closes on Escape from the list, a click outside, a Space
 /// change, losing key, or after an action or a successful send. It does not count as a visible
-/// panel: it shows no gadgets, so nothing starts reading for it.
+/// panel: it shows no gadgets, so nothing starts reading for it. Each opening refreshes the
+/// plugins (their manifests and listed actions); ⌘K shows a selection's plugin actions, and an
+/// action's printed text stays on a result page.
 @MainActor
 final class PaletteController: NSObject, NSWindowDelegate {
     private let context: ModuleContext
     private let registry: ModuleRegistry
     private let actions: AppActions
     private let stage: StageModel
+    private let plugin = PalettePluginState()
     private let host = FloatingPanelHost()
     private var panel: ShepherdPanel?
     private var hosting: PanelHostingView<PaletteView>?
@@ -59,11 +63,13 @@ final class PaletteController: NSObject, NSWindowDelegate {
         panel.makeKeyAndOrderFront(nil)
         host.startMonitoring { [weak self] in self?.close() }
         render(generation)
+        if let plugins = context.plugins { Task { await plugins.refresh() } }
     }
 
     func close() {
         guard let panel else { return }
         stage.close()
+        plugin.page = nil
         host.stopMonitoring()
         panel.delegate = nil
         panel.orderOut(nil)
@@ -77,12 +83,28 @@ final class PaletteController: NSObject, NSWindowDelegate {
     private func content() -> PaletteContent {
         let store = context.store
         let items = PaletteIndex.items(context: context, modules: registry.modules)
-        let page: PalettePage = switch stage.stage(row: { agent in Self.row(for: agent, in: items) }) {
-        case .agent(let agent)?: .prompt(agent)
-        case .newTask(let form)?: .newTask(form)
-        case nil: .list
+        let page: PalettePage = switch (plugin.page, stage.stage(row: { agent in Self.row(for: agent, in: items) })) {
+        case (.actions(let target)?, _): .actions(actionsPage(for: target))
+        case (.result(let result)?, _): .result(result)
+        case (nil, .agent(let agent)?): .prompt(agent)
+        case (nil, .newTask(let form)?): .newTask(form)
+        case (nil, nil): .list
         }
         return PaletteContent(items: items, notice: store.overallState.isLive ? nil : HerdSummary.lines(store).first, page: page)
+    }
+
+    /// The plugin actions for an agent or a project, titled with its name.
+    private func actionsPage(for target: PluginTarget) -> PluginActionsPage {
+        let store = context.store
+        let (title, scope): (String, PluginAction.Context) = switch target {
+        case .agent(let id): (store.agents.first { $0.id == id }?.name ?? "agent", .agent)
+        case .project(let id): (store.projects.first { $0.id == id }?.name ?? "project", .project)
+        case .global: ("Shepherd", .global)
+        }
+        let actions = context.plugins?.actions(for: scope) ?? []
+        return PluginActionsPage(title: title, items: actions.map { plugin, action in
+            PaletteIndex.commandItem(PluginsModule.command(plugin, action, target: target))
+        })
     }
 
     private static func row(for agent: AgentID, in items: [PaletteItem]) -> PanelAgentRow? {
@@ -112,7 +134,9 @@ final class PaletteController: NSObject, NSWindowDelegate {
         switch event {
         case .perform(let action): perform(action)
         case .prompt(let agent): stage.open(agent)
-        case .back: stage.close()
+        case .actions(let target): plugin.page = .actions(target)
+        case .back:
+            if plugin.page != nil { plugin.page = nil } else { stage.close() }
         case .stage(.startTask(let task)): stage.start(task)
         case .stage(let action): stage.send(action) { [weak self] in self?.close() }
         }
@@ -120,21 +144,42 @@ final class PaletteController: NSObject, NSWindowDelegate {
 
     private func perform(_ action: PaletteAction) {
         if case .newTask(let project) = action { return stage.openNewTask(in: project) }
+        if case .plugin(let ref) = action { return run(ref) }
         close()
         switch action {
         case .jump(let agent): actions.jump(to: agent)
         case .focusProject(let project): actions.focusProject(project)
         case .nextInQueue: actions.jumpToNext()
-        case .newTask: break
+        case .newTask, .plugin: break
+        }
+    }
+
+    /// Runs a plugin action with the palette showing it. No text closes the palette; text or a
+    /// failure stays on the result page.
+    private func run(_ ref: PluginActionRef) {
+        guard let plugins = context.plugins, let (_, action) = plugins.action(ref) else { return }
+        let opening = generation
+        plugin.page = .result(PluginResultPage(title: action.title, isRunning: true))
+        Task { @MainActor in
+            let page: PluginResultPage?
+            do {
+                page = try await plugins.run(ref).map { PluginResultPage(title: action.title, text: $0) }
+            } catch {
+                page = PluginResultPage(title: action.title, error: (error as? ConfigProblem)?.message ?? "\(error)")
+            }
+            guard opening == generation, isOpen, case .result(let shown)? = plugin.page, shown.isRunning else { return }
+            if let page { plugin.page = .result(page) } else { close() }
         }
     }
 
     /// Escape: back to the list from another page, else close.
     private func cancel() {
-        let mode: PaletteMode = switch stage.mode {
-        case .agent?: .prompt
-        case .newTask?: .newTask
-        case nil: .list
+        let mode: PaletteMode = switch (plugin.page, stage.mode) {
+        case (.actions?, _): .actions
+        case (.result?, _): .result
+        case (nil, .agent?): .prompt
+        case (nil, .newTask?): .newTask
+        case (nil, nil): .list
         }
         switch mode.handle(.escape, canPromptSelection: false, fieldEmpty: true) {
         case .back: stage.close()
@@ -162,4 +207,16 @@ final class PaletteController: NSObject, NSWindowDelegate {
     func windowDidResignKey(_ notification: Notification) {
         close()
     }
+}
+
+/// The palette's plugin pages, observed so the palette redraws when they change.
+@MainActor
+@Observable
+final class PalettePluginState {
+    enum Page: Equatable {
+        case actions(PluginTarget)
+        case result(PluginResultPage)
+    }
+
+    var page: Page?
 }

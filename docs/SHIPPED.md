@@ -103,3 +103,9 @@ Oldest first.
   state and time) that jumps to the agent. Keyboard navigation walks each checkout's header and agents;
   the palette finds every worktree by the repo's name. FakeHerdr has `repo <workspace> [name]`,
   and its `worktree.create` makes a linked worktree of the source's repo.
+- Plugins, first slice: a folder in `~/.config/shepherd/plugins/` with a `shepherd-plugin.json`
+  adds actions (global, project, agent), also listed at runtime by `listActions`. Global actions
+  are palette commands; ⌘K on an agent or project lists its own; a result page shows printed
+  text or the failure. A JSON `tokens` result sets tokens on the row for any source. Read when
+  the palette opens, run off the main actor with a timeout; `plugins.disabled` turns one off.
+  `HerdProject.path` carries the checkout. Examples: herdr's plugin actions, and a diff stat.

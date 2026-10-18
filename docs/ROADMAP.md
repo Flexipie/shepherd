@@ -40,15 +40,18 @@ Done when: the user's list is done, and adding a gadget touches only its module 
 ## Next: ready to land
 
 The core loop's decide step (VISION "The core"). Comes before milestone 6, which becomes part of
-"start from anywhere" below.
+"start from anywhere" below. It starts with the plugin basics (PRD "Plugins"), so the card's
+checks and questions are built on the same extension points users get.
 
+- Plugins, next slices: events, then checks and gadgets (PRD "Plugins"). Actions in the palette,
+  plugin tokens and the herdr actions bridge shipped.
 - The agent's final message, read from its session (Claude Code's session file first, Codex's
   next), on the row as a short preview and in full in the palette and the stage.
 - Saved questions in config ("What did you change, what is risky, would you merge?"): one key on
   an agent sends one, waits for the reply and shows it in the palette. Not automatic by default;
   a setting asks a chosen question automatically when an agent finishes.
-- The facts on finished work: diff size and files touched, read from git only while shown; the
-  PR and CI from tokens when a plugin publishes them.
+- The facts on finished work, as checks: diff size and files touched, read from git only while
+  shown; the PR and CI from tokens when a plugin publishes them; any user's own checks.
 - Then one key to act: follow up, send back with a note, or open the PR.
 
 Done when: the user decides on a finished agent's work from the palette, without opening its

@@ -73,14 +73,17 @@ public struct HerdProject: Sendable, Equatable, Identifiable {
     public let isFocusedInSource: Bool
     /// The repo the project is a checkout of, when the source knows.
     public let repo: HerdRepo?
+    /// The project's folder on disk, when the source knows.
+    public let path: String?
 
     public init(id: ProjectID, name: String, tokens: [String: String] = [:], isFocusedInSource: Bool = false,
-                repo: HerdRepo? = nil) {
+                repo: HerdRepo? = nil, path: String? = nil) {
         self.id = id
         self.name = name
         self.tokens = tokens
         self.isFocusedInSource = isFocusedInSource
         self.repo = repo
+        self.path = path
     }
 }
 

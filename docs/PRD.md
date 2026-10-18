@@ -373,12 +373,88 @@ its tab shows (`Presence.isShowing(_:)`).
 
 ## Actions
 
-One action model feeds every surface. An action has an id, a title, a context (global, workspace,
+Plugin actions (see "Plugins") are the first kind of user-defined action. One action model feeds every surface. An action has an id, a title, a context (global, workspace,
 agent) and a target: a herdr request, a herdr plugin action, or a shell command, with placeholders
 such as `{workspace_id}`, `{pane_id}`, `{cwd}`, `{token.pr}`. Modules and config both contribute
 actions, and herdr plugin actions are listed automatically through `plugin.action.list`. The panel
 cards, the notch, notification buttons, the palette and (later) App Intents all render the same
 list, so a new action shows up everywhere without extra code.
+
+## Plugins
+
+Anyone can extend Shepherd with scripts, in any language, without touching Swift. Built-in
+features stay modules; a plugin runs outside the app, so a broken one cannot crash Shepherd.
+Built-in features use the same extension points where they can (the "ready to land" checks and
+questions), so the plugin system is exercised every day.
+
+A plugin is a folder in `~/.config/shepherd/plugins/` (or `SHEPHERD_PLUGINS_PATH`; a symlink
+links a local one) with a `shepherd-plugin.json`, decoded leniently like the config. Every plugin
+there is on unless its id is in `plugins.disabled`. As built so far: actions, `listActions` and
+plugin tokens (`PluginHost` in Core, `ProcessPluginRunner` in the `ShellPlugins` target, the
+`plugins` module); events, checks and gadgets are planned (ROADMAP "ready to land").
+
+```json
+{
+  "id": "ticket-badges",
+  "name": "Ticket badges",
+  "actions": [
+    { "id": "open-pr", "title": "Open PR", "context": "agent", "command": ["./open-pr.sh"] }
+  ],
+  "listActions": ["./list-actions.sh"],
+  "events": [{ "on": ["agent.finished", "agent.blocked"], "command": ["./badge.sh"] }],
+  "checks": [{ "title": "Review", "command": ["./review.sh"] }],
+  "gadget": { "title": "Deploys", "command": ["./deploys.sh"], "every": 60 }
+}
+```
+
+- **Actions** have an `id`, a `title`, a `command`, an optional SF Symbol `symbol` and a context:
+  `global` (the default), `project` or `agent`. Global actions are palette commands; ⌘K on a
+  selected agent or project lists that context's actions. Later also on rows, the stage and the
+  ready to land card. `listActions` prints more actions (`{"actions": [...]}`, same shape) at
+  runtime, for plugins whose actions are not known in advance; a manifest action with the same
+  id wins. A failed listing keeps the last good actions.
+- **When plugins run.** Manifests are read and `listActions` run each time the palette opens
+  (off the main actor; a refresh already on its way is shared), not watched, so nothing runs at
+  idle. Removing a plugin drops its actions and tokens on the next refresh.
+- **Events**: `agent.blocked`, `agent.finished`, `agent.started`, `task.started`. A plugin runs
+  only for the events it lists, debounced per agent.
+- **Checks** add a line to a finished agent's ready to land card. They run when the card shows.
+- **Gadgets** print a card for the Gadgets tab. They run only while that tab shows, every `every`
+  seconds.
+
+**Running.** A command runs through `/usr/bin/env` (so a bare name is found on `PATH`, with
+Homebrew's directories added) from the plugin's folder, off the main actor, with a timeout (30 s
+for actions, 10 s for `listActions`, checks and gadgets; then terminated, then killed) and output
+capped at 256 KB. A non-zero exit is a failure, shown with the last line of stderr. Shepherd
+passes the target as environment variables:
+
+- always `SHEPHERD_PLUGIN_ROOT`;
+- for an agent: `SHEPHERD_AGENT_ID` (`herdr:w1:p1`), `SHEPHERD_AGENT_NAME`, `SHEPHERD_AGENT_KIND`,
+  `SHEPHERD_AGENT_STATUS`, `SHEPHERD_SESSION_ID`, and its project's variables;
+- for a project: `SHEPHERD_PROJECT_ID`, `SHEPHERD_PROJECT_NAME`, `SHEPHERD_PROJECT_PATH` (the
+  checkout, from herdr's `worktree`), `SHEPHERD_REPO_NAME`;
+- `SHEPHERD_CWD` (the agent's folder, else the project's) and `SHEPHERD_TOKENS` (JSON of what the
+  row shows: the source's tokens with the plugins' over them);
+- later `SHEPHERD_EVENT` for events.
+
+Problems loading or listing go to the panel footer under `plugins`; an action's failure shows on
+the palette's result page. Never silent.
+
+**Output.** Plain text is the result: the palette shows an action's text on a result page (no
+text closes the palette), a check's first line is its line on the card. A JSON object is applied instead: `{"text": ...}` for the result,
+`{"tokens": {"pr": "#12"}}` to set tokens on the target (an empty value removes one), and for a
+gadget `{"title": ..., "meters": [...], "lines": [...]}`. Plugin tokens render like a source's
+tokens, so they work for every source, not only herdr. They live in memory and go when the plugin
+is removed.
+
+**Trust.** A plugin runs the user's own code with the user's permissions; there is no sandbox.
+Installing one from elsewhere means reading its manifest first. Nothing runs at idle except the
+events a plugin asked for.
+
+**Plugins we ship** in `examples/plugins/`: `herdr-actions` (herdr's plugin actions through
+`listActions`; workspace actions become project actions and focus the workspace before
+`herdr plugin action invoke`, since herdr acts on its focused workspace), and `diff-stat` (git's
+diff stat as the result and `diff_*` tokens).
 
 ## Intelligence
 
@@ -457,7 +533,10 @@ back to its default while the rest applies; a file that is not valid JSON keeps 
 config. `FileWatcher` watches the directory (atomic saves) and the file (in-place writes), waits
 for a missing directory to appear, debounces 200 ms, and delivers only when the bytes changed.
 
-Planned: `actions` (see "Actions"), `notifications`, `intelligence`. Once released, config changes
+- `plugins.disabled`: plugin ids to skip (see "Plugins").
+
+Planned: `questions` and
+`questions.askOnFinish` (see ROADMAP "ready to land"), `notifications`, `intelligence`. Once released, config changes
 are additive or migrated.
 
 ## Tokens

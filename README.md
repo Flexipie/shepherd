@@ -81,6 +81,26 @@ PR number, a diff, a review verdict), and lets you act on it without switching t
 A tip for MacBooks with a full menu bar: items can hide behind the notch. The notch bar and the
 hotkey work either way; to see the menu bar icon too, Cmd-drag it somewhere visible.
 
+## Plugins
+
+Add your own actions with a script in any language. A plugin is a folder in
+`~/.config/shepherd/plugins/` with a `shepherd-plugin.json`:
+
+```json
+{
+  "id": "open-pr",
+  "actions": [{ "id": "open", "title": "Open the PR", "context": "project", "command": ["sh", "open.sh"] }]
+}
+```
+
+Global actions show up in the palette; ⌘K on an agent or a project lists its own. The script
+gets the target as environment variables (`SHEPHERD_CWD`, `SHEPHERD_PROJECT_PATH`,
+`SHEPHERD_AGENT_ID`, `SHEPHERD_TOKENS` and more) and can print text, which the palette shows, or
+JSON such as `{"tokens": {"pr": "#12"}}`, which sets tokens on that row for any agent, herdr or
+not. Plugins run your own code with your permissions, so only add ones you have read. Nothing
+runs until you open the palette. See `examples/plugins/` (every herdr plugin action in the
+palette, and a diff stat) and "Plugins" in `docs/PRD.md`.
+
 ## Config
 
 Optional. `~/.config/shepherd/config.json` (or `SHEPHERD_CONFIG_PATH`) is read on save; every key
@@ -95,7 +115,8 @@ can be left out:
   },
   "hotkeys": { "next": "ctrl+option+cmd+n", "palette": "option+space" },
   "agents": { "claude": { "args": [] } },
-  "notifications": "off"
+  "notifications": "off",
+  "plugins": { "disabled": [] }
 }
 ```
 
@@ -120,6 +141,8 @@ can be left out:
   (on unless herdr already posts system notifications itself, `ui.toast.delivery` "system" or
   "terminal"). macOS asks for permission the first time; if it is off in System Settings, the
   bar's footer says so.
+
+- `plugins.disabled`: plugin ids to leave off. Every plugin in the plugins folder is on otherwise.
 
 A mistake never breaks the app: the panel footer says what is wrong, and a file that is not valid
 JSON keeps the last good config.

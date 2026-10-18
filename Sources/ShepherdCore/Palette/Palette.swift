@@ -6,6 +6,8 @@ public enum PaletteAction: Sendable, Hashable {
     case nextInQueue
     /// Opens the new task form in the palette, with this project picked if given.
     case newTask(ProjectID?)
+    /// Runs a plugin's action.
+    case plugin(PluginActionRef)
 }
 
 /// A command a module offers in the palette. Modules contribute them, so the palette grows

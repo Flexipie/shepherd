@@ -157,6 +157,8 @@ Local first; see PRD "Intelligence" for the rules every idea here follows.
 - **Token conventions.** Document a small set of well-known token names (`pr`, `ticket`,
   `review`, `diff_add`, `diff_del`, `question`) so plugin authors and Shepherd agree without
   coordination.
+- **Plugin install from GitHub.** `shepherd plugin install owner/repo`, showing the manifest and
+  its commands before enabling. Linking a folder is enough until people share plugins.
 - **Example plugins.** Ship a couple of herdr plugins in an `examples/` folder (git diff badges,
   GitHub PR badges) that make Shepherd useful out of the box.
 - **Themes.** Colour sets that match popular terminal themes.

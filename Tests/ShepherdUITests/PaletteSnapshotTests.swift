@@ -19,6 +19,34 @@ import Testing
         }
     }
 
+    /// ⌘K on an agent: its plugin actions.
+    @Test func pluginActions() throws {
+        let target = PluginTarget.agent(SampleHerd.finished.id)
+        let commands = [("open-pr", "Open PR", "arrow.up.right.square"), ("tests", "Run tests in this worktree", "checkmark.seal"),
+                        ("review", "Ask for a review", "text.magnifyingglass")]
+            .map { id, title, symbol in
+                PaletteIndex.commandItem(PaletteCommand(id: "plugins.demo.\(id)", title: title, symbol: symbol, keywords: ["Demo"],
+                                                        action: .plugin(PluginActionRef(plugin: "demo", action: id, target: target))))
+            }
+        try Snapshot.check("palette-plugin-actions", width: PaletteView.width) {
+            PaletteView(content: PaletteContent(items: SamplePalette.content.items,
+                                                page: .actions(PluginActionsPage(title: "claude", items: commands))),
+                        clock: .fixed(SampleHerd.now)) { _ in }
+        }
+    }
+
+    /// What a plugin action printed, and a failure.
+    @Test func pluginResults() throws {
+        let text = PluginResultPage(title: "Ask for a review", text: "Review of feature/cart-totals: 8/10, safe to merge.\n\n- Tests cover the new totals.\n- One nit: rename `sum2`.")
+        try Snapshot.check("palette-plugin-result", width: PaletteView.width) {
+            PaletteView(content: PaletteContent(items: [], page: .result(text)), clock: .fixed(SampleHerd.now)) { _ in }
+        }
+        let failed = PluginResultPage(title: "Deploy", error: "Exited with 2: no credentials")
+        try Snapshot.check("palette-plugin-failed", width: PaletteView.width) {
+            PaletteView(content: PaletteContent(items: [], page: .result(failed)), clock: .fixed(SampleHerd.now)) { _ in }
+        }
+    }
+
     /// An idle agent's prompt: its row, its last lines, the field.
     @Test func prompt() throws {
         let stage = AgentStage(row: SampleHerd.row(SampleHerd.working, context: 184_213),
