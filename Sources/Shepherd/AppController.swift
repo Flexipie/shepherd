@@ -60,6 +60,7 @@ final class AppController {
             // The log restores exact times in state, so read it before the first snapshot.
             let history = await log.load()
             store.add(HerdrSource(history: history))
+            context.plugins?.startEvents()
             store.start()
             actions.updatePresence()
         }

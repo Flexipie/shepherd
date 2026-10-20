@@ -23,6 +23,9 @@ These need a person, real agents or other hardware:
   answering a real approval; a new task from it on a real herdr; whether ⌥Space clashes with a
   launcher such as Raycast or Alfred on other Macs; a config change re-registering the hotkey
   live, and a clash with `hotkeys.next` showing in the footer.
+- From plugin events: a real agent blocking and finishing runs a listed plugin once each (a repeat
+  within 5 s does not run again); a task started from the palette runs `task.started` in its
+  project.
 
 ## Milestone 5: UI and UX pass, and a modular UI
 
@@ -43,8 +46,8 @@ The core loop's decide step (VISION "The core"). Comes before milestone 6, which
 "start from anywhere" below. It starts with the plugin basics (PRD "Plugins"), so the card's
 checks and questions are built on the same extension points users get.
 
-- Plugins, next slices: events, then checks and gadgets (PRD "Plugins"). Actions in the palette,
-  plugin tokens and the herdr actions bridge shipped.
+- Plugins, next slices: checks and gadgets (PRD "Plugins"). Actions in the palette, plugin tokens,
+  the herdr actions bridge and events shipped.
 - The agent's final message, read from its session (Claude Code's session file first, Codex's
   next), on the row as a short preview and in full in the palette and the stage.
 - Saved questions in config ("What did you change, what is risky, would you merge?"): one key on

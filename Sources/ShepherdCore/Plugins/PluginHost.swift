@@ -20,9 +20,20 @@ public final class PluginHost {
     @ObservationIgnored private var loadProblems: [String] = []
     @ObservationIgnored private var listProblems: [String: String] = [:]
     @ObservationIgnored private var refreshing: Task<Void, Never>?
+    @ObservationIgnored private var eventTask: Task<Void, Never>?
+    /// When each plugin, agent and event last ran, for the debounce.
+    @ObservationIgnored private var lastRun: [EventKey: ContinuousClock.Instant] = [:]
+    /// Event runs in progress; an occurrence that arrives during one waits for it.
+    @ObservationIgnored private var running: Set<EventKey> = []
+    @ObservationIgnored private var queued: [EventKey: PluginEventOccurrence] = [:]
+    @ObservationIgnored private var eventProblems: [String: String] = [:]
 
     public static let actionTimeout: Duration = .seconds(30)
     public static let listTimeout: Duration = .seconds(10)
+    /// Event commands get the same time as checks and listings.
+    public static let eventTimeout: Duration = .seconds(10)
+    /// A plugin's command for an agent and event runs at most once in this window.
+    public static let eventDebounce: Duration = .seconds(5)
 
     public init(directory: URL = PluginHost.defaultDirectory(), runner: any PluginRunner, store: HerdStore, config: ConfigStore) {
         self.directory = directory
@@ -60,6 +71,7 @@ public final class PluginHost {
         if plugins != enabled { plugins = enabled }
         let ids = Set(enabled.map(\.id))
         listed = listed.filter { ids.contains($0.key) }
+        eventProblems = eventProblems.filter { ids.contains($0.key) }
         tokens = tokens.compactMapValues { byPlugin in
             let kept = byPlugin.filter { ids.contains($0.key) }
             return kept.isEmpty ? nil : kept
@@ -124,7 +136,81 @@ public final class PluginHost {
 
     private func report() {
         let all = loadProblems + listProblems.keys.sorted().compactMap { listProblems[$0] }
+            + eventProblems.keys.sorted().compactMap { eventProblems[$0] }
         config.report(all.isEmpty ? nil : all.joined(separator: "; "), for: "plugins")
+    }
+
+    // MARK: Events
+
+    /// Runs plugin events for what the store reports from now on. Idempotent; the events stop when
+    /// `stopEvents` is called or the host goes away.
+    public func startEvents() {
+        guard eventTask == nil else { return }
+        let events = store.events()
+        eventTask = Task { @MainActor [weak self] in
+            for await event in events {
+                guard let self else { return }
+                self.handle(event)
+            }
+        }
+    }
+
+    public func stopEvents() {
+        eventTask?.cancel()
+        eventTask = nil
+    }
+
+    /// Runs each enabled plugin that lists an occurrence's event. `now` is passed in so the
+    /// debounce can be tested.
+    func handle(_ event: HerdEvent, at now: ContinuousClock.Instant = .now) {
+        for occurrence in PluginEventOccurrence.raised(by: event) {
+            dispatch(occurrence, at: now)
+        }
+    }
+
+    private func dispatch(_ occurrence: PluginEventOccurrence, at now: ContinuousClock.Instant) {
+        lastRun = lastRun.filter { now - $0.value < Self.eventDebounce }
+        for plugin in plugins where rule(in: plugin, for: occurrence.event) != nil {
+            let key = EventKey(plugin: plugin.id, agent: occurrence.agent, event: occurrence.event)
+            guard lastRun[key] == nil else { continue }
+            lastRun[key] = now
+            if running.contains(key) {
+                queued[key] = occurrence
+            } else {
+                run(key, occurrence, plugin)
+            }
+        }
+    }
+
+    private func rule(in plugin: Plugin, for event: PluginEvent) -> PluginEventRule? {
+        plugin.manifest.events.first { $0.on.contains(event) }
+    }
+
+    /// Runs the plugin's command for the occurrence. Output is ignored; a failure goes to the
+    /// footer under `plugins`. An occurrence queued during the run starts again once it ends.
+    private func run(_ key: EventKey, _ occurrence: PluginEventOccurrence, _ plugin: Plugin) {
+        guard let rule = rule(in: plugin, for: occurrence.event) else { return }
+        running.insert(key)
+        var environment = occurrence.target.environment(store: store, tokens: allTokens(for: occurrence.target))
+        environment["SHEPHERD_PLUGIN_ROOT"] = plugin.folder.path
+        environment["SHEPHERD_EVENT"] = occurrence.event.rawValue
+        // Named here too: a task's new agent may not be in the store yet, so the target's
+        // environment does not always carry it.
+        environment["SHEPHERD_AGENT_ID"] = occurrence.agent.description
+        let runner = runner
+        Task {
+            do {
+                let result = try await runner.run(rule.command, in: plugin.folder, environment: environment, timeout: Self.eventTimeout)
+                eventProblems[plugin.id] = result.status == 0 ? nil : "\(occurrence.event.rawValue): \(Self.failure(result))"
+            } catch {
+                eventProblems[plugin.id] = "\(occurrence.event.rawValue): \(error)"
+            }
+            report()
+            running.remove(key)
+            if let next = queued.removeValue(forKey: key), let plugin = plugins.first(where: { $0.id == key.plugin }) {
+                run(key, next, plugin)
+            }
+        }
     }
 
     // MARK: Actions
@@ -200,4 +286,11 @@ public final class PluginHost {
 
 private extension String {
     var capitalizedFirst: String { prefix(1).uppercased() + dropFirst() }
+}
+
+/// One plugin's runs for one agent and event.
+private struct EventKey: Hashable {
+    let plugin: String
+    let agent: AgentID
+    let event: PluginEvent
 }

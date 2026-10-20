@@ -13,6 +13,8 @@ final class StubSource: AgentSource {
     private(set) var focused: [AgentID] = []
     private(set) var focusedProjects: [ProjectID] = []
     var hostPIDs: [pid_t] = []
+    /// The agent `startTask` returns.
+    var newAgent: AgentID?
 
     init(_ id: SourceID) {
         self.id = id
@@ -24,6 +26,10 @@ final class StubSource: AgentSource {
     func focus(_ agent: AgentID) async throws { focused.append(agent) }
     func focusProject(_ project: ProjectID) async throws { focusedProjects.append(project) }
     func hostApplicationPIDs() -> [pid_t] { hostPIDs }
+    func startTask(_ task: NewTask, args: [String]) async throws -> AgentID {
+        guard let newAgent else { throw AgentSourceError.unsupported(.startAgent) }
+        return newAgent
+    }
     func send(_ update: SourceUpdate) { continuation.yield(update) }
 }
 

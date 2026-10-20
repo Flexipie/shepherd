@@ -26,6 +26,7 @@ public final class HerdStore {
     @ObservationIgnored private var bySource: [SourceID: SourceUpdate] = [:]
     @ObservationIgnored private var tasks: [Task<Void, Never>] = []
     @ObservationIgnored private let log: TransitionLog?
+    @ObservationIgnored private var subscribers: [UUID: AsyncStream<HerdEvent>.Continuation] = [:]
 
     public init(log: TransitionLog? = nil) {
         self.log = log
@@ -106,7 +107,25 @@ public final class HerdStore {
     public func startTask(_ task: NewTask, args: [String]) async throws -> AgentID {
         guard let source = source(task.project.source) else { throw AgentSourceError.unknownSource(task.project.source) }
         guard canStartTask(in: task.project) else { throw AgentSourceError.unsupported(.startAgent) }
-        return try await source.startTask(task, args: args)
+        let agent = try await source.startTask(task, args: args)
+        publish(.taskStarted(agent, task.project))
+        return agent
+    }
+
+    /// Every event from now on, in order. Nothing is dropped while a consumer is busy; the stream
+    /// ends, and stops costing anything, once the consumer stops iterating.
+    public func events() -> AsyncStream<HerdEvent> {
+        let (stream, continuation) = AsyncStream.makeStream(of: HerdEvent.self, bufferingPolicy: .unbounded)
+        let id = UUID()
+        subscribers[id] = continuation
+        continuation.onTermination = { [weak self] _ in
+            Task { @MainActor in self?.subscribers[id] = nil }
+        }
+        return stream
+    }
+
+    private func publish(_ event: HerdEvent) {
+        for continuation in subscribers.values { continuation.yield(event) }
     }
 
     private func source(for agent: AgentID, needing capability: SourceCapabilities) throws -> any AgentSource {
@@ -149,6 +168,7 @@ public final class HerdStore {
         if !update.transitions.isEmpty {
             lastTransitions = update.transitions
             if let log { Task { await log.append(update.transitions) } }
+            publish(.transitions(update.transitions))
         }
     }
 

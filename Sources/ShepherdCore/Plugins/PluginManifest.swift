@@ -1,8 +1,8 @@
 import Foundation
 
 /// A plugin's `shepherd-plugin.json`. Read leniently: unknown keys are ignored (later versions
-/// add events, checks and gadgets), and an action that cannot be used is skipped with a problem
-/// while the rest load.
+/// add checks and gadgets), and an action or event rule that cannot be used is skipped with a
+/// problem while the rest load.
 public struct PluginManifest: Sendable, Equatable {
     public static let fileName = "shepherd-plugin.json"
 
@@ -11,12 +11,16 @@ public struct PluginManifest: Sendable, Equatable {
     public let actions: [PluginAction]
     /// Prints more actions as JSON (`{"actions": [...]}`), for actions not known in advance.
     public let listActions: [String]?
+    /// Commands run when the listed events happen.
+    public let events: [PluginEventRule]
 
-    public init(id: String, name: String, actions: [PluginAction] = [], listActions: [String]? = nil) {
+    public init(id: String, name: String, actions: [PluginAction] = [], listActions: [String]? = nil,
+                events: [PluginEventRule] = []) {
         self.id = id
         self.name = name
         self.actions = actions
         self.listActions = listActions
+        self.events = events
     }
 
     /// Reads a manifest. Throws when there is no usable id; smaller problems are in the result.
@@ -35,7 +39,8 @@ public struct PluginManifest: Sendable, Equatable {
             listActions = PluginAction.command(value)
             if listActions == nil { problems.append("plugin \(id): listActions must be a list of strings") }
         }
-        return (PluginManifest(id: id, name: name, actions: actions, listActions: listActions), problems)
+        let events = PluginEventRule.list(table["events"], at: "\(id).events", problems: &problems)
+        return (PluginManifest(id: id, name: name, actions: actions, listActions: listActions, events: events), problems)
     }
 }
 

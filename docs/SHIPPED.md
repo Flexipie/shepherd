@@ -109,3 +109,9 @@ Oldest first.
   text or the failure. A JSON `tokens` result sets tokens on the row for any source. Read when
   the palette opens, run off the main actor with a timeout; `plugins.disabled` turns one off.
   `HerdProject.path` carries the checkout. Examples: herdr's plugin actions, and a diff stat.
+- Plugins, events: a manifest's `events` lists what a command runs for (`agent.started`,
+  `agent.blocked`, `agent.finished`, `task.started`). `HerdStore.events()` delivers every herd event
+  to each subscriber in order, without drops; `PluginHost` runs the listed plugins with the agent's
+  environment and `SHEPHERD_EVENT`. Debounced 5 s per plugin, agent and event, with one queued run
+  when an event arrives during another. Output is ignored; a failure shows under `plugins` in the
+  footer. Not tied to the `plugins` module, so it runs whenever the plugin is on.

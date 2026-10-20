@@ -391,7 +391,8 @@ A plugin is a folder in `~/.config/shepherd/plugins/` (or `SHEPHERD_PLUGINS_PATH
 links a local one) with a `shepherd-plugin.json`, decoded leniently like the config. Every plugin
 there is on unless its id is in `plugins.disabled`. As built so far: actions, `listActions` and
 plugin tokens (`PluginHost` in Core, `ProcessPluginRunner` in the `ShellPlugins` target, the
-`plugins` module); events, checks and gadgets are planned (ROADMAP "ready to land").
+`plugins` module) and events (`PluginHost` runs them from `HerdStore.events()`); checks and gadgets
+are planned (ROADMAP "ready to land").
 
 ```json
 {
@@ -417,7 +418,10 @@ plugin tokens (`PluginHost` in Core, `ProcessPluginRunner` in the `ShellPlugins`
   (off the main actor; a refresh already on its way is shared), not watched, so nothing runs at
   idle. Removing a plugin drops its actions and tokens on the next refresh.
 - **Events**: `agent.blocked`, `agent.finished`, `agent.started`, `task.started`. A plugin runs
-  only for the events it lists, debounced per agent.
+  only for the events it lists, debounced per plugin, agent and event: a repeat within 5 s is
+  dropped, and one that arrives during a run runs once more after it. Output is ignored; a failure
+  shows under `plugins` in the footer. `task.started` runs in the project's environment with
+  `SHEPHERD_AGENT_ID` set to the new agent, which may not be in the herd yet.
 - **Checks** add a line to a finished agent's ready to land card. They run when the card shows.
 - **Gadgets** print a card for the Gadgets tab. They run only while that tab shows, every `every`
   seconds.
@@ -435,7 +439,7 @@ passes the target as environment variables:
   checkout, from herdr's `worktree`), `SHEPHERD_REPO_NAME`;
 - `SHEPHERD_CWD` (the agent's folder, else the project's) and `SHEPHERD_TOKENS` (JSON of what the
   row shows: the source's tokens with the plugins' over them);
-- later `SHEPHERD_EVENT` for events.
+- `SHEPHERD_EVENT` (the event's name) for events.
 
 Problems loading or listing go to the panel footer under `plugins`; an action's failure shows on
 the palette's result page. Never silent.

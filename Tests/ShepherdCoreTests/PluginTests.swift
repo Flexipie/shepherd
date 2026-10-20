@@ -10,7 +10,7 @@ import Testing
 
     @Test func readsActionsAndIgnoresUnknownKeys() throws {
         let (manifest, problems) = try read(#"""
-        {"id": "badges", "name": "Badges", "events": [{"on": ["agent.finished"]}],
+        {"id": "badges", "name": "Badges", "events": [{"on": ["agent.finished"], "command": ["./badge.sh"]}],
          "actions": [{"id": "open-pr", "title": "Open PR", "context": "project", "command": ["./open.sh", "--web"],
                       "symbol": "arrow.up.right.square", "later": true},
                      {"id": "refresh", "title": "Refresh", "command": ["./refresh.sh"]}],
