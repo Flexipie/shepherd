@@ -18,8 +18,8 @@ public final class SourcesModule: ShepherdModule {
         let cards = guide.intros.map { intro in
             let on = guide.isOn(intro, in: context.store)
             let text = on ? intro.on : intro.off
-            return PanelItem.gadget(GadgetCard(id: intro.id, title: intro.name, detail: text.detail, lines: [text.line],
-                                               isStale: !on))
+            // Not `isStale`: a source that is off is not out of date, and VoiceOver would say so.
+            return PanelItem.gadget(GadgetCard(id: intro.id, title: intro.name, detail: text.detail, lines: [text.line]))
         }
         return PanelSection(id: Self.id, title: "Where agents come from", items: cards, emptyText: "")
     }

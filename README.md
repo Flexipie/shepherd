@@ -78,8 +78,8 @@ PR number, a diff, a review verdict), and lets you act on it without switching t
 - **First run.** No config file needed. Until an agent shows, the panel starts with where agents
   can come from (tmux, Claude Code, herdr), what Shepherd found of each and what to do next.
   Without herdr nothing says "not connected".
-- **Honest state.** If herdr stops or the event stream breaks, Shepherd says so, shows the last
-  known state dimmed, and recovers on its own. Times are "4m" when Shepherd saw the change and
+- **Honest state.** If herdr's connection or event stream breaks, Shepherd says so, shows the last
+  known state dimmed, and recovers on its own. When herdr quits, its agents go until it starts again. Times are "4m" when Shepherd saw the change and
   "4m+" when it only knows an upper bound.
 
 A tip for MacBooks with a full menu bar: items can hide behind the notch. The notch bar and the
