@@ -63,11 +63,14 @@ final class PaletteController: NSObject, NSWindowDelegate {
         panel.makeKeyAndOrderFront(nil)
         host.startMonitoring { [weak self] in self?.close() }
         render(generation)
+        // Its agent rows count as the Agents tab, so their context sizes and messages are read.
+        context.presence.setPanel("palette", showing: .agents)
         if let plugins = context.plugins { Task { await plugins.refresh() } }
     }
 
     func close() {
         guard let panel else { return }
+        context.presence.setPanel("palette", showing: nil)
         stage.close()
         plugin.page = nil
         host.stopMonitoring()

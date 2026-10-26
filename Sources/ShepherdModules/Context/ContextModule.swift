@@ -1,11 +1,11 @@
 import Observation
 import ShepherdCore
 
-/// The context size of agents whose session a reader understands (Claude Code for now), shown on
-/// their rows and stage. It has no section of its own: it fills `ModuleContext.agentContext`,
-/// which row builders read. It reads only while a panel shows the Agents tab: every agent with a
-/// session on showing it, then an agent again when its status changes. Otherwise nothing is read.
-/// Turned off, the sizes go away with it.
+/// The context size and last message of agents whose session a reader understands (Claude Code
+/// for now), shown on their rows, the palette and the stage. It has no section of its own: it
+/// fills `ModuleContext.agentContext`, which row builders read. It reads only while a panel or
+/// the palette shows agents: every agent with a session on showing them, then an agent again when
+/// its status changes. Otherwise nothing is read. Turned off, what it read goes away with it.
 @MainActor
 public final class ContextModule: ShepherdModule {
     public static let id = "context"
@@ -70,11 +70,12 @@ public final class ContextModule: ShepherdModule {
             return
         }
         Task { @MainActor [weak self] in
-            let tokens = try? await reader.contextTokens(for: session)
+            let found = try? await reader.read(session)
             guard let self else { return }
             reading.remove(agent)
             if context.store.agents.contains(where: { $0.id == agent }) {
-                context.agentContext.set(tokens, for: agent)
+                context.agentContext.set(found?.contextTokens, for: agent)
+                context.agentContext.set(finalMessage: found?.finalMessage, for: agent)
             }
             if again.remove(agent) != nil, context.presence.isShowing(.agents),
                let current = context.store.agents.first(where: { $0.id == agent }), let session = current.session {

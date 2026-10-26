@@ -213,3 +213,9 @@ Oldest first.
   columns and keyboard navigation agree); `layout.projects` puts the named project and repo
   columns first (`ProjectsModule`). Left out, nothing changes. Unknown ids are reported under
   `layout`. Hiding a gadget no longer means listing every other module.
+- An agent's final message (#41): `ClaudeSessionSource` reads the text of the last main-thread
+  assistant entry in the same tail walk as the context size, and `context` keeps it beside the
+  size. A row shows it on one line under the title once the agent stops working; the stage and
+  the palette's prompt page show it whole, inline Markdown drawn, in place of the last lines
+  while the agent is idle or done. The palette now counts as showing Agents, so opening it alone
+  reads sessions. Codex's session file (`task_complete.last_agent_message`) is a follow-up.

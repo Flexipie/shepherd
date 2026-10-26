@@ -89,6 +89,13 @@ import Testing
         try checkExpanded("notch-stage-context", SampleHerd.content, stage: .agent(stage))
     }
 
+    /// A finished agent: its whole last message in place of its last lines.
+    @Test func stageWithFinalMessage() throws {
+        let stage = AgentStage(row: SampleHerd.row(SampleHerd.finished, context: 184_213, message: SampleHerd.finalMessage),
+                               lines: ["PR #12 is up for review.", "", "> "], canReply: true, prompts: true)
+        try checkExpanded("notch-stage-final-message", SampleHerd.content, stage: .agent(stage))
+    }
+
     @Test func stageReadingWithAnError() throws {
         let stage = AgentStage(row: SampleHerd.row(SampleHerd.finished), lines: nil,
                                error: "Could not read: herdr did not answer in time")

@@ -1,14 +1,15 @@
 import Foundation
 import ShepherdCore
 
-/// Reads a Claude Code agent's context size from its session file:
+/// Reads a Claude Code agent's context size and last message from its session file:
 /// `<config>/projects/<cwd, every non-alphanumeric character as "-">/<session id>.jsonl`, where
 /// `<config>` is `CLAUDE_CONFIG_DIR` or `~/.claude`. When that file is missing (the agent changed
 /// directory), it looks for `<session id>.jsonl` in every project folder once and remembers it.
 ///
 /// Read-only, and only the file's last `tailBytes`. The size is the last main-thread assistant
-/// turn's input plus cache read plus cache creation tokens. An unchanged file (same size and
-/// modification date) costs one `stat`. Other agent kinds read nothing and give nil.
+/// turn's input plus cache read plus cache creation tokens; the message is the text of the last
+/// main-thread assistant entry that has any. An unchanged file (same size and modification date)
+/// costs one `stat`. Other agent kinds read nothing and give nil.
 @MainActor
 public final class ClaudeContextReader: AgentContextReader {
     public nonisolated static let tailBytes = 256 * 1024
@@ -25,7 +26,7 @@ public final class ClaudeContextReader: AgentContextReader {
         projects = directory.appending(path: "projects")
     }
 
-    public func contextTokens(for session: AgentSession) async throws -> Int? {
+    public func read(_ session: AgentSession) async throws -> AgentSessionReading? {
         guard session.kind == "claude", ClaudeSessionFile.isSafeID(session.id) else { return nil }
         let expected = session.cwd.map { projects.appending(path: ClaudeSessionFile.folderName($0)).appending(path: "\(session.id).jsonl") }
         let candidates = [paths[session.id], expected].compactMap { $0 }
@@ -34,7 +35,7 @@ public final class ClaudeContextReader: AgentContextReader {
         paths[session.id] = result?.url
         guard let result else { return nil }
         cache[result.url] = result.reading
-        return result.reading.tokens
+        return AgentSessionReading(contextTokens: result.reading.tokens, finalMessage: result.reading.finalMessage)
     }
 }
 
@@ -45,7 +46,18 @@ enum ClaudeSessionFile {
         let size: UInt64
         let modified: Date
         let tokens: Int?
+        let finalMessage: String?
+
+        init(size: UInt64, modified: Date, tokens: Int?, finalMessage: String? = nil) {
+            self.size = size
+            self.modified = modified
+            self.tokens = tokens
+            self.finalMessage = finalMessage
+        }
     }
+
+    /// Longer messages are cut here, so a surface never lays out a whole log.
+    static let messageLimit = 10_000
 
     /// Claude Code's folder name for a working directory: every character that is not an ASCII
     /// letter or digit becomes "-".
@@ -87,25 +99,46 @@ enum ClaudeSessionFile {
         let offset = size > UInt64(tailBytes) ? size - UInt64(tailBytes) : 0
         try handle.seek(toOffset: offset)
         let data = try handle.readToEnd() ?? Data()
-        return Reading(size: size, modified: modified, tokens: lastContextTokens(in: data, cutAtStart: offset > 0))
+        let turn = lastTurn(in: data, cutAtStart: offset > 0)
+        return Reading(size: size, modified: modified, tokens: turn.tokens, finalMessage: turn.finalMessage)
     }
 
-    /// Walks the lines from the end to the last assistant turn of the main thread (not a
-    /// sidechain, not a synthetic error) with usage. `cutAtStart` drops the first line, which the
-    /// tail window may have cut.
     static func lastContextTokens(in data: Data, cutAtStart: Bool) -> Int? {
+        lastTurn(in: data, cutAtStart: cutAtStart).tokens
+    }
+
+    /// Walks the lines from the end over the assistant entries of the main thread (not a
+    /// sidechain, not a synthetic error): the last one with usage gives the context size, the last
+    /// one with text the final message. `cutAtStart` drops the first line, which the tail window
+    /// may have cut.
+    static func lastTurn(in data: Data, cutAtStart: Bool) -> (tokens: Int?, finalMessage: String?) {
         var lines = data.split(separator: UInt8(ascii: "\n"), omittingEmptySubsequences: true)
         if cutAtStart, !lines.isEmpty { lines.removeFirst() }
         let marker = Data(#""assistant""#.utf8)
+        var tokens: Int?
+        var finalMessage: String?
         for line in lines.reversed() where line.range(of: marker) != nil {
             guard let object = try? JSONSerialization.jsonObject(with: Data(line)) as? [String: Any],
                   object["type"] as? String == "assistant", object["isSidechain"] as? Bool != true,
-                  let message = object["message"] as? [String: Any], message["model"] as? String != "<synthetic>",
-                  let usage = message["usage"] as? [String: Any] else { continue }
-            let keys = ["input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens"]
-            let total = keys.reduce(0) { $0 + ((usage[$1] as? NSNumber)?.intValue ?? 0) }
-            if total > 0 { return total }
+                  let message = object["message"] as? [String: Any], message["model"] as? String != "<synthetic>" else { continue }
+            if tokens == nil, let usage = message["usage"] as? [String: Any] {
+                let keys = ["input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens"]
+                let total = keys.reduce(0) { $0 + ((usage[$1] as? NSNumber)?.intValue ?? 0) }
+                if total > 0 { tokens = total }
+            }
+            if finalMessage == nil { finalMessage = text(of: message) }
+            if tokens != nil, finalMessage != nil { break }
         }
-        return nil
+        return (tokens, finalMessage)
+    }
+
+    /// The message's text blocks joined, trimmed and cut at `messageLimit`; nil when it has none.
+    /// Claude Code writes "(no content)" for an empty one.
+    static func text(of message: [String: Any]) -> String? {
+        let blocks = message["content"] as? [[String: Any]] ?? []
+        let text = blocks.filter { $0["type"] as? String == "text" }.compactMap { $0["text"] as? String }
+            .joined(separator: "\n\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty, text != "(no content)" else { return nil }
+        return text.count > messageLimit ? String(text.prefix(messageLimit)) + "…" : text
     }
 }

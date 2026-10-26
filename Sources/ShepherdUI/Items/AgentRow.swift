@@ -6,13 +6,16 @@ import SwiftUI
 /// straight to the agent; it shows while the row is hovered or selected. A context size, when
 /// known, sits before the time ("184k", or "184k context" with `namesContext`). With `checkout`,
 /// the row stands for a repo card's checkout and its one agent: the checkout's label (a branch
-/// glyph for a worktree, a dot when focused) as the title, then the agent's status.
+/// glyph for a worktree, a dot when focused) as the title, then the agent's status. Under the
+/// title, the agent's last message on one line once it stopped working, unless `showsPreview` is
+/// off because the surface shows the whole message.
 struct AgentRow: View {
     let row: PanelAgentRow
     let now: Date
     var checkout: HerdProject?
     var showsProject = false
     var namesContext = false
+    var showsPreview = true
     var isSelected = false
     /// Characters of the name a palette query matched.
     var nameHighlights: [Range<String.Index>] = []
@@ -54,6 +57,13 @@ struct AgentRow: View {
                     }
                 }
                 .lineLimit(1)
+                if showsPreview, let preview = row.messagePreview {
+                    Text(preview)
+                        .font(.system(size: showsProject ? 12 : 11))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
                 TokenLines(lines: row.tokens, isLive: row.isLive)
             }
         }
@@ -117,6 +127,7 @@ struct AgentRow: View {
         parts.append(row.isLive ? row.agent.statusText : "last seen \(row.agent.statusText), not live")
         if let spoken = Elapsed.spoken(row.agent.since, now: now) { parts.append(spoken) }
         if let tokens = row.contextTokens { parts.append(ContextSize.spoken(tokens)) }
+        if showsPreview, let preview = row.messagePreview { parts.append("last message: \(preview.prefix(200))") }
         parts += row.tokens.flatMap { $0.map(\.text) }
         return parts.joined(separator: ", ")
     }

@@ -32,10 +32,20 @@ enum SampleHerd {
     static let teal = HexColor("#94e2d5")!
     static let red = HexColor("#f38ba8")!
 
-    static func row(_ agent: HerdAgent, live: Bool = true, context: Int? = nil) -> PanelAgentRow {
+    static func row(_ agent: HerdAgent, live: Bool = true, context: Int? = nil, message: String? = nil) -> PanelAgentRow {
         let tokens = agent.tokens["summary"].map { [[StyledToken(name: "summary", text: $0, dim: agent.status == .done)]] } ?? []
-        return PanelAgentRow(agent: agent, tokens: tokens, isLive: live, action: .jump(agent.id), contextTokens: context)
+        return PanelAgentRow(agent: agent, tokens: tokens, isLive: live, action: .jump(agent.id), contextTokens: context,
+                             finalMessage: message)
     }
+
+    static let finalMessage = """
+        **Done.** The cart totals now round per line, not per order.
+
+        - `CartTotals.sum` takes the currency's minor units.
+        - Tests: 40 pass, 2 new for rounding.
+
+        PR #12 is up for review.
+        """
 
     static let queue = PanelSection(id: "queue", title: "Needs you",
                                     items: [blockedCodex, blockedClaude, finished].map { .agent(row($0)) },

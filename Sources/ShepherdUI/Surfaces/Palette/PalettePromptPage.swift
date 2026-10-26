@@ -2,12 +2,14 @@ import ShepherdCore
 import SwiftUI
 
 /// The palette prompting one agent: the field takes a prompt (or a reply while the agent is
-/// blocked), and below it are the agent's row, its last lines and, while blocked, its choices
+/// blocked), and below it are the agent's row, its last lines (its whole last message instead,
+/// once it stopped and a reader found one, scrolling past `maxHeight`) and, while blocked, its choices
 /// with ⌘ digits. Return sends; the text stays until the send succeeds, so a failure loses
 /// nothing. Left in an empty field goes back to the list.
 struct PalettePromptPage: View {
     let stage: AgentStage
     let now: Date
+    var maxHeight: CGFloat?
     @Binding var draft: String
     let onEvent: (PaletteEvent) -> Void
 
@@ -21,8 +23,13 @@ struct PalettePromptPage: View {
             field
             Divider().padding(.horizontal, 10)
             VStack(alignment: .leading, spacing: 8) {
-                AgentRow(row: stage.row, now: now, showsProject: true, namesContext: true)
-                lines
+                AgentRow(row: stage.row, now: now, showsProject: true, namesContext: true,
+                         showsPreview: !stage.row.showsFinalMessage)
+                if stage.row.showsFinalMessage, let message = stage.row.finalMessage {
+                    FinalMessage(message: message, maxHeight: maxHeight)
+                } else {
+                    lines
+                }
                 if stage.canSendKeys {
                     if stage.choices.isEmpty {
                         HStack(spacing: 6) {

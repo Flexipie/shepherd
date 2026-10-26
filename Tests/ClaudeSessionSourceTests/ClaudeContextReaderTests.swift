@@ -47,6 +47,28 @@ import Testing
         #expect(try ClaudeSessionFile.read(Self.fixture, previous: older, tailBytes: 1 << 20).tokens == 184_213)
     }
 
+    /// The text of the last main-thread entry that has any: the tool call after it, the
+    /// sidechain, the synthetic error and an empty "(no content)" do not count. Unknown fields and
+    /// a missing `content` are fine.
+    @Test func theLastMainTextIsTheFinalMessage() {
+        let lines = [
+            #"{"type":"assistant","message":{"model":"m","content":[{"type":"text","text":"Earlier."}]}}"#,
+            #"{"type":"assistant","isSidechain":false,"future":1,"message":{"model":"m","content":[{"type":"thinking","thinking":"x"},{"type":"text","text":"  **Done.** Tests pass.\n\nPR is up.  "}],"usage":{"input_tokens":7}}}"#,
+            #"{"type":"assistant","message":{"model":"m","content":[{"type":"tool_use","name":"Bash","input":{}}]}}"#,
+            #"{"type":"assistant","message":{"model":"m"}}"#,
+            #"{"type":"assistant","message":{"model":"m","content":[{"type":"text","text":"(no content)"}]}}"#,
+            #"{"type":"assistant","isSidechain":true,"message":{"model":"m","content":[{"type":"text","text":"From a subagent."}]}}"#,
+            #"{"type":"assistant","message":{"model":"<synthetic>","content":[{"type":"text","text":"API Error"}]}}"#,
+            #"{"type":"user","message":{"role":"user","content":"what did the assistant say?"}}"#,
+        ]
+        let turn = ClaudeSessionFile.lastTurn(in: Data(lines.joined(separator: "\n").utf8), cutAtStart: false)
+        #expect(turn.finalMessage == "**Done.** Tests pass.\n\nPR is up.")
+        #expect(turn.tokens == 7)
+        // The fixture has usage but no text.
+        #expect(ClaudeSessionFile.lastTurn(in: Data(#"{"type":"assistant","message":{"model":"m","usage":{"input_tokens":1}}}"#.utf8),
+                                           cutAtStart: false).finalMessage == nil)
+    }
+
     /// 1,100 bytes cut into the 14k turn but keep the 184k one whole.
     @Test func aSmallTailWindowStillFindsTheTurn() throws {
         let reading = try ClaudeSessionFile.read(Self.fixture, previous: nil, tailBytes: 1100)
@@ -74,9 +96,9 @@ import Testing
         try install(id: "session-1", folder: "-tmp-project-1")
         let reader = ClaudeContextReader(configDirectory: config)
         let session = AgentSession(kind: "claude", id: "session-1", cwd: "/tmp/project-1")
-        #expect(try await reader.contextTokens(for: session) == 184_213)
+        #expect(try await reader.read(session)?.contextTokens == 184_213)
         // Read again: unchanged, from the cache.
-        #expect(try await reader.contextTokens(for: session) == 184_213)
+        #expect(try await reader.read(session)?.contextTokens == 184_213)
     }
 
     @Test func findsASessionThatMovedFolder() async throws {
@@ -84,15 +106,15 @@ import Testing
         try install(id: "session-2", folder: "-tmp-elsewhere")
         let reader = ClaudeContextReader(configDirectory: config)
         let session = AgentSession(kind: "claude", id: "session-2", cwd: "/tmp/project-1")
-        #expect(try await reader.contextTokens(for: session) == 184_213)
+        #expect(try await reader.read(session)?.contextTokens == 184_213)
     }
 
     @Test func otherKindsAndMissingFilesGiveNothing() async throws {
         defer { try? FileManager.default.removeItem(at: config) }
         try install(id: "session-3", folder: "-tmp-project-1")
         let reader = ClaudeContextReader(configDirectory: config)
-        #expect(try await reader.contextTokens(for: AgentSession(kind: "codex", id: "session-3", cwd: "/tmp/project-1")) == nil)
-        #expect(try await reader.contextTokens(for: AgentSession(kind: "claude", id: "missing", cwd: "/tmp/project-1")) == nil)
-        #expect(try await reader.contextTokens(for: AgentSession(kind: "claude", id: "../session-3")) == nil)
+        #expect(try await reader.read(AgentSession(kind: "codex", id: "session-3", cwd: "/tmp/project-1")) == nil)
+        #expect(try await reader.read(AgentSession(kind: "claude", id: "missing", cwd: "/tmp/project-1")) == nil)
+        #expect(try await reader.read(AgentSession(kind: "claude", id: "../session-3")) == nil)
     }
 }
