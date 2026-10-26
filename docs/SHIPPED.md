@@ -78,8 +78,8 @@ Oldest first.
   Return jumps or focuses the project, Escape closes. Modules contribute commands
   (`ShepherdModule.commands`); `queue` offers "Next agent that needs you". `HotKeyCenter` handles
   several named hotkeys and reports a clash between them. Idle with the palette closed: 0% CPU
-  over 30 s, about 56 MB RSS; the first open adds about 45 MB RSS (footprint: about 15 MB, plus
-  about 9).
+  over 30 s, about 56 MB RSS; the first open adds about 45 MB RSS (footprint: about 15 MB idle,
+  about 9 MB more on first open).
 - Prompt and new task in the palette: Tab (or →) on an agent opens its prompt page (its row, its
   last eight lines, the field), from a second `StageModel` that reads only while the page shows.
   Return replies to a blocked agent and prompts any other; success closes the palette, a failure

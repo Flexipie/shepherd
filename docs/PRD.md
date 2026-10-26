@@ -620,7 +620,7 @@ against the panel is darkened until it reads. `rows_by_agent` is not read yet.
 - Model calls, output reads and sounds happen on transitions, never on a timer.
 - Memory: under 60 MB of physical footprint, what Activity Monitor's Memory column shows, measured
   with `footprint <pid>` on the app after the same steps (idle, then the bar and the palette each
-  opened and closed). RSS (`ps -o rss`) is not the budget: it counts shared system framework
-  pages, about 35 MB at idle and about 25 MB more after the palette's first text field focus,
-  which macOS can drop for free. Panel windows turn Writing Tools off in their field editor
+  opened and closed). RSS (`ps -o rss`) is not the budget: it also counts clean pages of shared
+  system frameworks, which macOS can drop without cost (against fake herdr, RSS is about 50 MB
+  idle and about 77 MB after the palette, footprint about 14 and 24 MB). Panel windows turn Writing Tools off in their field editor
   (`NSText.withoutWritingTools`), because its first focus loads a few hundred frameworks.
