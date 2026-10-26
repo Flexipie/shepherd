@@ -6,6 +6,7 @@ public enum BuiltinModules {
     public static let all: [any ShepherdModule.Type] = [
         StatusModule.self,
         NotchModule.self,
+        SourcesModule.self,
         QueueModule.self,
         UsageModule.self,
         SystemModule.self,

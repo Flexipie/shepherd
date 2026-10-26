@@ -140,13 +140,15 @@ public final class HerdStore {
     }
 
     /// Live only when every source is; otherwise the first source's problem, so the user hears
-    /// about it.
+    /// about it. An absent source is not a problem: someone without herdr is not "not connected".
+    /// Never `.absent` itself.
     public var overallState: SourceState {
         // Read the observed dictionary first: `sources` is not observed, and with no sources yet
         // nothing else here would register a dependency, so a surface would never update.
         let observed = sourceStates
         let states = sources.compactMap { observed[$0.id] }
-        return states.first { !$0.isLive } ?? (states.isEmpty ? .connecting : .live)
+        if states.isEmpty { return .connecting }
+        return states.first { !$0.isLive && !$0.isAbsent } ?? .live
     }
 
     package func apply(_ update: SourceUpdate, from source: SourceID) {

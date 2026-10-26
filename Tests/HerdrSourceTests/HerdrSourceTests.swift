@@ -247,10 +247,13 @@ import Testing
         await fake.stop()
     }
 
-    @Test func disconnectedWhenHerdrIsMissing() async throws {
+    /// No socket file means no herdr at all: the source is absent, which is not a problem for the herd.
+    @Test func absentWhenHerdrIsMissing() async throws {
         let fake = FakeHerdrServer()
         let (store, _) = running(fake)
-        try await until(store) { $0.overallState == .disconnected("herdr is not running") }
+        try await until(store) { $0.sourceStates[HerdrSource.sourceID] == .absent("herdr is not running") }
+        #expect(store.overallState == .live)
+        #expect(store.statusLines[HerdrSource.sourceID] == ["herdr is not running"])
         await store.stop()
     }
 

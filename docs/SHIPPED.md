@@ -200,3 +200,10 @@ Oldest first.
   idle window averages more than 0.5% or the physical footprint is over 60 MB (`PERF_SECONDS`,
   `PERF_CPU_LIMIT`, `PERF_MEMORY_LIMIT_MB` override them). First run: 0.00% CPU, 14.0 MB. The
   footprint after opening the bar and the palette is still measured by hand.
+- First run (#36): Shepherd without herdr no longer reads "Not connected: herdr is not running" or
+  dims its glyph. A source that is not on the Mac or not running is `absent` (herdr: no socket
+  file), which the herd's state leaves out. While no agent shows, the Agents tab (and the notch
+  bar) starts with "Where agents come from": a card each for tmux (found, or not installed),
+  Claude Code (when its settings folder exists: hooks on, or the `shepherd-report install claude`
+  command) and herdr (connected or not running), saying what each gives. Detection only reads;
+  nothing is written or remembered, and with no config file everything runs on defaults.

@@ -18,6 +18,8 @@ public final class ModuleContext {
     public let contextReader: (any AgentContextReader)?
     /// Context sizes by agent, filled by the module that reads them.
     public let agentContext = AgentContextStore()
+    /// The sources found on this Mac, for the first-run guide; filled by the app.
+    public let sourceGuide = SourceGuide()
     /// The user's plugins; nil where there are none (tests, or before the app sets one).
     public let plugins: PluginHost?
 

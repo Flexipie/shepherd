@@ -65,6 +65,7 @@ final class AppController {
             // The log restores exact times in state, so read it before the first snapshot.
             let history = await log.load()
             addSources(history: history)
+            explainSources()
             context.plugins?.startEvents()
             store.start()
             actions.updatePresence()
@@ -88,6 +89,16 @@ final class AppController {
             }
         }
         followSourcesConfig()
+    }
+
+    /// Fills the first-run guide. Reading Claude Code's settings is file I/O, so it runs off the main actor.
+    private func explainSources() {
+        let tmuxInstalled = tmux != nil
+        Task {
+            let environment = ProcessInfo.processInfo.environment
+            let claude = await Task.detached(priority: .utility) { ClaudeSetup.detect(environment: environment) }.value
+            context.sourceGuide.set(SourceIntros.make(tmuxInstalled: tmuxInstalled, claude: claude))
+        }
     }
 
     /// Screen patterns apply as soon as the config changes; a different list of sources says it needs a restart.

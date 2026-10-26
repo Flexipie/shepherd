@@ -103,7 +103,7 @@ public enum InstallCLI {
 
     /// `$CLAUDE_CONFIG_DIR/settings.json`, else `~/.claude/settings.json`: the user settings Claude
     /// Code reads.
-    static func settingsURL(environment: [String: String]) -> URL {
+    public static func settingsURL(environment: [String: String]) -> URL {
         if let folder = environment["CLAUDE_CONFIG_DIR"], !folder.isEmpty {
             return URL(fileURLWithPath: folder).appending(path: "settings.json")
         }

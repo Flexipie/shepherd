@@ -143,7 +143,7 @@ import Testing
         let store = HerdStore()
         let context = ModuleContext(store: store, presence: Presence(), actions: RecordingActions(), config: config)
         let registry = ModuleRegistry(available: BuiltinModules.all, context: context)
-        #expect(registry.modules.map { type(of: $0).id } == ["status", "notch", "queue", "usage", "system", "projects", "notifications", "context", "plugins"])
+        #expect(registry.modules.map { type(of: $0).id } == ["status", "notch", "sources", "queue", "usage", "system", "projects", "notifications", "context", "plugins"])
         let notch = registry.modules[1]
 
         try Data(#"{"modules": ["projects", "notch", "nope", "queue", "nope2"]}"#.utf8).write(to: url, options: .atomic)
@@ -153,8 +153,8 @@ import Testing
         #expect(config.problems == [#"config: unknown module "nope", "nope2""#])
 
         try FileManager.default.removeItem(at: url)
-        for _ in 0..<300 where registry.modules.count != 9 { try await Task.sleep(for: .milliseconds(10)) }
-        #expect(registry.modules.map { type(of: $0).id } == ["status", "notch", "queue", "usage", "system", "projects", "notifications", "context", "plugins"])
+        for _ in 0..<300 where registry.modules.count != 10 { try await Task.sleep(for: .milliseconds(10)) }
+        #expect(registry.modules.map { type(of: $0).id } == ["status", "notch", "sources", "queue", "usage", "system", "projects", "notifications", "context", "plugins"])
         #expect(config.problems.isEmpty)
     }
 }

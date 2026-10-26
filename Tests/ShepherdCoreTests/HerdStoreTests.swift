@@ -65,6 +65,21 @@ import Testing
         #expect(store.overallState == .disconnected("not running"))
     }
 
+    /// Someone without herdr is not "not connected": an absent source is left out of the herd's state.
+    @Test func anAbsentSourceIsNotAProblem() {
+        let store = HerdStore()
+        store.add(StubSource("herdr"))
+        store.add(StubSource("tmux"))
+        store.apply(SourceUpdate(agents: [], state: .absent("herdr is not running")), from: "herdr")
+        #expect(store.overallState == .connecting)
+        store.apply(SourceUpdate(agents: [], state: .live), from: "tmux")
+        #expect(store.overallState == .live)
+        let alone = HerdStore()
+        alone.add(StubSource("herdr"))
+        alone.apply(SourceUpdate(agents: [], state: .absent("herdr is not running")), from: "herdr")
+        #expect(alone.overallState == .live)
+    }
+
     @Test func focusGoesToTheOwningSourceAndRespectsCapabilities() async throws {
         let store = HerdStore()
         let herdr = StubSource("herdr")

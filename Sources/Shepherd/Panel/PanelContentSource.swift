@@ -26,7 +26,7 @@ enum HerdSummary {
         case .connecting: lines = ["Connecting…"]
         case .disconnected(let reason): lines = ["Not connected: \(reason). Retrying."]
         case .stale(let reason): lines = ["Reconnecting: \(reason)"]
-        case .live: lines = ["\(store.workingCount) working, \(store.needsYou.count) waiting"]
+        case .live, .absent: lines = ["\(store.workingCount) working, \(store.needsYou.count) waiting"]
         }
         for source in store.sources {
             lines += store.statusLines[source.id] ?? []
