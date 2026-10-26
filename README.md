@@ -127,8 +127,8 @@ can be left out:
 }
 ```
 
-- `modules`: which modules run, in order. Panel sections follow this order; in the notch bar the
-  queue stays on the left and the others follow as columns.
+- `modules`: which modules run, in order. Panel sections follow this order (unless `layout`
+  lists that tab); in the notch bar the queue stays on the left and the others follow as columns.
 - `layout`: choose and order what the panel and the bar show, without turning modules off.
   `agents` and `gadgets` list the sections of that tab in order (`sources`, the first-run guide,
   `queue` and `projects` on Agents; `usage` and `system` on Gadgets); one you leave out is
