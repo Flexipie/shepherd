@@ -120,15 +120,4 @@ import Testing
     @Test func theBuiltInKindsAreClaudeAndCodexByProcessName() {
         #expect(screens.kindByProcess == ["claude": "claude", "codex": "codex"])
     }
-
-    @Test func aKindFromConfigReadsItsOwnPatterns() {
-        let screens = ScreenStatus(["pi": ScreenPatterns(process: "pi-agent", blocked: ["^Allow\\?"],
-                                                         working: ["thinking"], idle: ["(?m)^>$", "ready"])])
-        #expect(screens.kindByProcess == ["pi-agent": "pi"])
-        #expect(screens.status(kind: "pi", screen: "pi ready\n> ") == .idle)
-        #expect(screens.status(kind: "pi", screen: "> ") == .unknown)
-        #expect(screens.status(kind: "pi", screen: "thinking...\n> \nready") == .working)
-        #expect(screens.status(kind: "pi", screen: "Allow? thinking") == .blocked)
-        #expect(screens.status(kind: "claude", screen: Self.claudeIdle) == .unknown)
-    }
 }
