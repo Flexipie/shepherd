@@ -331,12 +331,13 @@ so a module reads only while its tab shows (`Presence.isShowing(_:)`).
     opens a window after one of the project's agents (`new-window -d`, so the terminal stays
     where it is) whose command is `/bin/sh` running `<kind> <args> <prompt>` as separate
     arguments, then `exec`ing the user's login shell, so the window stays when the agent exits.
-    The prompt is the agent's first argument (after `--` when it starts with `-`), which Claude
-    Code and Codex both take, so it waits through a trust question; no quoting, so any shell and
-    any length. `new-window` runs with the server's PATH, since tmux gives a pane its caller's
-    PATH and an app opened from Finder has a short one. Until a scan lists the new pane, read and
-    focus reach it by its pane id. A project outside git says it has nothing to make a worktree
-    from.
+    The prompt is the agent's first argument, after `--` so a flag taking several values or a
+    subcommand name cannot take it; Claude Code and Codex both take one, so it waits through a
+    trust question. No quoting, so any shell; tmux caps a command near 16 KB, so a longer prompt
+    is refused before anything is made, as is a worktree folder that already exists. git and
+    `new-window` run with the server's PATH, since tmux gives a pane its caller's PATH and an app
+    opened from Finder has a short one. Until a scan lists the new pane, read, focus and replies
+    reach it by its pane id. A project outside git says it has nothing to make a worktree from.
 - **Usage** (the `usage` module), on the Gadgets tab, a column in the bar and a section in the
   menu bar panel: one card per OpenUsage provider (Claude accounts first), each limit as a thin
   bar (orange from 80%) with its value and "resets in", notes below, dimmed when stale. It reads

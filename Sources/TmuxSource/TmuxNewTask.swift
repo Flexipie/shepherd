@@ -29,25 +29,38 @@ enum TmuxNewTask {
     }
 
     /// The new window's command: `/bin/sh` runs the agent with its args and the prompt as its first
-    /// argument, each passed as is (no quoting, so any shell, any length), then replaces itself with
-    /// the user's login shell, so the window stays when the agent exits. `--` keeps a prompt that
-    /// starts with `-` from reading as a flag.
+    /// argument, each passed as is (no quoting, so any shell), then replaces itself with the user's
+    /// login shell, so the window stays when the agent exits. `--` before the prompt keeps it from
+    /// reading as a flag, as one more value of a flag that takes several, or as a subcommand.
     static func command(kind: String, args: [String], prompt: String) -> [String] {
-        let prompt = prompt.isEmpty ? [] : prompt.hasPrefix("-") ? ["--", prompt] : [prompt]
+        let prompt = prompt.isEmpty ? [] : ["--", prompt]
         return ["/bin/sh", "-c", "\"$@\"; exec \"${SHELL:-/bin/sh}\" -l", "sh", kind] + args + prompt
     }
 
+    /// tmux refuses a command past its message size (about 16 KB on tmux 3.6). Some room is kept
+    /// for the rest of `new-window`'s arguments.
+    static let commandLimit = 15_000
+
+    /// Why `command` is too long for tmux, or nil when it fits.
+    static func tooLong(_ command: [String]) -> String? {
+        let bytes = command.reduce(0) { $0 + $1.utf8.count + 1 }
+        guard bytes > commandLimit else { return nil }
+        return "the prompt is too long to start in tmux (\(bytes / 1000) KB, at most about \(commandLimit / 1000) KB)"
+    }
+
     /// `git worktree add -b <branch> <folder>` from `checkout`, so the branch starts at its HEAD.
-    /// Blocks until git exits, so call it off the main actor. A failure says what git said, and that
-    /// the worktree is there when git made it before failing (a hook that failed after checkout).
-    static func addWorktree(git: String, checkout: String, branch: String, folder: String) throws {
+    /// Blocks until git exits, so call it off the main actor. `folder` must not exist yet. A failure
+    /// says what git said, and that the worktree is there when git made it before failing (a hook
+    /// that failed after checkout).
+    static func addWorktree(git: String, checkout: String, branch: String, folder: String, path: String?) throws {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: git)
         process.arguments = ["-C", checkout, "worktree", "add", "-b", branch, folder]
-        // An app started from Finder has a short PATH; git's hooks and filters (LFS) need the user's tools.
+        // An app started from Finder has a short PATH; git's hooks and filters (LFS) need the user's
+        // tools, so `path` (the tmux server's) wins, else Homebrew's folders are added.
         var environment = ProcessInfo.processInfo.environment
-        let path = environment["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin"
-        environment["PATH"] = (["/opt/homebrew/bin", "/usr/local/bin"].filter { !path.contains($0) } + [path]).joined(separator: ":")
+        let own = environment["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin"
+        environment["PATH"] = path ?? (["/opt/homebrew/bin", "/usr/local/bin"].filter { !own.contains($0) } + [own]).joined(separator: ":")
         process.environment = environment
         process.standardInput = FileHandle.nullDevice
         process.standardOutput = FileHandle.nullDevice

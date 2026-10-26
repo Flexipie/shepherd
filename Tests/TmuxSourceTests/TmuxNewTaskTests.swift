@@ -5,8 +5,7 @@ import TmuxKit
 import TmuxTestSupport
 @testable import TmuxSource
 
-/// Starting a task: a worktree next to the repo, a window on the project's server, and the agent's
-/// command typed into its shell.
+/// Starting a task: a worktree next to the repo, then a window on the project's server running the agent.
 extension TmuxSourceTests {
     /// A repo with one commit at `folder/repo`, and a `claude` in `folder/bin` that writes its
     /// arguments to `folder/args`, one per line, then shows an idle screen.
@@ -64,9 +63,9 @@ extension TmuxSourceTests {
         let worktree = folder.appending(path: "repo-fix-login")
         #expect(FileManager.default.fileExists(atPath: worktree.appending(path: ".git").path))
         #expect(FileManager.default.fileExists(atPath: repo.appending(path: ".git/refs/heads/fix/login").path))
-        await until { (try? String(contentsOf: args, encoding: .utf8)) == "--model\na b\n\(Self.longPrompt)\n" }
+        await until { (try? String(contentsOf: args, encoding: .utf8)) == "--model\na b\n--\n\(Self.longPrompt)\n" }
         let recorded = try String(contentsOf: args, encoding: .utf8)
-        #expect(recorded == "--model\na b\n\(Self.longPrompt)\n")
+        #expect(recorded == "--model\na b\n--\n\(Self.longPrompt)\n")
         await until { store.agents.contains { $0.id == agent } }
         let started = try #require(store.agents.first { $0.id == agent })
         #expect(started.cwd == worktree.path)

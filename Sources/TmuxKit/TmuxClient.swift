@@ -123,7 +123,9 @@ public struct TmuxClient: Sendable {
     /// for it (`-e` cannot change that), so `path`, when given, is that process's PATH.
     public func newWindow(after window: String, folder: String, name: String, path: String? = nil,
                           command: [String]) throws -> String {
-        try run(["new-window", "-d", "-a", "-t", window, "-c", folder, "-n", name, "-P", "-F", "#{pane_id}"] + command,
+        // The name is a format: `##` keeps a `#` in a branch name from expanding.
+        try run(["new-window", "-d", "-a", "-t", window, "-c", folder, "-n", name.replacingOccurrences(of: "#", with: "##"),
+                 "-P", "-F", "#{pane_id}"] + command,
                 path: path)
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }

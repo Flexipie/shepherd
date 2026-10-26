@@ -40,7 +40,7 @@ public final class TmuxSource: AgentSource {
     /// Panes a task started that no scan has shown as an agent yet, by key, so the new agent's
     /// stage can read and jump to it at once. `listing` is the last listing requested when it
     /// started: only a later one can have seen the pane.
-    private var started: [String: (socket: String, paneID: String, listing: Int)] = [:]
+    private var started: [String: (socket: String, paneID: String, session: String, listing: Int)] = [:]
     private var tracker = PaneTracker()
     /// The terminals' clients: Shepherd's own control clients are left out.
     private var clients: [TmuxAttachedClient] = []
@@ -114,7 +114,7 @@ public final class TmuxSource: AgentSource {
             try client.selectWindow(pane.paneID)
             try client.selectPane(pane.paneID)
         }
-        if activatesTerminal { activateTerminal(session: observations[agent.local]?.session) }
+        if activatesTerminal { activateTerminal(session: observations[agent.local]?.session ?? started[agent.local]?.session) }
     }
 
     public func read(_ agent: AgentID, lines: Int) async throws -> String {
@@ -124,13 +124,13 @@ public final class TmuxSource: AgentSource {
     }
 
     public func sendKeys(_ agent: AgentID, _ keys: [String]) async throws {
-        let pane = try target(agent)
+        let pane = try pane(agent)
         let client = TmuxClient(binary: binary, socket: pane.socket)
         try await tmux { try client.sendKeys(pane.paneID, keys) }
     }
 
     public func sendText(_ agent: AgentID, _ text: String) async throws {
-        let pane = try target(agent)
+        let pane = try pane(agent)
         let client = TmuxClient(binary: binary, socket: pane.socket)
         try await tmux {
             try client.sendLiteral(pane.paneID, text)
@@ -159,21 +159,24 @@ public final class TmuxSource: AgentSource {
         guard let git = TmuxNewTask.locateGit() else { throw AgentSourceError.failed("git is not installed") }
         let branch = task.branch ?? TmuxNewTask.branchName(kind: task.kind)
         let folder = TmuxNewTask.folder(for: checkout, branch: branch)
-        try await tmux { try TmuxNewTask.addWorktree(git: git, checkout: checkout.root, branch: branch, folder: folder) }
-        let client = TmuxClient(binary: binary, socket: pane.socket)
         let command = TmuxNewTask.command(kind: task.kind, args: args, prompt: task.prompt)
+        // Checked before anything is made, so a refusal leaves nothing behind.
+        if let problem = TmuxNewTask.tooLong(command) { throw AgentSourceError.failed(problem) }
+        guard !FileManager.default.fileExists(atPath: folder) else {
+            throw AgentSourceError.failed("\(folder) already exists; pick another branch name")
+        }
+        let client = TmuxClient(binary: binary, socket: pane.socket)
+        // Shepherd's own PATH is short when it was opened from Finder; the server's is the user's.
+        let path = await Task.detached { client.globalEnvironment("PATH") }.value
+        try await tmux { try TmuxNewTask.addWorktree(git: git, checkout: checkout.root, branch: branch, folder: folder, path: path) }
         let paneID: String
         do {
-            paneID = try await tmux {
-                // Shepherd's own PATH is short when it was opened from Finder; the server's is the user's.
-                let path = client.globalEnvironment("PATH")
-                return try client.newWindow(after: pane.windowID, folder: folder, name: branch, path: path, command: command)
-            }
+            paneID = try await tmux { try client.newWindow(after: pane.windowID, folder: folder, name: branch, path: path, command: command) }
         } catch {
             throw AgentSourceError.failed("Created worktree \(branch) at \(folder), but \(task.kind) did not start: \(error)")
         }
         let key = PaneObservation.key(socket: pane.socket, paneID: paneID)
-        started[key] = (pane.socket, paneID, lastRequested)
+        started[key] = (pane.socket, paneID, pane.session, lastRequested)
         return AgentID(source: id, local: key)
     }
 
