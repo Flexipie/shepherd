@@ -44,13 +44,15 @@ let package = Package(
         .target(name: "TmuxSource", dependencies: ["TmuxKit", "ShepherdCore"]),
         // A private tmux server on its own socket, for the tmux tests only.
         .target(name: "TmuxTestSupport", dependencies: ["TmuxKit"], path: "Tests/TmuxTestSupport"),
+        // Demo mode's made-up herd: a fake herdr, reports and screen-read agents, all temporary.
+        .target(name: "DemoHerd", dependencies: ["HerdrFake", "HerdrSource", "ReportKit", "ReportSource", "TmuxSource", "ShepherdCore"]),
         // Built-in features, one folder per module.
         .target(name: "ShepherdModules", dependencies: ["ShepherdCore"]),
         // SwiftUI views for the panel and the notch pill. Values in, no windows, no glass, so
         // every view can be snapshot tested.
         .target(name: "ShepherdUI", dependencies: ["ShepherdCore"]),
         // The app: menu bar item, panel, notch pill, settings.
-        .executableTarget(name: "Shepherd", dependencies: ["ShepherdModules", "ShepherdCore", "ShepherdUI", "HerdrSource", "OpenUsageSource", "SystemSource", "ClaudeSessionSource", "ShellPlugins", "ReportSource", "TmuxSource"]),
+        .executableTarget(name: "Shepherd", dependencies: ["ShepherdModules", "ShepherdCore", "ShepherdUI", "HerdrSource", "OpenUsageSource", "SystemSource", "ClaudeSessionSource", "ShellPlugins", "ReportSource", "TmuxSource", "DemoHerd"]),
         .testTarget(name: "HerdrKitTests", dependencies: ["HerdrKit", "HerdrFake"]),
         .testTarget(name: "HerdrSourceTests", dependencies: ["HerdrSource", "HerdrKit", "HerdrFake", "ShepherdCore"]),
         .testTarget(name: "OpenUsageSourceTests", dependencies: ["OpenUsageSource", "ShepherdCore"], resources: [.copy("Fixtures")]),
@@ -62,6 +64,7 @@ let package = Package(
         .testTarget(name: "TmuxKitTests", dependencies: ["TmuxKit", "TmuxTestSupport"]),
         .testTarget(name: "TmuxSourceTests", dependencies: ["TmuxSource", "TmuxKit", "TmuxTestSupport", "ReportKit", "ReportSource", "ShepherdCore"]),
         .testTarget(name: "ShepherdCoreTests", dependencies: ["ShepherdCore", "ShepherdModules"]),
+        .testTarget(name: "DemoHerdTests", dependencies: ["DemoHerd", "ShepherdCore"]),
         .testTarget(name: "ShepherdUITests", dependencies: ["ShepherdUI", "ShepherdCore"], exclude: ["__Snapshots__"]),
     ]
 )

@@ -22,10 +22,12 @@ public final class ModuleContext {
     public let sourceGuide = SourceGuide()
     /// The user's plugins; nil where there are none (tests, or before the app sets one).
     public let plugins: PluginHost?
+    /// The herd is demo mode's made-up one, so surfaces say so.
+    public let isDemo: Bool
 
     public init(store: HerdStore, presence: Presence, actions: any AgentActions, config: ConfigStore = ConfigStore(fixed: .defaults),
                 notifier: (any Notifier)? = nil, usage: (any UsageReader)? = nil, system: (any SystemSampler)? = nil,
-                contextReader: (any AgentContextReader)? = nil, plugins: PluginHost? = nil) {
+                contextReader: (any AgentContextReader)? = nil, plugins: PluginHost? = nil, isDemo: Bool = false) {
         self.store = store
         self.presence = presence
         self.actions = actions
@@ -35,6 +37,7 @@ public final class ModuleContext {
         self.system = system
         self.contextReader = contextReader
         self.plugins = plugins
+        self.isDemo = isDemo
     }
 
     /// Token lines for a project's or an agent's values: the config's layout for that section,

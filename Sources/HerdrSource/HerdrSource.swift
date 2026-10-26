@@ -42,6 +42,12 @@ public final class HerdrSource: AgentSource {
         (updates, continuation) = AsyncStream.makeStream(bufferingPolicy: .bufferingNewest(16))
     }
 
+    /// A herdr on another socket, such as demo mode's fake one: no history, no terminal to bring
+    /// forward and no herdr config read.
+    public convenience init(socketPath: String) {
+        self.init(client: HerdrClient(socketPath: socketPath), activatesTerminal: false, configURL: nil)
+    }
+
     public func start() {
         guard task == nil else { return }
         watchConfig()
