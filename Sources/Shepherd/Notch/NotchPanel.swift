@@ -24,6 +24,10 @@ class NotchPanel: NSPanel {
 
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
+
+    override func fieldEditor(_ createFlag: Bool, for object: Any?) -> NSText? {
+        super.fieldEditor(createFlag, for: object)?.withoutWritingTools()
+    }
 }
 
 /// The notch surface's window. Hovering never makes it key, so typing stays in the terminal; a
