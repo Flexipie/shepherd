@@ -151,12 +151,13 @@ enum ClaudeSessionFile {
     }
 
     /// A user entry Claude Code writes for a local slash command (`/cost`, `/model`): its name
-    /// and its output, in tags. It starts no turn, so the answer before it still stands.
+    /// and its output, in tags. It starts no turn, so the answer before it still stands. A skill or
+    /// custom command starts with `<command-message>` instead and is a prompt.
     static func isLocalCommand(_ message: [String: Any]) -> Bool {
         let text = message["content"] as? String
             ?? (message["content"] as? [[String: Any]])?.first.flatMap { $0["text"] as? String } ?? ""
         let start = text.drop { $0.isWhitespace }
-        return ["<command-name>", "<command-message>", "<local-command-"].contains { start.hasPrefix($0) }
+        return start.hasPrefix("<command-name>") || start.hasPrefix("<local-command-")
     }
 
     /// A user entry that only carries tool results, which Claude Code writes inside a turn.

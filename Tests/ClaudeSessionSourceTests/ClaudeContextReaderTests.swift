@@ -63,9 +63,10 @@ import Testing
         let turn = ClaudeSessionFile.lastTurn(in: Data(lines.joined(separator: "\n").utf8), cutAtStart: false)
         #expect(turn.finalMessage == "**Done.** Tests pass.\n\nPR is up.")
         #expect(turn.tokens == 7)
-        // An API error, a new prompt or an interruption after the text: the turn has no message.
+        // An API error, a new prompt, a skill or an interruption after the text: the turn has no message.
         for after in [#"{"type":"assistant","isApiErrorMessage":true,"message":{"model":"<synthetic>","content":[{"type":"text","text":"API Error: 403"}]}}"#,
                       #"{"type":"user","message":{"role":"user","content":"now the docs"}}"#,
+                      #"{"type":"user","message":{"role":"user","content":"<command-message>ship</command-message>\n<command-name>/ship</command-name>"}}"#,
                       #"{"type":"user","message":{"role":"user","content":[{"type":"text","text":"[Request interrupted by user]"}]}}"#] {
             let data = Data((lines + [after]).joined(separator: "\n").utf8)
             #expect(ClaudeSessionFile.lastTurn(in: data, cutAtStart: false).finalMessage == nil)
