@@ -290,15 +290,19 @@ public final class TmuxSource: AgentSource {
         guard let observation = observations[key] else { return }
         let client = TmuxClient(binary: binary, socket: observation.socket)
         let pane = observation.paneID
-        let screen = await Task.detached(priority: .utility) { try? client.screen(pane) }.value
-        guard let screen else {
+        let kind = observation.kind
+        let screens = screens
+        // Patterns come from config, so they are matched off the main actor too.
+        let status = await Task.detached(priority: .utility) {
+            (try? client.screen(pane)).map { screens.status(kind: kind, screen: $0) }
+        }.value
+        guard let status else {
             // The pane or its server is gone; a listing says which.
             scheduleList(after: Self.listDelay)
             return
         }
         guard observations[key] != nil else { return }
         let now = Date()
-        let status = screens.status(kind: observation.kind, screen: screen)
         observations[key]?.status = status
         observations[key]?.workingSeen = status == .working ? now : nil
         publish(at: now)

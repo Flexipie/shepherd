@@ -159,8 +159,8 @@ can be left out:
   itself). `blocked`, `working` and `idle` are lists of regular expressions, matched against the
   last ten non-empty lines of the screen, each line trimmed; a state applies when every pattern in
   its list is found, checked in that order. A numbered prompt (`1. Yes`) is blocked for any agent.
-  A kind replaces the built-in one of the same name (`claude`, `codex`); pattern changes apply on
-  save.
+  A kind replaces the built-in one of the same name or process (`claude`, `codex`); two of your
+  kinds on one process are reported. Pattern changes apply on save.
 
 A mistake never breaks the app: the panel footer says what is wrong, and a file that is not valid
 JSON keeps the last good config.

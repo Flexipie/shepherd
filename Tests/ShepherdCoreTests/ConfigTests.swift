@@ -59,30 +59,35 @@ import Testing
     @Test func sourcesListIsTheOrderAndTmuxAgentsReplaceOrAddKinds() throws {
         let (config, problems) = try read(#"""
         {"sources": [{"source": "tmux", "agents": {
-            "aider": {"process": "aider", "working": ["Waiting for"], "idle": ["(?m)^> $"], "future": 1},
+            "aider": {"process": "aider", "working": ["Waiting for"], "idle": ["(?m)^>$"], "future": 1},
             "claude": {"idle": ["❯"]},
             "pi": {"idle": ["("]},
-            "codex": {"working": "busy"}}, "socket": "x"},
+            "codex": {"working": "busy"},
+            "zed": {"process": "claude", "idle": ["❯"]}}, "socket": "x"},
           "report", "herdr", "report", "zellij", 7, {"agents": {}}]}
         """#)
         #expect(config.sources.order == ["tmux", "report", "herdr"])
         #expect(config.sources.screens["claude"] == ScreenPatterns(process: "claude", idle: ["❯"]))
+        #expect(config.sources.screens["zed"] == nil)
         #expect(config.sources.screens["codex"] == ScreenPatterns.builtin["codex"])
         #expect(config.sources.screens["aider"]
-            == ScreenPatterns(process: "aider", working: ["Waiting for"], idle: ["(?m)^> $"]))
+            == ScreenPatterns(process: "aider", working: ["Waiting for"], idle: ["(?m)^>$"]))
         #expect(config.sources.screens["pi"] == nil)
         #expect(problems == [
             "config: unknown key \"sources[0].socket\"",
             "config: unknown key \"sources[0].agents.aider.future\"",
             "config: sources[0].agents.codex.working must be a list of regular expressions",
             "config: sources[0].agents.pi.idle: \"(\" is not a valid regular expression",
+            "config: sources[0].agents.zed: process \"claude\" is already sources[0].agents.claude",
             "config: sources[3]: \"report\" is listed twice",
             "config: sources[4]: unknown source \"zellij\"; known: herdr, report, tmux",
             "config: sources[5] must be a source id or an object",
             "config: sources[6].source must be a source id",
         ])
         #expect(try read(#"{"sources": "tmux"}"#).problems == ["config: sources must be a list of source ids or objects"])
-        #expect(try read(#"{"sources": []}"#).config.sources.order == [])
+        let none = try read(#"{"sources": []}"#)
+        #expect(none.config.sources.order == [])
+        #expect(none.problems == ["config: sources lists no source, so no agents will show"])
     }
 
     @Test func disabledPlugins() throws {

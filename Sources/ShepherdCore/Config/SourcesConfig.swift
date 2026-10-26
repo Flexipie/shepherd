@@ -59,6 +59,7 @@ public struct SourcesConfig: Sendable, Equatable {
                 readAgents(agents, at: "\(at).agents", into: &config.screens, problems: &problems)
             }
         }
+        if config.order.isEmpty { problems.append("config: sources lists no source, so no agents will show") }
         return config
     }
 
@@ -68,13 +69,22 @@ public struct SourcesConfig: Sendable, Equatable {
             problems.append("config: \(path) must be an object of agent kinds")
             return
         }
+        var added: [String: ScreenPatterns] = [:]
         for kind in kinds.keys.sorted() {
             do {
-                screens[kind] = try ScreenPatterns.read(kinds[kind]!, kind: kind, at: "\(path).\(kind)", problems: &problems)
+                let patterns = try ScreenPatterns.read(kinds[kind]!, kind: kind, at: "\(path).\(kind)", problems: &problems)
+                if let other = added.first(where: { $0.value.process == patterns.process })?.key {
+                    problems.append("config: \(path).\(kind): process \"\(patterns.process)\" is already \(path).\(other)")
+                    continue
+                }
+                added[kind] = patterns
             } catch {
                 problems.append("config: \(error.message)")
             }
         }
+        // A kind from config wins over a built-in one watching the same process.
+        let processes = Set(added.values.map(\.process))
+        screens = screens.filter { !processes.contains($0.value.process) }.merging(added) { $1 }
     }
 }
 
