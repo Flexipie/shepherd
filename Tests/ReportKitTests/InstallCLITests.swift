@@ -59,6 +59,7 @@ import Testing
         var shown = ""
         let outcome = InstallCLI.run(arguments: arguments,
                                      environment: ["CLAUDE_CONFIG_DIR": scratch.url.appending(path: "claude").path, "PATH": path],
+                                     binary: "/Apps/Shepherd.app/Contents/MacOS/shepherd-report",
                                      show: { shown += $0 }, confirm: { answer }, now: now)
         return (outcome, shown)
     }
@@ -115,9 +116,14 @@ import Testing
         let real = scratch.url.appending(path: "dotfiles-settings.json")
         // Hooks from a build that wrote the binary's quoted absolute path.
         let current = try ClaudeHooks.install(into: try SettingsJSON.parse(Data(Self.original.utf8))).printed()
-        try Data(current.replacingOccurrences(of: "\"shepherd-report report", with: "\"'/Old Place/shepherd-report' report").utf8)
-            .write(to: real)
+        let old = current.replacingOccurrences(of: "\"shepherd-report report", with: "\"'/Old Place/shepherd-report' report")
+        try Data(old.utf8).write(to: real)
         try FileManager.default.createSymbolicLink(at: scratch.settings, withDestinationURL: real)
+
+        // Uninstall finds the older form too.
+        #expect(run(["uninstall", "claude", "--yes"], scratch).0.exitCode == 0)
+        #expect(try String(contentsOf: real, encoding: .utf8) == Self.original)
+        try Data(old.utf8).write(to: real)
 
         #expect(run(["install", "claude", "--yes"], scratch).0.exitCode == 0)
         #expect(try FileManager.default.destinationOfSymbolicLink(atPath: scratch.settings.path) == real.path)
@@ -160,7 +166,7 @@ import Testing
         let edited = Self.original.replacingOccurrences(of: "opus", with: "sonnet")
         var shown = ""
         let outcome = InstallCLI.run(arguments: ["install", "claude"],
-                                     environment: ["CLAUDE_CONFIG_DIR": scratch.url.appending(path: "claude").path],
+                                     environment: ["CLAUDE_CONFIG_DIR": scratch.url.appending(path: "claude").path], binary: nil,
                                      show: { shown += $0 },
                                      confirm: { try? Data(edited.utf8).write(to: scratch.settings); return true }, now: now)
         #expect(outcome.exitCode == 1)
@@ -168,15 +174,34 @@ import Testing
         #expect(try scratch.backups().isEmpty)
     }
 
-    @Test func installWarnsWhenTheCommandIsNotOnPath() throws {
+    @Test func installWarnsBeforeAskingWhenTheCommandIsNotOnPath() throws {
         let scratch = try Scratch(contents: Self.original)
-        #expect(run(["install", "claude", "--print"], scratch).0.output.contains("not on your PATH"))
+        let bin = scratch.url.appending(path: "bin")
+        try FileManager.default.createDirectory(at: bin.appending(path: "shepherd-report"), withIntermediateDirectories: true)
+        var shownWhenAsked = ""
+        var shown = ""
+        let outcome = InstallCLI.run(arguments: ["install", "claude"],
+                                     environment: ["CLAUDE_CONFIG_DIR": scratch.url.appending(path: "claude").path, "PATH": bin.path],
+                                     binary: "/Apps/Shepherd.app/Contents/MacOS/shepherd-report",
+                                     show: { shown += $0 }, confirm: { shownWhenAsked = shown; return true }, now: now)
+        #expect(outcome.exitCode == 0)
+        #expect(shownWhenAsked.contains("not on this shell's PATH"))
+        #expect(shownWhenAsked.contains("ln -s '/Apps/Shepherd.app/Contents/MacOS/shepherd-report' /usr/local/bin/shepherd-report"))
+        // Installing again still says so; uninstalling never does.
+        #expect(run(["install", "claude", "--yes"], scratch, path: bin.path).0.output.contains("not on this shell's PATH"))
+        let removed = run(["uninstall", "claude", "--yes"], scratch, path: bin.path)
+        #expect(!removed.0.output.contains("PATH") && !removed.1.contains("PATH"))
+    }
+
+    @Test func noWarningWhenTheCommandIsOnPath() throws {
+        let scratch = try Scratch(contents: Self.original)
         let bin = scratch.url.appending(path: "bin")
         try FileManager.default.createDirectory(at: bin, withIntermediateDirectories: true)
         let tool = bin.appending(path: "shepherd-report")
         try Data("#!/bin/sh\n".utf8).write(to: tool)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: tool.path)
-        #expect(!run(["install", "claude", "--print"], scratch, path: "/nowhere:\(bin.path)").0.output.contains("PATH"))
+        let (outcome, shown) = run(["install", "claude", "--print"], scratch, path: "/nowhere:\(bin.path)")
+        #expect(!outcome.output.contains("PATH") && !shown.contains("PATH"))
     }
 
     @Test(arguments: [["install"], ["install", "codex"], ["install", "claude", "--force"], ["remove", "claude"]])

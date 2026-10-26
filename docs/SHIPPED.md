@@ -167,15 +167,17 @@ Oldest first.
   settings (`$CLAUDE_CONFIG_DIR/settings.json`, else `~/.claude/settings.json`): `SessionStart`
   idle, `UserPromptSubmit` and `PostToolUse` working, `Notification` on a permission prompt or an
   MCP question blocked, `Stop` done, `SessionEnd` closed, each running `shepherd-report report
-  --status <s> --kind claude --from-hook` by its bare name, found on PATH (install warns when it is
-  not there). It prints the change as a unified diff, asks before writing (`--yes` when stdin is not
-  a terminal, `--print` to only show it), copies the file to `settings.json.shepherd-backup-<time>`
-  beside the link, and writes through a symlink so a dotfiles link stays. It refuses a link to a
-  missing file and a file changed while it asked. A hook's usage error exits 1, never 2, which would
-  block Claude. Only hook entries whose program is `shepherd-report` or `shepherd` followed by
-  `report` are added or removed; installing again replaces an older form (an absolute path) and is
-  otherwise a no-op. `uninstall claude` removes exactly those entries, and the groups and events
-  they leave empty. The file is read with key order and numbers kept and printed as Claude Code
-  writes it, so for a file Claude Code wrote the diff holds only Shepherd's lines. A file that is
-  not strict JSON (comments, trailing commas, a repeated key) is refused untouched. Codex waits
-  until its `notify` format is confirmed.
+  --status <s> --kind claude --from-hook` by its bare name, found on PATH. When it is not on the
+  shell's PATH, install says so before asking, with the `ln -s` that links this binary into
+  `/usr/local/bin` (Claude Code runs hooks with the PATH it was started with). It prints the change
+  as a unified diff, asks before writing (`--yes` when stdin is not a terminal, `--print` to only
+  show it), copies the file to `settings.json.shepherd-backup-<time>` beside the link, and writes
+  through a symlink so a dotfiles link stays. It refuses a link to a missing file and a file changed
+  while it asked. A hook's usage error exits 1, never 2, which would block Claude. Only hook entries
+  whose program is `shepherd-report` or `shepherd` followed by `report` are added or removed;
+  installing again replaces an older form (an absolute path) and is otherwise a no-op. `uninstall
+  claude` removes exactly those entries, and the groups and events they leave empty. The file is
+  read with key order and numbers kept and printed as Claude Code writes it, so for a file Claude
+  Code wrote the diff holds only Shepherd's lines. A file that is not strict JSON (comments,
+  trailing commas, a repeated key) is refused untouched. Codex waits until its `notify` format is
+  confirmed.

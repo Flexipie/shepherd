@@ -9,9 +9,10 @@ public enum InstallCLI {
                uninstall claude [--print] [--yes]
         """
 
-    /// `arguments` start with `install` or `uninstall`. `show` prints to stdout. `confirm` asks whether to write and returns nil when
-    /// there is no one to ask (stdin is not a terminal).
-    public static func run(arguments: [String], environment: [String: String],
+    /// `arguments` start with `install` or `uninstall`. `binary` is where this `shepherd-report`
+    /// is, named when it has to be linked onto PATH. `show` prints to stdout. `confirm` asks whether
+    /// to write and returns nil when there is no one to ask (stdin is not a terminal).
+    public static func run(arguments: [String], environment: [String: String], binary: String?,
                            show: (String) -> Void, confirm: () -> Bool?, now: Date = Date()) -> ReportCLI.Outcome {
         guard let verb = arguments.first, verb == "install" || verb == "uninstall" else {
             return .init(exitCode: 2, output: usage)
@@ -57,18 +58,16 @@ public enum InstallCLI {
         } catch {
             return .init(exitCode: 1, output: "cannot change \(path.path): \(error). Nothing written.")
         }
+        // The hooks run the bare name: say so before any question if it is not found.
+        let warning = verb == "install" && !onPath(environment: environment) ? missingWarning(binary: binary) : ""
         guard after != settings else {
             let state = verb == "install" ? "already installed in" : "not in"
-            return .init(exitCode: 0, output: "Shepherd's hooks are \(state) \(path.path). Nothing to change.")
+            return .init(exitCode: 0, output: "Shepherd's hooks are \(state) \(path.path). Nothing to change.\(warning.isEmpty ? "" : "\n" + warning)")
         }
 
-        // The hooks run the bare name, so say so now if Claude Code will not find it.
-        let warning = verb == "install" && !onPath(environment: environment)
-            ? "\nshepherd-report is not on your PATH, so these hooks will fail until it is (link it into a folder on PATH)."
-            : ""
         let text = after.printed()
-        show(LineDiff.unified(from: before, to: text, oldName: path.path, newName: path.path))
-        if printOnly { return .init(exitCode: 0, output: "--print: nothing written.\(warning)") }
+        show(LineDiff.unified(from: before, to: text, oldName: path.path, newName: path.path) + (warning.isEmpty ? "" : warning + "\n"))
+        if printOnly { return .init(exitCode: 0, output: "--print: nothing written.") }
         if !yes {
             guard let answer = confirm() else {
                 return .init(exitCode: 1, output: "Nothing written. Run again with --yes to write this change.")
@@ -96,7 +95,7 @@ public enum InstallCLI {
             if let permissions {
                 try? FileManager.default.setAttributes([.posixPermissions: permissions], ofItemAtPath: target.path)
             }
-            return .init(exitCode: 0, output: "Wrote \(path.path); \(note). Running Claude sessions pick it up when restarted.\(warning)")
+            return .init(exitCode: 0, output: "Wrote \(path.path); \(note). Running Claude sessions pick it up when restarted.")
         } catch {
             return .init(exitCode: 1, output: "cannot write \(path.path): \(error.localizedDescription)")
         }
@@ -112,11 +111,25 @@ public enum InstallCLI {
         return URL(fileURLWithPath: home).appending(path: ".claude/settings.json")
     }
 
-    /// Whether an executable `shepherd-report` is in one of PATH's folders.
+    /// Whether an executable file `shepherd-report` is in one of PATH's folders.
     static func onPath(environment: [String: String]) -> Bool {
         (environment["PATH"] ?? "").split(separator: ":").contains { folder in
-            FileManager.default.isExecutableFile(atPath: "\(folder)/shepherd-report")
+            let candidate = "\(folder)/shepherd-report"
+            var isFolder: ObjCBool = false
+            return FileManager.default.fileExists(atPath: candidate, isDirectory: &isFolder) && !isFolder.boolValue
+                && FileManager.default.isExecutableFile(atPath: candidate)
         }
+    }
+
+    /// Claude Code runs hooks with the PATH it was started with, which for an
+    /// app or IDE is often shorter than this shell's.
+    static func missingWarning(binary: String?) -> String {
+        let link = binary.map { "ln -s '\($0)' /usr/local/bin/shepherd-report" } ?? "link shepherd-report into /usr/local/bin"
+        return """
+            shepherd-report is not on this shell's PATH, so these hooks will fail until it is. Claude Code \
+            runs hooks with the PATH it was started with; link it into a folder on that PATH, for example:
+              \(link)
+            """
     }
 
     /// `<file>.shepherd-backup-<yyyyMMdd-HHmmss>` beside the file, with a counter if that is taken.
