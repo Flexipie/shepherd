@@ -141,3 +141,9 @@ Oldest first.
   the screen row, and screen readings are not announced to notifications or plugin events. The
   source is added only when `tmux` is installed. Tests run a private tmux server with fake `claude`
   scripts; `SHEPHERD_LIVE=1` reads the real servers.
+- Shared row and card components and a surface layer (#30): `ShepherdUI` is split into
+  `Components` (row chrome, the choosable row with its `RowContext`, the card fill, the
+  `Clocked` surface clock), `Items` (one view per item kind, `PanelItemView` the one switch) and
+  `Surfaces` (panel, notch, palette). `PanelItem.usage` became `PanelItem.gadget(GadgetCard)`, so
+  This Mac no longer poses as a usage account and a gadget made of meters and lines touches only
+  its module. No pixel changed: every snapshot matches its reference.

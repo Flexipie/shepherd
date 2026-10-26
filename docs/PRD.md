@@ -153,7 +153,7 @@ than". `SHEPHERD_TRANSITION_LOG` points it elsewhere for development runs.
 | `TmuxKit` | tmux's command line (`list-panes`, `capture-pane`, `send-keys`, `select-pane`), control mode (`tmux -C`) and the process table (`ps`). Foundation only. No UI, no Shepherd. |
 | `TmuxSource` | tmux as a source: panes whose process tree runs a known agent, read from their screens and labelled inferred. Watches the socket folder and control clients; no polling. |
 | `ShepherdModules` | Built-in features, one folder each, listed in `BuiltinModules.all`. |
-| `ShepherdUI` | SwiftUI views for the panel and the notch surface. Values in, no windows, no glass, so every view can be snapshot tested. |
+| `ShepherdUI` | SwiftUI views, values in, no windows, no glass, so every view can be snapshot tested. Three layers: `Components` (shared pieces: row chrome and the choosable row, the card fill, glyphs, tokens), `Items` (one view per `PanelItem` kind, drawn the same on every surface, with `PanelItemView` the one place a kind meets its view) and `Surfaces` (the panel, the notch, the palette: layout, keyboard and the clock, never their own item views). |
 | `Shepherd` | The app: status item, panel window, notch surface window, hotkey, later notifications and the palette. Thin. |
 
 ## What herdr gives us
@@ -315,7 +315,7 @@ its tab shows (`Presence.isShowing(_:)`).
   last report is missing or past its earliest future `expiresAt`, then once more at that time if
   still shown; leaving the tab or closing cancels it. Without OpenUsage running the column says so.
 - **This Mac** (the `system` module), on the Gadgets tab, a column after usage: one card with CPU
-  and memory as bars, reusing the usage card. While Gadgets shows it samples once (which only
+  and memory as bars, in the same gadget card as usage. While Gadgets shows it samples once (which only
   primes the CPU reading), after 0.5 s, then every 2 s; leaving the tab or closing cancels the
   task, so nothing runs otherwise.
 - **Context size** (the `context` module, no section of its own): a Claude Code agent's
@@ -532,6 +532,17 @@ keeps its instance and state.
 A gadget's section becomes a bar column (`BarColumn`), can be turned off in `modules`, and costs
 nothing while the bar is closed: it reads or samples only while shown, and never polls in the
 background. Everything stays local.
+
+### Adding a gadget
+
+A gadget is a module whose section sets `tab: .gadgets`. Its items are `PanelItem.gadget`
+cards (`GadgetCard`: a title, a detail, meters drawn as thin bars, and short lines), which every
+surface already draws, so a gadget that fits that shape touches only its module (and its line in
+`BuiltinModules.all`). A gadget that needs a look of its own adds one view in
+`Sources/ShepherdUI/Items/`, with its value as a `PanelItem` case and one line in
+`PanelItemView`; the surfaces do not change. Rows reuse `rowChrome` and `choosable` and cards
+`card()` from `Components`, so a new view does not copy their padding, highlight or click
+handling.
 
 ## Config
 
