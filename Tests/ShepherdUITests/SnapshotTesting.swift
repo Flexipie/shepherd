@@ -76,6 +76,14 @@ enum Snapshot {
         return pngData(image)
     }
 
+    /// The height `view` takes at `width`, as `render` lays it out, rounded up to a whole point
+    /// like `NSView.fittingSize`.
+    static func height(of view: some View, width: CGFloat) -> CGFloat {
+        var height: CGFloat = 0
+        ImageRenderer(content: view.frame(width: width).environment(\.colorScheme, .dark)).render { size, _ in height = size.height }
+        return height.rounded(.up)
+    }
+
     static func pngData(_ image: CGImage) -> Data? {
         NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:])
     }

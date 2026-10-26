@@ -191,3 +191,7 @@ Oldest first.
   its ancestors, from whatever pids a source gives it, with the "is it an app" check passed in
   (Core has no AppKit). Finding herdr's processes, and why walking up from them skips the server,
   moved into `HerdrSource` (`HerdrProcesses`). herdr and tmux call the same entry point.
+- Snapshot tests measure the notch bar's height with `ImageRenderer` instead of an `NSHostingView`.
+  The hosting view built real AppKit text fields, whose fitting height came out a few points off
+  under load (#54), so a stage or new task snapshot failed on size alone. The height is rounded up
+  like `fittingSize`, so every reference is unchanged.

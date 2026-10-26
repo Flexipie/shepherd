@@ -47,7 +47,9 @@ import Testing
         let width = metrics.body(.expanded, expandedHeight: 0).width
         let bar = NotchBarView(content: content, clock: .fixed(SampleHerd.now), width: width, stage: stage,
                                offersNewTask: offersNewTask, tab: tab, perform: { _ in }, onStage: { _ in })
-        let height = NSHostingView(rootView: bar.environment(\.colorScheme, .dark)).fittingSize.height + 32
+        // Measured with ImageRenderer, not NSHostingView: a hosting view builds real AppKit text
+        // fields, whose fitting height came out a few points off under load (#54).
+        let height = Snapshot.height(of: bar, width: width) + 32
         try check(name, .expanded(content, stage: stage, offersNewTask: offersNewTask), height: height + 8,
                   expandedHeight: height, tab: tab, sourceLocation: sourceLocation)
     }
