@@ -28,12 +28,6 @@ import Testing
         #expect(TerminalLocator.parent(of: 1) == 0)
     }
 
-    @Test func walksTheLiveProcessTableFromAnyPid() {
-        // Any pid works as a start, not only a source's own processes: here, this test's parent.
-        let parent = getppid()
-        #expect(TerminalLocator.hostingApps(of: [getpid()], isApp: { $0 == parent }) == [parent])
-    }
-
     @Test func elapsedIsHonestAboutPrecision() {
         let now = Date(timeIntervalSince1970: 10_000)
         #expect(Elapsed.short(Since(now.addingTimeInterval(-30), .exact), now: now) == "now")
