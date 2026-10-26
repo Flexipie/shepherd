@@ -28,6 +28,8 @@ public final class DemoHerd {
 
     /// Starts the fake herdr and writes the reports. The sources start with the store.
     public static func start() async throws -> DemoHerd {
+        // Another demo owns the socket and spool; taking them over would break it.
+        guard !answers(socket) else { throw DemoError.alreadyRunning }
         let server = FakeHerdrServer(herd: .demo, path: socket)
         try await server.start()
         // Only demo reports are ever here: clear what an earlier demo left.
@@ -52,9 +54,32 @@ public final class DemoHerd {
                                    kind: "claude", cwd: "/tmp/billing", updatedAt: now))
     }
 
+    /// Whether something listens on the Unix socket at `path`.
+    private static func answers(_ path: String) -> Bool {
+        let fd = Darwin.socket(AF_UNIX, SOCK_STREAM, 0)
+        guard fd >= 0 else { return false }
+        defer { Darwin.close(fd) }
+        var address = sockaddr_un()
+        address.sun_family = sa_family_t(AF_UNIX)
+        withUnsafeMutableBytes(of: &address.sun_path) { bytes in
+            for (index, byte) in path.utf8.prefix(bytes.count - 1).enumerated() { bytes[index] = byte }
+        }
+        return withUnsafePointer(to: &address) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                Darwin.connect(fd, $0, socklen_t(MemoryLayout<sockaddr_un>.size)) == 0
+            }
+        }
+    }
+
     /// Removes the socket and the spool, for when the app quits. Safe to call from termination.
     public func removeFiles() {
         try? FileManager.default.removeItem(atPath: server.path)
         try? FileManager.default.removeItem(at: spool)
     }
+}
+
+public enum DemoError: Error, CustomStringConvertible {
+    case alreadyRunning
+
+    public var description: String { "another demo is already running" }
 }
