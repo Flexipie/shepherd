@@ -34,7 +34,7 @@ public final class UsageModule: ShepherdModule {
 
     public var panel: PanelSection? {
         guard context.usage != nil else { return nil }
-        var items = (report?.providers ?? []).map(PanelItem.usage)
+        var items = (report?.providers ?? []).map { PanelItem.gadget(GadgetCard($0)) }
         let notices = [problem].compactMap { $0 } + (report?.problems ?? [])
         items.insert(contentsOf: notices.map(PanelItem.notice), at: 0)
         let empty = report == nil && problem == nil ? "Reading usage…" : "No accounts in OpenUsage"

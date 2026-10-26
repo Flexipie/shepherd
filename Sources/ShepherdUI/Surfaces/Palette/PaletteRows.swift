@@ -48,10 +48,7 @@ struct PaletteRow: View {
                 .frame(width: 14)
             VStack(alignment: .leading, spacing: 2, content: content)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .background(RoundedRectangle(cornerRadius: 7).fill(isSelected ? Color.accentColor.opacity(0.18) : .clear))
-        .contentShape(Rectangle())
+        .rowChrome(isSelected: isSelected, vertical: 6)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibility)
         .accessibilityAddTraits(result.item.action == nil ? [] : .isButton)

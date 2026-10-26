@@ -39,9 +39,42 @@ public enum PanelItem: Sendable, Equatable {
     case project(PanelProjectCard)
     /// Two or more checkouts of one repo, under one header.
     case repo(PanelRepoCard)
-    /// One account's plan usage.
-    case usage(UsageProvider)
+    /// A gadget's card of meters and lines.
+    case gadget(GadgetCard)
     case notice(String)
+}
+
+/// A gadget's card: a title, a thin bar per meter, then short lines. A gadget whose content fits
+/// this shape needs no view of its own: its module returns cards and every surface draws them.
+public struct GadgetCard: Sendable, Equatable, Identifiable {
+    /// Unique within the section.
+    public let id: String
+    public let title: String
+    /// Beside the title, quieter: a plan, a host.
+    public let detail: String?
+    public let meters: [UsageMeter]
+    /// Short lines under the meters: balances, errors.
+    public let lines: [String]
+    /// The data is old, such as after a failed refresh: the card is dimmed.
+    public let isStale: Bool
+
+    public init(id: String, title: String, detail: String? = nil, meters: [UsageMeter] = [], lines: [String] = [],
+                isStale: Bool = false) {
+        self.id = id
+        self.title = title
+        self.detail = detail
+        self.meters = meters
+        self.lines = lines
+        self.isStale = isStale
+    }
+}
+
+extension GadgetCard {
+    /// One account's plan usage: its name and plan, its limits, then its notes.
+    public init(_ provider: UsageProvider) {
+        self.init(id: provider.id, title: provider.name, detail: provider.plan, meters: provider.meters, lines: provider.notes,
+                  isStale: provider.isStale)
+    }
 }
 
 /// What choosing an item does.

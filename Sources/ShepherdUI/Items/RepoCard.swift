@@ -8,11 +8,7 @@ import SwiftUI
 struct RepoCard: View {
     let card: PanelRepoCard
     let now: Date
-    let selection: PanelTarget.ID?
-    let sectionID: String
-    var jump: ((PanelAction) -> Void)?
-    let perform: (PanelAction) -> Void
-    let hover: (PanelTarget.ID?) -> Void
+    let rows: RowContext
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -23,14 +19,12 @@ struct RepoCard: View {
                 if let agent = Self.soleAgent(project) {
                     soleAgentRow(project, agent)
                 } else {
-                    ProjectHeader(card: project, compact: true, selection: selection, sectionID: sectionID, perform: perform,
-                                  hover: hover)
-                    ProjectAgentRows(card: project, now: now, selection: selection, sectionID: sectionID, jump: jump,
-                                     perform: perform, hover: hover)
+                    ProjectHeader(card: project, compact: true, rows: rows)
+                    ProjectAgentRows(card: project, now: now, rows: rows)
                 }
             }
         }
-        .cardBackground()
+        .card()
     }
 
     /// The agent of a checkout that has exactly one, which then shares the checkout's row. The
@@ -42,12 +36,9 @@ struct RepoCard: View {
     private func soleAgentRow(_ project: PanelProjectCard, _ agent: PanelAgentRow) -> some View {
         let merged = PanelAgentRow(agent: agent.agent, tokens: project.tokens + agent.tokens, isLive: agent.isLive,
                                    action: agent.action, contextTokens: agent.contextTokens)
-        let id = agent.action.map { PanelTarget.id(section: sectionID, action: $0) }
-        return AgentRow(row: merged, now: now, checkout: project.project, isSelected: id != nil && id == selection,
-                        onJump: jump.flatMap { jump in agent.action.map { action in { jump(action) } } })
-            .onTapGesture { if let action = agent.action { tap(action, perform: perform, jump: jump) } }
-            .onHover { inside in if let id { hover(inside ? id : nil) } }
-            .id(id)
+        return AgentRow(row: merged, now: now, checkout: project.project, isSelected: rows.isSelected(agent.action),
+                        onJump: rows.onJump(agent.action))
+            .choosable(agent.action, in: rows)
     }
 
     private var header: some View {

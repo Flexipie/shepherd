@@ -28,7 +28,7 @@ public final class SystemModule: ShepherdModule {
 
     public var panel: PanelSection? {
         guard context.system != nil else { return nil }
-        let items = sample.map { [PanelItem.usage(Self.provider($0))] } ?? []
+        let items = sample.map { [PanelItem.gadget(Self.card($0))] } ?? []
         return PanelSection(id: Self.id, title: "This Mac", items: items, emptyText: "Measuring…", tab: .gadgets)
     }
 
@@ -58,13 +58,13 @@ public final class SystemModule: ShepherdModule {
     }
 
     /// The sample as a meter card: "CPU 23%", "Memory 18.2 of 36 GB".
-    static func provider(_ sample: SystemSample) -> UsageProvider {
+    static func card(_ sample: SystemSample) -> GadgetCard {
         let cpu = UsageMeter(id: "cpu", label: "CPU", fraction: sample.cpu ?? 0,
                              valueText: sample.cpu.map { "\(Int(($0 * 100).rounded()))%" } ?? "…")
         let total = sample.memoryTotal
         let memory = UsageMeter(id: "memory", label: "Memory", fraction: total == 0 ? 0 : Double(sample.memoryUsed) / Double(total),
                                 valueText: "\(gigabytes(sample.memoryUsed, decimals: 1)) of \(gigabytes(total, decimals: 0)) GB")
-        return UsageProvider(id: id, name: "CPU and memory", meters: [cpu, memory])
+        return GadgetCard(id: id, title: "CPU and memory", meters: [cpu, memory])
     }
 
     /// Binary gigabytes, as Activity Monitor counts them.
