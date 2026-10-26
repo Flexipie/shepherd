@@ -73,9 +73,12 @@ Claude Code runs the hooks as `shepherd-report`, so it must be on your PATH. If 
 Any other agent can report too, from its own hooks or scripts:
 `shepherd-report report --status working|blocked|done|idle|closed [--message <text>]`.
 
-To try Shepherd without real agents, right-click the menu bar icon and choose Try Demo, or run
-`make demo`: a made-up herd from all three sources. Demo mode never touches your herdr, tmux,
-config or history; Leave Demo in the same menu goes back.
+To try Shepherd without real agents, right-click the menu bar icon and choose Try Demo (the
+first-run guide points there too), or run `make demo` (the app with `--demo`, beside any Shepherd
+already running). You get a made-up herd from all three sources: three herdr projects, two Claude
+Code reports and two tmux agents, under a "Demo herd" card that says they are made up. Demo mode
+reads and writes nothing of yours (no herdr, tmux, config, history, plugins or notifications);
+Leave Demo in the same menu goes back.
 
 ## What it does
 
@@ -141,7 +144,8 @@ check, no account.
   `~/Library/Application Support/Shepherd/transitions.jsonl` (the newest 5,000). Agent reports
   are files in `~/Library/Application Support/Shepherd/reports`: `shepherd-report` writes them and
   removes one when its agent closes, and Shepherd removes one a day after it blocked or finished.
-  Only when you ask: keys and text typed into an agent, a git worktree and branch for a new
+  Demo mode uses only its own socket and report folder under `/tmp` (`shepherd-demo`). Only when
+  you ask: keys and text typed into an agent, a git worktree and branch for a new
   task, and Claude Code's `settings.json` through `shepherd-report install`, after showing the
   diff, with a backup.
 - **Plugins** are your own code and run with your permissions: when the palette opens (to list
@@ -176,7 +180,7 @@ can be left out:
 
 ```json
 {
-  "modules": ["status", "notch", "sources", "queue", "usage", "system", "projects",
+  "modules": ["status", "notch", "demo", "sources", "queue", "usage", "system", "projects",
               "notifications", "context", "plugins"],
   "tokens": {
     "projects": [[{ "token": "pr", "fg": "#94e2d5", "rules": [{ "contains": "draft", "dim": true }] }, "ticket_state"]],
@@ -194,6 +198,7 @@ can be left out:
 
 - `modules`: which modules run, in order. Panel sections follow this order (unless `layout`
   lists that tab); in the notch bar the queue stays on the left and the others follow as columns.
+  `demo` shows something only in demo mode.
 - `sources`: where agents come from, in this order: `herdr`, `report` (`shepherd-report`) and
   `tmux`. Left out, all three run. A change applies the next time Shepherd starts. tmux can be an
   object instead, to teach it an agent or change how it reads one:
@@ -242,6 +247,7 @@ JSON keeps the last good config.
 make test   # unit tests
 make app    # build/Shepherd.app
 make run    # build the app and relaunch it
+make demo   # the app on a made-up herd, beside any Shepherd already running
 make perf   # idle CPU and memory budget check against a fake herdr
 ```
 
