@@ -186,11 +186,22 @@ import Testing
                                      show: { shown += $0 }, confirm: { shownWhenAsked = shown; return true }, now: now)
         #expect(outcome.exitCode == 0)
         #expect(shownWhenAsked.contains("not on this shell's PATH"))
-        #expect(shownWhenAsked.contains("ln -s '/Apps/Shepherd.app/Contents/MacOS/shepherd-report' /usr/local/bin/shepherd-report"))
+        // The only folder on PATH already holds a shepherd-report, so the link goes to /usr/local/bin.
+        #expect(shownWhenAsked.contains("sudo mkdir -p /usr/local/bin && sudo ln -s '/Apps/Shepherd.app/Contents/MacOS/shepherd-report' /usr/local/bin/shepherd-report"))
         // Installing again still says so; uninstalling never does.
         #expect(run(["install", "claude", "--yes"], scratch, path: bin.path).0.output.contains("not on this shell's PATH"))
         let removed = run(["uninstall", "claude", "--yes"], scratch, path: bin.path)
         #expect(!removed.0.output.contains("PATH") && !removed.1.contains("PATH"))
+    }
+
+    @Test func theLinkGoesToAFolderOnPathTheUserCanWrite() throws {
+        let scratch = try Scratch(contents: Self.original)
+        let bin = scratch.url.appending(path: "my bin")
+        try FileManager.default.createDirectory(at: bin, withIntermediateDirectories: true)
+        let (outcome, shown) = run(["install", "claude", "--print"], scratch, path: "relative:/usr/bin:\(bin.path)")
+        #expect(outcome.exitCode == 0)
+        #expect(shown.contains("  ln -s '/Apps/Shepherd.app/Contents/MacOS/shepherd-report' '\(bin.path)/shepherd-report'\n"))
+        #expect(InstallCLI.shellQuoted("/Sam's Apps/x") == #"'/Sam'\''s Apps/x'"#)
     }
 
     @Test func noWarningWhenTheCommandIsOnPath() throws {

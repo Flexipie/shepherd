@@ -59,7 +59,7 @@ public enum InstallCLI {
             return .init(exitCode: 1, output: "cannot change \(path.path): \(error). Nothing written.")
         }
         // The hooks run the bare name: say so before any question if it is not found.
-        let warning = verb == "install" && !onPath(environment: environment) ? missingWarning(binary: binary) : ""
+        let warning = verb == "install" && !onPath(environment: environment) ? missingWarning(binary: binary, environment: environment) : ""
         guard after != settings else {
             let state = verb == "install" ? "already installed in" : "not in"
             return .init(exitCode: 0, output: "Shepherd's hooks are \(state) \(path.path). Nothing to change.\(warning.isEmpty ? "" : "\n" + warning)")
@@ -123,13 +123,35 @@ public enum InstallCLI {
 
     /// Claude Code runs hooks with the PATH it was started with, which for an
     /// app or IDE is often shorter than this shell's.
-    static func missingWarning(binary: String?) -> String {
-        let link = binary.map { "ln -s '\($0)' /usr/local/bin/shepherd-report" } ?? "link shepherd-report into /usr/local/bin"
+    /// The `ln -s` goes to the first folder on PATH this user can write to, else to /usr/local/bin
+    /// with sudo (it is often root's, or missing on Apple silicon).
+    static func missingWarning(binary: String?, environment: [String: String]) -> String {
+        let fileManager = FileManager.default
+        let folder = (environment["PATH"] ?? "").split(separator: ":").map(String.init).first { folder in
+            folder.hasPrefix("/") && fileManager.isWritableFile(atPath: folder)
+                && !fileManager.fileExists(atPath: "\(folder)/shepherd-report")
+        }
+        let link: String
+        if let binary {
+            let source = shellQuoted(binary)
+            if let folder {
+                link = "ln -s \(source) \(shellQuoted(folder + "/shepherd-report"))"
+            } else {
+                link = "sudo mkdir -p /usr/local/bin && sudo ln -s \(source) /usr/local/bin/shepherd-report"
+            }
+        } else {
+            link = "link shepherd-report into \(folder ?? "/usr/local/bin")"
+        }
         return """
             shepherd-report is not on this shell's PATH, so these hooks will fail until it is. Claude Code \
             runs hooks with the PATH it was started with; link it into a folder on that PATH, for example:
               \(link)
             """
+    }
+
+    /// One shell word in single quotes, a `'` inside written as `'\''`.
+    static func shellQuoted(_ text: String) -> String {
+        "'" + text.replacingOccurrences(of: "'", with: "'\\''") + "'"
     }
 
     /// `<file>.shepherd-backup-<yyyyMMdd-HHmmss>` beside the file, with a counter if that is taken.
