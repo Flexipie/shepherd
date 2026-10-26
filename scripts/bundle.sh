@@ -4,7 +4,8 @@ set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 config="${1:-release}"
-version="$(git -C "$root" describe --tags --always 2>/dev/null || echo 0.0.0)"
+# The release version; bump it with the changelog when cutting a release (docs/README.md, "Releasing").
+version="0.1.0"
 
 swift build --package-path "$root" -c "$config"
 bin="$(swift build --package-path "$root" -c "$config" --show-bin-path)/Shepherd"
@@ -25,6 +26,7 @@ cat >"$app/Contents/Info.plist" <<PLIST
   <key>CFBundleExecutable</key><string>Shepherd</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>${version}</string>
+  <key>CFBundleVersion</key><string>${version}</string>
   <key>LSMinimumSystemVersion</key><string>26.0</string>
   <key>LSUIElement</key><true/>
   <key>NSHighResolutionCapable</key><true/>
