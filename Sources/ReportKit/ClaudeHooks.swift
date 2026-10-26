@@ -28,19 +28,15 @@ public enum ClaudeHooks {
         public let description: String
     }
 
-    /// The command for a status, running the binary at `executable`.
-    static func command(executable: String, status: ReportFile.Status) -> String {
-        "\(shellQuoted(executable)) report --status \(status.rawValue) --kind claude --from-hook"
+    /// The command for a status. The bare name, found on PATH, so the hook survives the app moving.
+    static func command(status: ReportFile.Status) -> String {
+        "shepherd-report report --status \(status.rawValue) --kind claude --from-hook"
     }
 
     /// `settings` with Shepherd's hooks in place of any it had. Unchanged when they are already
     /// there exactly, so installing twice changes nothing.
-    public static func install(into settings: SettingsJSON, executable: String) throws -> SettingsJSON {
-        // Quoted as `'\''`, which `isOurs` does not read back, so uninstall could not find them.
-        guard !executable.contains("'") else {
-            throw Problem(description: "the path to shepherd-report contains a ' (\(executable)); move it")
-        }
-        let wanted = entries.map { ($0.event, $0.matcher, command(executable: executable, status: $0.status)) }
+    public static func install(into settings: SettingsJSON) throws -> SettingsJSON {
+        let wanted = entries.map { ($0.event, $0.matcher, command(status: $0.status)) }
         let present = try ours(in: settings)
         if present.count == wanted.count, zip(present, wanted).allSatisfy({ $0 == $1 }) { return settings }
 
@@ -135,7 +131,8 @@ public enum ClaudeHooks {
         return program == "shepherd-report" || program == "shepherd"
     }
 
-    /// The first words of a shell command, with single or double quotes around a word removed.
+    /// The first words of a shell command, with single or double quotes around a word removed. A
+    /// path may come first, as in hooks an earlier build wrote.
     static func leadingWords(_ command: String, count: Int) -> [String] {
         var words: [String] = []
         var rest = Substring(command)
@@ -154,12 +151,5 @@ public enum ClaudeHooks {
             }
         }
         return words
-    }
-
-    /// The path as one shell word: as is when it has only safe characters, else in single quotes.
-    static func shellQuoted(_ path: String) -> String {
-        let safe = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/._-+")
-        if !path.isEmpty, path.unicodeScalars.allSatisfy(safe.contains) { return path }
-        return "'" + path.replacingOccurrences(of: "'", with: "'\\''") + "'"
     }
 }

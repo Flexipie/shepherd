@@ -8,7 +8,6 @@ if arguments.first == "install" || arguments.first == "uninstall" {
     outcome = InstallCLI.run(
         arguments: arguments,
         environment: ProcessInfo.processInfo.environment,
-        executable: Bundle.main.executablePath ?? CommandLine.arguments[0],
         show: { print($0, terminator: ""); fflush(stdout) },
         confirm: {
             guard isatty(STDIN_FILENO) != 0 else { return nil }

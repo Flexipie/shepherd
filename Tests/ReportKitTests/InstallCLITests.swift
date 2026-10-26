@@ -6,7 +6,6 @@ import Testing
 /// Shepherd's entries touched, nothing written without a yes).
 @Suite struct InstallCLITests {
     let now = Date(timeIntervalSince1970: 1_800_000_000)
-    let executable = "/Apps/Shepherd.app/Contents/MacOS/shepherd-report"
 
     /// A file as Claude Code writes it, with the user's own hooks, including one Shepherd must not
     /// mistake for its own.
@@ -56,11 +55,11 @@ import Testing
         deinit { try? FileManager.default.removeItem(at: url) }
     }
 
-    func run(_ arguments: [String], _ scratch: Scratch, answer: Bool? = nil) -> (ReportCLI.Outcome, String) {
+    func run(_ arguments: [String], _ scratch: Scratch, answer: Bool? = nil, path: String = "") -> (ReportCLI.Outcome, String) {
         var shown = ""
         let outcome = InstallCLI.run(arguments: arguments,
-                                     environment: ["CLAUDE_CONFIG_DIR": scratch.url.appending(path: "claude").path],
-                                     executable: executable, show: { shown += $0 }, confirm: { answer }, now: now)
+                                     environment: ["CLAUDE_CONFIG_DIR": scratch.url.appending(path: "claude").path, "PATH": path],
+                                     show: { shown += $0 }, confirm: { answer }, now: now)
         return (outcome, shown)
     }
 
@@ -68,7 +67,7 @@ import Testing
         let scratch = try Scratch(contents: Self.original)
         let (outcome, diff) = run(["install", "claude", "--print"], scratch)
         #expect(outcome.exitCode == 0)
-        #expect(diff.contains("+            \"command\": \"\(executable) report --status done --kind claude --from-hook\""))
+        #expect(diff.contains("+            \"command\": \"shepherd-report report --status done --kind claude --from-hook\""))
         // A removed line only comes back with a comma, as an event before the new ones.
         let lines = diff.split(separator: "\n").dropFirst(2)
         for removed in lines where removed.hasPrefix("-") {
@@ -114,15 +113,17 @@ import Testing
     @Test func installReplacesAnOlderPathAndKeepsTheLink() throws {
         let scratch = try Scratch(contents: nil)
         let real = scratch.url.appending(path: "dotfiles-settings.json")
-        let old = try ClaudeHooks.install(into: try SettingsJSON.parse(Data(Self.original.utf8)), executable: "/Old Place/shepherd-report")
-        try Data(old.printed().utf8).write(to: real)
+        // Hooks from a build that wrote the binary's quoted absolute path.
+        let current = try ClaudeHooks.install(into: try SettingsJSON.parse(Data(Self.original.utf8))).printed()
+        try Data(current.replacingOccurrences(of: "\"shepherd-report report", with: "\"'/Old Place/shepherd-report' report").utf8)
+            .write(to: real)
         try FileManager.default.createSymbolicLink(at: scratch.settings, withDestinationURL: real)
 
         #expect(run(["install", "claude", "--yes"], scratch).0.exitCode == 0)
         #expect(try FileManager.default.destinationOfSymbolicLink(atPath: scratch.settings.path) == real.path)
         let commands = try ClaudeHooks.ours(in: try SettingsJSON.parse(Data(contentsOf: real))).map(\.2)
         #expect(commands.count == ClaudeHooks.entries.count)
-        #expect(commands.allSatisfy { $0.hasPrefix(executable + " ") })
+        #expect(commands.allSatisfy { $0.hasPrefix("shepherd-report report ") })
     }
 
     @Test func aMissingFileIsCreatedWithoutABackup() throws {
@@ -160,20 +161,22 @@ import Testing
         var shown = ""
         let outcome = InstallCLI.run(arguments: ["install", "claude"],
                                      environment: ["CLAUDE_CONFIG_DIR": scratch.url.appending(path: "claude").path],
-                                     executable: executable, show: { shown += $0 },
+                                     show: { shown += $0 },
                                      confirm: { try? Data(edited.utf8).write(to: scratch.settings); return true }, now: now)
         #expect(outcome.exitCode == 1)
         #expect(try scratch.text() == edited)
         #expect(try scratch.backups().isEmpty)
     }
 
-    @Test func aPathWithAQuoteIsRefused() throws {
+    @Test func installWarnsWhenTheCommandIsNotOnPath() throws {
         let scratch = try Scratch(contents: Self.original)
-        let outcome = InstallCLI.run(arguments: ["install", "claude", "--yes"],
-                                     environment: ["CLAUDE_CONFIG_DIR": scratch.url.appending(path: "claude").path],
-                                     executable: "/Users/x/Sam's Apps/shepherd-report", show: { _ in }, confirm: { true }, now: now)
-        #expect(outcome.exitCode == 1)
-        #expect(try scratch.text() == Self.original)
+        #expect(run(["install", "claude", "--print"], scratch).0.output.contains("not on your PATH"))
+        let bin = scratch.url.appending(path: "bin")
+        try FileManager.default.createDirectory(at: bin, withIntermediateDirectories: true)
+        let tool = bin.appending(path: "shepherd-report")
+        try Data("#!/bin/sh\n".utf8).write(to: tool)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: tool.path)
+        #expect(!run(["install", "claude", "--print"], scratch, path: "/nowhere:\(bin.path)").0.output.contains("PATH"))
     }
 
     @Test(arguments: [["install"], ["install", "codex"], ["install", "claude", "--force"], ["remove", "claude"]])
