@@ -47,9 +47,9 @@ import Testing
         #expect(try ClaudeSessionFile.read(Self.fixture, previous: older, tailBytes: 1 << 20).tokens == 184_213)
     }
 
-    /// The text of the last main-thread entry that has any: the tool call after it, the
-    /// sidechain, the synthetic error and an empty "(no content)" do not count. Unknown fields and
-    /// a missing `content` are fine.
+    /// The text of the last main-thread entry that has any: the tool call and tool result after
+    /// it, the sidechain and an empty "(no content)" do not count. Unknown fields and a missing
+    /// `content` are fine.
     @Test func theLastMainTextIsTheFinalMessage() {
         let lines = [
             #"{"type":"assistant","message":{"model":"m","content":[{"type":"text","text":"Earlier."}]}}"#,
@@ -58,12 +58,22 @@ import Testing
             #"{"type":"assistant","message":{"model":"m"}}"#,
             #"{"type":"assistant","message":{"model":"m","content":[{"type":"text","text":"(no content)"}]}}"#,
             #"{"type":"assistant","isSidechain":true,"message":{"model":"m","content":[{"type":"text","text":"From a subagent."}]}}"#,
-            #"{"type":"assistant","message":{"model":"<synthetic>","content":[{"type":"text","text":"API Error"}]}}"#,
-            #"{"type":"user","message":{"role":"user","content":"what did the assistant say?"}}"#,
+            #"{"type":"user","message":{"role":"user","content":[{"type":"tool_result","content":"the assistant's tool ran"}]}}"#,
         ]
         let turn = ClaudeSessionFile.lastTurn(in: Data(lines.joined(separator: "\n").utf8), cutAtStart: false)
         #expect(turn.finalMessage == "**Done.** Tests pass.\n\nPR is up.")
         #expect(turn.tokens == 7)
+        // An API error, a new prompt or an interruption after the text: the turn has no message.
+        for after in [#"{"type":"assistant","isApiErrorMessage":true,"message":{"model":"<synthetic>","content":[{"type":"text","text":"API Error: 403"}]}}"#,
+                      #"{"type":"user","message":{"role":"user","content":"now the docs"}}"#,
+                      #"{"type":"user","message":{"role":"user","content":[{"type":"text","text":"[Request interrupted by user]"}]}}"#] {
+            let data = Data((lines + [after]).joined(separator: "\n").utf8)
+            #expect(ClaudeSessionFile.lastTurn(in: data, cutAtStart: false).finalMessage == nil)
+            #expect(ClaudeSessionFile.lastTurn(in: data, cutAtStart: false).tokens == 7)
+        }
+        // A meta entry (a local command's output) does not end the turn.
+        let meta = #"{"type":"user","isMeta":true,"message":{"role":"user","content":"<local-command-stdout>"}}"#
+        #expect(ClaudeSessionFile.lastTurn(in: Data((lines + [meta]).joined(separator: "\n").utf8), cutAtStart: false).finalMessage != nil)
         // The fixture has usage but no text.
         #expect(ClaudeSessionFile.lastTurn(in: Data(#"{"type":"assistant","message":{"model":"m","usage":{"input_tokens":1}}}"#.utf8),
                                            cutAtStart: false).finalMessage == nil)

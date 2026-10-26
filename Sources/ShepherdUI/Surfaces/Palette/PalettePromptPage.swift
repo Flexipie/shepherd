@@ -23,8 +23,7 @@ struct PalettePromptPage: View {
             field
             Divider().padding(.horizontal, 10)
             VStack(alignment: .leading, spacing: 8) {
-                AgentRow(row: stage.row, now: now, showsProject: true, namesContext: true,
-                         showsPreview: !stage.row.showsFinalMessage)
+                AgentRow(row: stage.row, now: now, showsProject: true, namesContext: true, showsPreview: false)
                 if stage.row.showsFinalMessage, let message = stage.row.finalMessage {
                     FinalMessage(message: message, maxHeight: maxHeight)
                 } else {

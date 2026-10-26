@@ -393,8 +393,9 @@ so a module reads only while its tab shows (`Presence.isShowing(_:)`).
   of the query must match one of an item's words (name, kind, project, status, agent and project
   token values); a name counts most, and its matched characters are bold. With no query, agents
   that need the user come first in queue order. It closes on Escape, an outside click, a Space
-  change, losing key or after an action, and is built fresh on every opening. It does not count
-  as a visible panel, so gadgets do not start reading for it. Tab (or →) on an agent whose
+  change, losing key or after an action, and is built fresh on every opening. While open it counts
+  as a panel showing Agents (so `context` reads), never Gadgets, so gadgets do not start reading
+  for it. Tab (or →) on an agent whose
   source can take text opens its prompt page, and the "New task" commands (from `projects`)
   open the new task form; both are a second `StageModel`, so the palette reads an agent's last
   lines only while its prompt shows (on entering and on a status change) and a started task

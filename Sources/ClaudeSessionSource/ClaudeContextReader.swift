@@ -107,29 +107,51 @@ enum ClaudeSessionFile {
         lastTurn(in: data, cutAtStart: cutAtStart).tokens
     }
 
-    /// Walks the lines from the end over the assistant entries of the main thread (not a
-    /// sidechain, not a synthetic error): the last one with usage gives the context size, the last
-    /// one with text the final message. `cutAtStart` drops the first line, which the tail window
-    /// may have cut.
+    /// Walks the lines from the end over the main thread's entries (not a sidechain): the last
+    /// assistant entry with usage (not a synthetic error) gives the context size, the last one
+    /// with text the final message. The message is only looked for in the latest turn: a prompt,
+    /// an interruption or an API error after it means there is none, so a surface shows the
+    /// agent's lines instead of an earlier answer. `cutAtStart` drops the first line, which the
+    /// tail window may have cut.
     static func lastTurn(in data: Data, cutAtStart: Bool) -> (tokens: Int?, finalMessage: String?) {
         var lines = data.split(separator: UInt8(ascii: "\n"), omittingEmptySubsequences: true)
         if cutAtStart, !lines.isEmpty { lines.removeFirst() }
-        let marker = Data(#""assistant""#.utf8)
+        let markers = [Data(#""assistant""#.utf8), Data(#""user""#.utf8)]
         var tokens: Int?
         var finalMessage: String?
-        for line in lines.reversed() where line.range(of: marker) != nil {
+        var messageDone = false
+        for line in lines.reversed() where markers.contains(where: { line.range(of: $0) != nil }) {
             guard let object = try? JSONSerialization.jsonObject(with: Data(line)) as? [String: Any],
-                  object["type"] as? String == "assistant", object["isSidechain"] as? Bool != true,
-                  let message = object["message"] as? [String: Any], message["model"] as? String != "<synthetic>" else { continue }
-            if tokens == nil, let usage = message["usage"] as? [String: Any] {
-                let keys = ["input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens"]
-                let total = keys.reduce(0) { $0 + ((usage[$1] as? NSNumber)?.intValue ?? 0) }
-                if total > 0 { tokens = total }
+                  object["isSidechain"] as? Bool != true,
+                  let message = object["message"] as? [String: Any] else { continue }
+            switch object["type"] as? String {
+            case "user":
+                if !messageDone, object["isMeta"] as? Bool != true, !isToolResult(message) { messageDone = true }
+            case "assistant":
+                guard message["model"] as? String != "<synthetic>" else {
+                    messageDone = true
+                    continue
+                }
+                if tokens == nil, let usage = message["usage"] as? [String: Any] {
+                    let keys = ["input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens"]
+                    let total = keys.reduce(0) { $0 + ((usage[$1] as? NSNumber)?.intValue ?? 0) }
+                    if total > 0 { tokens = total }
+                }
+                if !messageDone, let text = text(of: message) {
+                    finalMessage = text
+                    messageDone = true
+                }
+            default: continue
             }
-            if finalMessage == nil { finalMessage = text(of: message) }
-            if tokens != nil, finalMessage != nil { break }
+            if tokens != nil, messageDone { break }
         }
         return (tokens, finalMessage)
+    }
+
+    /// A user entry that only carries tool results, which Claude Code writes inside a turn.
+    static func isToolResult(_ message: [String: Any]) -> Bool {
+        guard let blocks = message["content"] as? [[String: Any]], !blocks.isEmpty else { return false }
+        return blocks.allSatisfy { $0["type"] as? String == "tool_result" }
     }
 
     /// The message's text blocks joined, trimmed and cut at `messageLimit`; nil when it has none.

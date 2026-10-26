@@ -8,7 +8,7 @@ import SwiftUI
 /// the row stands for a repo card's checkout and its one agent: the checkout's label (a branch
 /// glyph for a worktree, a dot when focused) as the title, then the agent's status. Under the
 /// title, the agent's last message on one line once it stopped working, unless `showsPreview` is
-/// off because the surface shows the whole message.
+/// off because the surface below shows the whole message or the agent's lines.
 struct AgentRow: View {
     let row: PanelAgentRow
     let now: Date

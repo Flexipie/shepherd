@@ -22,8 +22,9 @@ struct FinalMessage: View {
             }
         }
         .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.06)))
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel("Last message")
+        .accessibilityValue(message)
     }
 
     private var text: some View {

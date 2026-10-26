@@ -106,11 +106,18 @@ public struct PanelAgentRow: Sendable, Equatable {
         self.finalMessage = finalMessage
     }
 
-    /// The last message on one line, for the row: whitespace collapsed and Markdown's bold and
-    /// code marks dropped. nil while the agent works, when the message is an earlier turn's.
+    /// The last message on one line, for the row: whitespace collapsed and Markdown's heading,
+    /// bold and code marks dropped. nil while the agent works, when the message is an earlier
+    /// turn's.
     public var messagePreview: String? {
         guard agent.status != .working, let finalMessage else { return nil }
-        let plain = finalMessage.replacing("**", with: "").replacing("`", with: "")
+        let unheaded = finalMessage.split(separator: "\n", omittingEmptySubsequences: false)
+            .map { line -> Substring in
+                let marks = line.prefix { $0 == "#" }
+                return !marks.isEmpty && line.dropFirst(marks.count).first == " " ? line.dropFirst(marks.count) : line
+            }
+            .joined(separator: "\n")
+        let plain = unheaded.replacing("**", with: "").replacing("`", with: "")
         let preview = plain.split(whereSeparator: \.isWhitespace).joined(separator: " ")
         return preview.isEmpty ? nil : preview
     }
