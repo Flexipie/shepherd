@@ -27,9 +27,9 @@ together or alone:
 
 | Source | What you need | What you get |
 | --- | --- | --- |
-| **tmux** | Your agents running in tmux panes | Every Claude Code or Codex pane, found by its process. Its state is read from the screen (shown as inferred), and you can read its last lines, answer approvals, prompt it, jump to it and start new tasks. Teach it other agents in config. |
+| **tmux** | Your agents running in tmux panes | Every Claude Code or Codex pane, found by its process. Its state is read from the screen, and you can read its last lines, answer approvals, prompt it, jump to it and start new tasks. Teach it other agents in config. |
 | **Agent reports** | `shepherd-report install claude`, or any agent that runs `shepherd-report report` | Exact state from the agent itself, through its hooks. Status only: no reading, answering or jumping. |
-| **herdr** | [herdr](https://herdr.dev) 0.9.3 or later, running | Everything herdr knows: workspaces, agents and their state, your herdr plugins' tokens (a PR, a ticket), plus Claude Code's context size and final message. |
+| **herdr** | [herdr](https://herdr.dev) 0.9.3 or later, running | Everything herdr knows: workspaces, agents and their state, your herdr plugins' tokens (a PR, a ticket), plus reading, answering, jumping and new tasks, and Claude Code's context size and final message. |
 
 **tmux is what the screen features need.** Without tmux (or herdr) Shepherd can only show what
 agents report; it cannot read a screen, type into it or press an approval button. Run your agents
@@ -100,8 +100,8 @@ config or history; Leave Demo in the same menu goes back.
   new background window of the same session.
 - **Panel.** Click the paw icon in the menu bar for the same queue and projects as a list. Up and
   down move, Return jumps, Escape closes. Right-click the icon for the connection state and Quit.
-- **Projects and worktrees.** Agents are grouped by git checkout, and the worktrees of one repo
-  share a card: the repo's name on top, then each checkout with its own agents. Type the repo's
+- **Projects and worktrees.** tmux agents are grouped by git checkout and herdr's by workspace,
+  and the worktrees of one repo share a card: the repo's name on top, then each checkout with its own agents. Type the repo's
   name in the palette to find them all.
 - **Agents | Gadgets.** Two tabs (⌘1, ⌘2) in the panel and the bar. Gadgets holds **Usage** (your
   Claude Code, Codex and other plan limits with when each resets, read from
@@ -112,11 +112,12 @@ config or history; Leave Demo in the same menu goes back.
   context is ("184k"), and once it stops, its last message on one line; the stage and the
   palette show the whole message.
 - **Notifications** (off by default; the notch is the alert). When on, an agent you are not
-  looking at that blocks posts a macOS notification (with Jump and Reply where its source allows).
+  looking at that blocks posts a macOS notification (with Jump, and Reply where its source allows it).
   States read from a screen are a guess, so they never notify; reports and herdr do.
 - **Your herdr colours.** With herdr, token colours and rules come from herdr's own `[ui.sidebar]`
   config, so `$pr` and `$ticket_state` look as they do in its sidebar.
-- **Honest state.** States read from a screen are marked inferred. If a source's connection
+- **Honest state.** A state read from a screen is a best guess, so it never sends a
+  notification or a plugin event. If a source's connection
   breaks, Shepherd says so, shows the last known state dimmed and recovers on its own. Times are
   "4m" when Shepherd saw the change and "4m+" when it only knows an upper bound.
 
@@ -131,7 +132,8 @@ check, no account.
 - **Network:** none, except the Usage gadget, which asks OpenUsage on `127.0.0.1:6736` (loopback
   only) while the Gadgets tab shows. Shepherd holds no credentials and never calls a vendor API.
 - **What it reads:** herdr's local socket and its `config.toml`; tmux's pane list, the last lines
-  of agent panes and the process table (`ps`), to tell which panes run an agent; the `.git` entries
+  of agent panes and the process table (`ps`), to tell which panes run an agent (a control client,
+  `tmux -C`, is attached to each server to learn when a pane prints; it keeps only which pane did); the `.git` entries
   above an agent's folder; agent reports in its spool folder; for Claude Code under herdr, the
   tail of that session's file in `~/.claude/projects`; Claude Code's `settings.json`, to say on
   first run whether the hooks are installed; its own config and plugins folder.
