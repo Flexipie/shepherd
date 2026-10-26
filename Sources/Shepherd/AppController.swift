@@ -1,5 +1,6 @@
 import AppKit
 import ClaudeSessionSource
+import DemoHerd
 import HerdrSource
 import OpenUsageSource
 import ReportSource
@@ -13,13 +14,16 @@ import TmuxSource
 @MainActor
 final class AppController {
     /// `SHEPHERD_TRANSITION_LOG` points the log elsewhere, so runs against a fake herdr do not
-    /// mix into real history.
-    private let log = TransitionLog(url: ProcessInfo.processInfo.environment["SHEPHERD_TRANSITION_LOG"]
-        .map { URL(fileURLWithPath: $0) } ?? TransitionLog.defaultURL)
+    /// mix into real history. Demo mode keeps none.
+    private let log: TransitionLog?
     private let store: HerdStore
     private let presence = Presence()
     private let actions: AppActions
-    private let config = ConfigStore()
+    /// Demo mode reads no config file: it runs with the defaults and writes nothing.
+    private let config: ConfigStore
+    /// Demo mode: the made-up herd stands in for every source, and nothing of the user's is read.
+    private let isDemo: Bool
+    private var demo: DemoHerd?
     private let context: ModuleContext
     private let registry: ModuleRegistry
     private let notifier: SystemNotifier?
@@ -34,14 +38,21 @@ final class AppController {
     /// The first-run guide has been filled once; after that it is refreshed only when a panel opens.
     private var guideFilled = false
 
-    init() {
+    /// In demo mode no plugin runs, no notification is posted and no usage or Claude Code session
+    /// is read: they are the user's own.
+    init(demo: Bool) {
+        isDemo = demo
+        log = demo ? nil : TransitionLog(url: ProcessInfo.processInfo.environment["SHEPHERD_TRANSITION_LOG"]
+            .map { URL(fileURLWithPath: $0) } ?? TransitionLog.defaultURL)
+        config = demo ? ConfigStore(fixed: .defaults) : ConfigStore()
         store = HerdStore(log: log)
         actions = AppActions(store: store, presence: presence, config: config)
-        notifier = SystemNotifier(store: store, actions: actions, config: config)
-        let plugins = PluginHost(runner: ProcessPluginRunner(), store: store, config: config)
+        // Notifications are shared with any other Shepherd, so a demo posts and withdraws none.
+        notifier = demo ? nil : SystemNotifier(store: store, actions: actions, config: config)
+        let plugins = demo ? nil : PluginHost(runner: ProcessPluginRunner(), store: store, config: config)
         context = ModuleContext(store: store, presence: presence, actions: actions, config: config, notifier: notifier,
-                                    usage: OpenUsageReader(), system: MachSystemSampler(),
-                                    contextReader: ClaudeContextReader(), plugins: plugins)
+                                    usage: demo ? nil : OpenUsageReader(), system: MachSystemSampler(),
+                                    contextReader: demo ? nil : ClaudeContextReader(), plugins: plugins, isDemo: demo)
         registry = ModuleRegistry(available: BuiltinModules.all, context: context)
     }
 
@@ -49,7 +60,9 @@ final class AppController {
         let content = PanelContentSource(store: store, registry: registry, config: config)
         let panel = PanelController(content: content, actions: actions, presence: presence)
         self.panel = panel
-        statusItem = StatusItemController(store: store, registry: registry, panel: panel)
+        statusItem = StatusItemController(store: store, registry: registry, panel: panel, isDemo: isDemo,
+                                          demoItem: { [weak self] in self?.demoMenuTitle },
+                                          switchDemo: { [weak self] in self?.relaunch() })
         notch = NotchSurfaceController(registry: registry, content: content, actions: actions, presence: presence)
         palette = PaletteController(context: context, registry: registry, actions: actions)
         hotKeys = HotKeyCenter(config: config, bindings: [
@@ -64,13 +77,66 @@ final class AppController {
             },
         ])
         Task {
-            // The log restores exact times in state, so read it before the first snapshot.
-            let history = await log.load()
-            addSources(history: history)
-            explainSources()
+            if isDemo {
+                await addDemo()
+            } else {
+                // The log restores exact times in state, so read it before the first snapshot.
+                let history = await log?.load() ?? []
+                addSources(history: history)
+                explainSources()
+            }
             context.plugins?.startEvents()
             store.start()
             actions.updatePresence()
+        }
+    }
+
+    private func addDemo() async {
+        // Nothing here touches the user's files, so a failure leaves an empty herd that says why.
+        do {
+            let demo = try await DemoHerd.start()
+            self.demo = demo
+            demo.sources.forEach(store.add)
+        } catch {
+            config.report("demo: could not start the made-up herd (\(error))", for: "demo")
+        }
+    }
+
+    /// Removes demo mode's temporary socket and reports.
+    func stop() {
+        demo?.removeFiles()
+    }
+
+    /// The menu's demo item, when this Shepherd runs as an app: Leave Demo in demo mode, else Try
+    /// Demo, left out while another Shepherd runs (a second demo would share its socket and spool).
+    private var demoMenuTitle: String? {
+        guard Bundle.main.bundleURL.pathExtension == "app" else { return nil }
+        if isDemo { return "Leave Demo" }
+        return otherShepherdRunning ? nil : "Try Demo"
+    }
+
+    private var otherShepherdRunning: Bool {
+        NSRunningApplication.runningApplications(withBundleIdentifier: Bundle.main.bundleIdentifier ?? "")
+            .contains { $0.processIdentifier != ProcessInfo.processInfo.processIdentifier }
+    }
+
+    /// Opens a new Shepherd in or out of demo mode, then quits this one. The hotkeys are let go
+    /// first, so the new one can take them; they come back if it does not open. Leaving a demo
+    /// that runs beside another Shepherd (`make demo`) only quits it.
+    private func relaunch() {
+        if isDemo, otherShepherdRunning {
+            NSApp.terminate(nil)
+            return
+        }
+        closeSurfaces()
+        hotKeys?.suspend()
+        let options = NSWorkspace.OpenConfiguration()
+        options.createsNewApplicationInstance = true
+        options.arguments = isDemo ? [] : ["--demo"]
+        NSWorkspace.shared.openApplication(at: Bundle.main.bundleURL, configuration: options) { [weak self] _, error in
+            Task { @MainActor in
+                if error == nil { NSApp.terminate(nil) } else { self?.hotKeys?.resume() }
+            }
         }
     }
 
@@ -108,7 +174,8 @@ final class AppController {
         Task {
             let environment = ProcessInfo.processInfo.environment
             let claude = await Task.detached(priority: .utility) { ClaudeSetup.detect(environment: environment) }.value
-            context.sourceGuide.set(SourceIntros.make(sources: sources, tmuxInstalled: tmuxInstalled, claude: claude))
+            context.sourceGuide.set(SourceIntros.make(sources: sources, tmuxInstalled: tmuxInstalled, claude: claude,
+                                                      canTryDemo: Bundle.main.bundleURL.pathExtension == "app"))
         }
     }
 

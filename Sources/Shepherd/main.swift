@@ -5,9 +5,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var controller: AppController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        let controller = AppController()
+        // `--demo` runs on a made-up herd instead of the user's sources.
+        let controller = AppController(demo: CommandLine.arguments.contains("--demo"))
         controller.start()
         self.controller = controller
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        controller?.stop()
     }
 }
 

@@ -229,3 +229,11 @@ Oldest first.
   project outside git, a folder already there, an agent not on the server's PATH and a prompt past
   about 15 KB (tmux's command limit) are refused before anything is made. A step that fails after
   the worktree was made says it is there.
+- Demo mode (#38): `Shepherd --demo`, `make demo`, or Try Demo in the status item's right-click
+  menu (it reopens Shepherd in demo mode; Leave Demo goes back) runs on a fixed made-up herd: three
+  herdr projects from `HerdrFake` (an approval waiting, one finished, one working, one idle), two
+  Claude Code reports (one working, one asking a question) and two screen-read tmux agents,
+  through the real herdr and report sources. A "Demo herd" card tops the Agents tab and the menu
+  says so. It reads and writes nothing of the user's: no herdr, tmux, config, transition log,
+  plugins, notifications, usage or session files; the socket and spool are fixed paths under `/tmp`. The
+  first-run guide's last card points to it. Idle in demo: 0.0% CPU, 24 MB footprint.

@@ -11,11 +11,19 @@ final class StatusItemController: NSObject {
     private let store: HerdStore
     private let registry: ModuleRegistry
     private let panel: PanelController
+    private let isDemo: Bool
+    /// The title of the menu's demo item, read when the menu opens; nil for none.
+    private let demoItem: () -> String?
+    private let switchDemo: () -> Void
 
-    init(store: HerdStore, registry: ModuleRegistry, panel: PanelController) {
+    init(store: HerdStore, registry: ModuleRegistry, panel: PanelController, isDemo: Bool, demoItem: @escaping () -> String?,
+         switchDemo: @escaping () -> Void) {
         self.store = store
         self.registry = registry
         self.panel = panel
+        self.isDemo = isDemo
+        self.demoItem = demoItem
+        self.switchDemo = switchDemo
         super.init()
         // No permanent `item.menu`: while one is set, the button's action never fires.
         item.button?.target = self
@@ -39,7 +47,11 @@ final class StatusItemController: NSObject {
 
     private func apply(_ contribution: StatusContribution?) {
         guard let button = item.button else { return }
-        let contribution = contribution ?? StatusContribution(symbol: "pawprint", accessibilityLabel: "Shepherd")
+        var contribution = contribution ?? StatusContribution(symbol: "pawprint", accessibilityLabel: "Shepherd")
+        if isDemo {
+            contribution = StatusContribution(symbol: contribution.symbol, count: contribution.count, emphasis: contribution.emphasis,
+                                              accessibilityLabel: "Demo. " + contribution.accessibilityLabel)
+        }
         let image = NSImage(systemSymbolName: contribution.symbol, accessibilityDescription: contribution.accessibilityLabel)
         image?.isTemplate = true
         button.image = image
@@ -76,13 +88,23 @@ final class StatusItemController: NSObject {
 
     private func showMenu() {
         let menu = NSMenu()
+        if isDemo { menu.addItem(NSMenuItem(title: "Demo: these agents are made up", action: nil, keyEquivalent: "")) }
         for line in HerdSummary.lines(store) {
             menu.addItem(NSMenuItem(title: line, action: nil, keyEquivalent: ""))
         }
         menu.addItem(.separator())
+        if let title = demoItem() {
+            let item = NSMenuItem(title: title, action: #selector(demoChosen), keyEquivalent: "")
+            item.target = self
+            menu.addItem(item)
+        }
         menu.addItem(NSMenuItem(title: "Quit Shepherd", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         item.menu = menu
         item.button?.performClick(nil)
         item.menu = nil
+    }
+
+    @objc private func demoChosen() {
+        switchDemo()
     }
 }

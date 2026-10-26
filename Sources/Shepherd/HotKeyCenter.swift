@@ -74,6 +74,17 @@ final class HotKeyCenter {
         }
     }
 
+    /// Lets go of every hotkey, so another Shepherd can take them.
+    func suspend() {
+        unregisterAll()
+        registered = nil
+    }
+
+    /// Takes the hotkeys again after `suspend()`.
+    func resume() {
+        update()
+    }
+
     private func unregisterAll() {
         for ref in hotKeys.values { UnregisterEventHotKey(ref) }
         hotKeys.removeAll()
