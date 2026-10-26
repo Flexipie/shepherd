@@ -18,7 +18,7 @@ Oldest first.
   `TransitionTracker` (time in state, exact or "no later than"), `SessionStore`; the settled
   `ShepherdModule` protocol with `StatusModule` and `NotchModule`; the menu bar item; the notch
   pill with a floating fallback; jumping to an agent focuses its pane and brings the hosting
-  terminal forward. Idle: 0% CPU, about 53 MB.
+  terminal forward. Idle: 0% CPU, about 53 MB RSS.
 - Milestone 1, the source seam: the source-neutral herd model, `AgentSource` and `HerdStore` in
   `ShepherdCore`; `HerdrSource` as the only bridge to `HerdrKit` (its `SessionStore` removed);
   modules and the app see only the herd model. `TransitionLog` keeps observed transitions on disk
@@ -30,18 +30,18 @@ Oldest first.
   `projects` modules and a `ModuleRegistry` built from config; the `ShepherdUI` target with
   snapshot tests; the panel window under the status item (glass, keyboard navigation, closes on
   Escape, outside click, Space change or jump); the global "next" hotkey (⌃⌥⌘N). Idle with the
-  panel closed: 0% CPU over 30 s; open: one wake a minute; about 65 MB, flat over ten opens.
+  panel closed: 0% CPU over 30 s; open: one wake a minute; about 65 MB RSS, flat over ten opens.
 - The notch surface: one black shape around the notch that morphs between a paw ear (orange with
   a count when agents need you), the needs-you pill, and the full panel on hover. Hover never
   takes typing from the terminal; a click inside gives it the keyboard; Escape, a click elsewhere
   or a jump folds it. The window follows the shape, so nothing transparent sits over the menu
   bar at rest. `PanelContentSource` feeds both panels. Idle with the ear showing: 0% CPU over
-  30 s, about 62 MB.
+  30 s, about 62 MB RSS.
 - The notch bar: hovering the notch grows a wide, short bar along the top of the screen instead
   of a tall panel. The needs-you queue is pinned on the left, then one column per project
   (`BarColumn`, shared by the view and keyboard navigation), scrolling sideways when there are
   many; arrows move across the grid. The menu bar panel stays vertical. Idle with the ear
-  showing: 0% CPU over 30 s, about 54 MB.
+  showing: 0% CPU over 30 s, about 54 MB RSS.
 - Answer from the notch: choosing a needs-you agent in the bar opens its stage, with its last
   visible lines (`agent.read`, only while open), its choices parsed by `ChoiceParser` as buttons
   and digits (`agent.send_keys`), Return and Escape as a fallback, and a reply field
@@ -62,7 +62,7 @@ Oldest first.
   panel) with plan limits for every account OpenUsage tracks, both Claude accounts and Codex, read
   from OpenUsage's local API by the `OpenUsageSource` target. No credentials, nothing sent off
   the machine, and reads only while a panel is open, once per OpenUsage refresh. Idle with the
-  bar closed: 0% CPU, about 55 MB, no connections.
+  bar closed: 0% CPU, about 55 MB RSS, no connections.
 - System gadget: a `system` column ("This Mac") after usage with the whole Mac's CPU and memory
   as two bars, from Mach host statistics in the `SystemSource` target. It samples every 2 s only
   while the bar or panel is open; closed, no task and no system calls.
@@ -78,7 +78,8 @@ Oldest first.
   Return jumps or focuses the project, Escape closes. Modules contribute commands
   (`ShepherdModule.commands`); `queue` offers "Next agent that needs you". `HotKeyCenter` handles
   several named hotkeys and reports a clash between them. Idle with the palette closed: 0% CPU
-  over 30 s, about 56 MB; the first open adds about 45 MB.
+  over 30 s, about 56 MB RSS; the first open adds about 45 MB RSS (footprint: about 15 MB, plus
+  about 9).
 - Prompt and new task in the palette: Tab (or →) on an agent opens its prompt page (its row, its
   last eight lines, the field), from a second `StageModel` that reads only while the page shows.
   Return replies to a blocked agent and prompts any other; success closes the palette, a failure
@@ -181,3 +182,8 @@ Oldest first.
   and numbers kept and printed as Claude Code writes it, so for a file Claude Code wrote the diff
   holds only Shepherd's lines. A file that is not strict JSON (comments, trailing commas, a repeated
   key) is refused untouched. Codex waits until its `notify` format is confirmed.
+- Memory budget is physical footprint (`docs/PRD.md`, "Performance budget"); the RSS figures above
+  count shared system frameworks. Panel windows turn Writing Tools off in their field editor, so
+  the palette's first focus no longer loads WebKit and a few hundred other frameworks; spell check,
+  autocorrect and completion are unchanged. Against fake herdr: footprint about 14 MB idle and 24 MB
+  after the bar and the palette, before and after; RSS after the palette about 77 MB, down from 98.
