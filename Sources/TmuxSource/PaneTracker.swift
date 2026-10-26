@@ -154,7 +154,8 @@ struct PaneTracker {
                          name: observation.kind,
                          projectID: path.isEmpty ? nil : ProjectID(source: source, local: path),
                          project: projectName(path), status: entry.shown, since: Since(entry.since, .exact),
-                         isFocusedInSource: observation.isFocused, isInferred: true)
+                         isFocusedInSource: observation.isFocused, cwd: observation.path.isEmpty ? nil : observation.path,
+                         isInferred: true)
     }
 
     /// One project per checkout, or per folder outside git, in the agents' order. Checkouts of one

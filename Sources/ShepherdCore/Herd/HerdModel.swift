@@ -129,6 +129,8 @@ public struct HerdAgent: Sendable, Equatable, Identifiable {
     public let message: String?
     /// The question the agent is waiting on, when the source has one.
     public let question: String?
+    /// The agent's own folder, when the source knows it and it can differ from the project's.
+    public let cwd: String?
     /// Read from the agent's terminal screen, not reported by the agent. The state is a best
     /// reading: surfaces may label it, and a notification or plugin event does not come from it.
     public let isInferred: Bool
@@ -136,7 +138,7 @@ public struct HerdAgent: Sendable, Equatable, Identifiable {
     public init(id: AgentID, kind: String? = nil, name: String, projectID: ProjectID? = nil, project: String = "",
                 status: HerdStatus, statusLabel: String? = nil, since: Since? = nil, tokens: [String: String] = [:],
                 isFocusedInSource: Bool = false, session: AgentSession? = nil, message: String? = nil,
-                question: String? = nil, isInferred: Bool = false) {
+                question: String? = nil, cwd: String? = nil, isInferred: Bool = false) {
         self.id = id
         self.kind = kind
         self.name = name
@@ -150,6 +152,7 @@ public struct HerdAgent: Sendable, Equatable, Identifiable {
         self.session = session
         self.message = message
         self.question = question
+        self.cwd = cwd
         self.isInferred = isInferred
     }
 }

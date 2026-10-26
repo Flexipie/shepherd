@@ -17,11 +17,12 @@ public struct GitCheckout: Sendable, Equatable, Hashable {
         self.isLinked = isLinked
     }
 
-    /// The repo's name: the main checkout's folder, or a bare repo's folder without `.git`.
+    /// The repo's name: the main checkout's folder, a bare repo's folder without `.git`, or the
+    /// folder holding a hidden bare repo (the `repo/.bare` layout).
     public var repoName: String {
         let dir = URL(fileURLWithPath: commonDir)
-        if dir.lastPathComponent == ".git" { return dir.deletingLastPathComponent().lastPathComponent }
         let name = dir.lastPathComponent
+        if name.hasPrefix(".") { return dir.deletingLastPathComponent().lastPathComponent }
         return name.hasSuffix(".git") ? String(name.dropLast(4)) : name
     }
 
