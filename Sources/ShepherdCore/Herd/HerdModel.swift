@@ -207,8 +207,15 @@ public enum SourceState: Sendable, Equatable {
     case stale(String)
     /// The source is not running or not reachable; retrying.
     case disconnected(String)
+    /// The source is not on this Mac or not running at all, so it has nothing to show and nothing
+    /// is wrong. It still comes up on its own when it starts.
+    case absent(String)
 
     public var isLive: Bool { self == .live }
+
+    public var isAbsent: Bool {
+        if case .absent = self { true } else { false }
+    }
 }
 
 /// What a source can do. Surfaces hide what a source cannot do instead of failing.

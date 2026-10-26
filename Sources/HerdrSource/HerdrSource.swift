@@ -213,7 +213,14 @@ public final class HerdrSource: AgentSource {
                 marker: Self.marker(terminalID: transition.terminalID, seq: transition.stateChangeSeq))
         }
         for transition in update.transitions where transition.kind == .closed { known[transition.paneID] = nil }
-        return SourceUpdate(agents: agents, projects: projects, state: Self.state(update.connection),
+        let state = state(update.connection)
+        // A herdr that is gone has no panes: its last agents are not kept, even dimmed, so nothing
+        // counts them as waiting.
+        if state.isAbsent {
+            return SourceUpdate(agents: [], projects: [], state: state, statusLines: connectionLines + sidebar.problems,
+                                transitions: transitions, tokenLayout: sidebar.layout, postsSystemAlerts: postsSystemAlerts)
+        }
+        return SourceUpdate(agents: agents, projects: projects, state: state,
                             statusLines: connectionLines + sidebar.problems, transitions: transitions,
                             tokenLayout: sidebar.layout, postsSystemAlerts: postsSystemAlerts)
     }
@@ -239,19 +246,26 @@ public final class HerdrSource: AgentSource {
         Since(since.date, since.precision == .exact ? .exact : .noLaterThan)
     }
 
-    static func state(_ connection: ConnectionState) -> SourceState {
+    /// Without a socket file there is no herdr session at all (not installed, or not started), which
+    /// is not a problem for someone who does not use herdr. A socket left behind by a herdr that
+    /// crashed is still a disconnection.
+    func state(_ connection: ConnectionState) -> SourceState {
         switch connection {
         case .connecting: .connecting
         case .live: .live
         case .stale(let reason): .stale(reason)
-        case .disconnected(let reason): .disconnected(reason)
+        case .disconnected(let reason): socketExists ? .disconnected(reason) : .absent("herdr is not running")
         }
     }
+
+    private var socketExists: Bool { FileManager.default.fileExists(atPath: client.socketPath) }
 
     func statusLines(_ update: SessionUpdate) -> [String] {
         var lines: [String] = []
         if update.connection.isLive {
             lines.append("herdr \(update.session.snapshot.version)")
+        } else if case .disconnected = update.connection, !socketExists {
+            lines.append("herdr is not running")
         } else {
             lines.append("herdr socket: \(client.socketPath)")
         }

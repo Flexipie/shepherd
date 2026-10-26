@@ -105,6 +105,12 @@ public enum ClaudeHooks {
         return .object(root)
     }
 
+    /// Whether `settings` runs any of Shepherd's hooks. Lenient: settings that are not the shape
+    /// Claude Code uses simply have none.
+    public static func isInstalled(in settings: SettingsJSON) -> Bool {
+        (try? ours(in: settings).isEmpty == false) ?? false
+    }
+
     /// Shepherd's hooks in `settings`, as (event, matcher, command) in file order.
     static func ours(in settings: SettingsJSON) throws -> [(String, String?, String)] {
         guard let hooks = settings["hooks"] else { return [] }

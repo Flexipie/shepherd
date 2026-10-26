@@ -247,10 +247,29 @@ import Testing
         await fake.stop()
     }
 
-    @Test func disconnectedWhenHerdrIsMissing() async throws {
+    /// No socket file means no herdr at all: the source is absent, which is not a problem for the herd.
+    @Test func absentWhenHerdrIsMissing() async throws {
         let fake = FakeHerdrServer()
         let (store, _) = running(fake)
-        try await until(store) { $0.overallState == .disconnected("herdr is not running") }
+        try await until(store) { $0.sourceStates[HerdrSource.sourceID] == .absent("herdr is not running") }
+        #expect(store.overallState == .live)
+        #expect(store.statusLines[HerdrSource.sourceID] == ["herdr is not running"])
+        await store.stop()
+    }
+
+    /// herdr quit cleanly (its socket is gone): its last agents are dropped, so nothing counts them as waiting.
+    @Test func aHerdrThatQuitLeavesNoAgentsWaiting() async throws {
+        let fake = FakeHerdrServer()
+        try await fake.start()
+        let (store, _) = running(fake)
+        try await until(store) { $0.overallState == .live && !$0.agents.isEmpty }
+        await fake.setStatus("w1:p1", "blocked")
+        try await until(store) { !$0.needsYou.isEmpty }
+        await fake.stop()
+        try await until(store) { $0.sourceStates[HerdrSource.sourceID] == .absent("herdr is not running") }
+        #expect(store.agents.isEmpty)
+        #expect(store.needsYou.isEmpty)
+        #expect(store.projects.isEmpty)
         await store.stop()
     }
 

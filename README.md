@@ -75,8 +75,11 @@ PR number, a diff, a review verdict), and lets you act on it without switching t
 - **Your herdr colours, no setup.** Token colours and rules come from herdr's own
   `[ui.sidebar]` config, so `$pr`, `$ticket_state` and friends look the way they do in herdr's
   sidebar. Colours picked for dark terminals are darkened in light mode until they read.
-- **Honest state.** If herdr stops or the event stream breaks, Shepherd says so, shows the last
-  known state dimmed, and recovers on its own. Times are "4m" when Shepherd saw the change and
+- **First run.** No config file needed. Until an agent shows, the panel starts with where agents
+  can come from (tmux, Claude Code, herdr), what Shepherd found of each and what to do next.
+  Without herdr nothing says "not connected".
+- **Honest state.** If herdr's connection or event stream breaks, Shepherd says so, shows the last
+  known state dimmed, and recovers on its own. When herdr quits, its agents go until it starts again. Times are "4m" when Shepherd saw the change and
   "4m+" when it only knows an upper bound.
 
 A tip for MacBooks with a full menu bar: items can hide behind the notch. The notch bar and the
@@ -109,7 +112,7 @@ can be left out:
 
 ```json
 {
-  "modules": ["status", "notch", "queue", "usage", "system", "projects", "context"],
+  "modules": ["status", "notch", "sources", "queue", "usage", "system", "projects", "context"],
   "tokens": {
     "projects": [[{ "token": "pr", "fg": "#94e2d5", "rules": [{ "contains": "draft", "dim": true }] }, "ticket_state"]],
     "agents": [["summary"]]

@@ -31,6 +31,8 @@ final class AppController {
     private var tmux: TmuxSource?
     /// The source order the running sources were built from. A different one applies at the next launch.
     private var startedOrder: [String] = []
+    /// The first-run guide has been filled once; after that it is refreshed only when a panel opens.
+    private var guideFilled = false
 
     init() {
         store = HerdStore(log: log)
@@ -65,6 +67,7 @@ final class AppController {
             // The log restores exact times in state, so read it before the first snapshot.
             let history = await log.load()
             addSources(history: history)
+            explainSources()
             context.plugins?.startEvents()
             store.start()
             actions.updatePresence()
@@ -88,6 +91,25 @@ final class AppController {
             }
         }
         followSourcesConfig()
+    }
+
+    /// Fills the first-run guide, then again each time a panel opens while it shows, so installing
+    /// Claude Code's hooks is seen without a restart. Reading Claude Code's settings is file I/O, so
+    /// it runs off the main actor.
+    private func explainSources() {
+        let visible = withObservationTracking {
+            presence.isPanelVisible
+        } onChange: { [weak self] in
+            Task { @MainActor in self?.explainSources() }
+        }
+        guard !guideFilled || (visible && store.agents.isEmpty) else { return }
+        guideFilled = true
+        let sources = startedOrder, tmuxInstalled = tmux != nil
+        Task {
+            let environment = ProcessInfo.processInfo.environment
+            let claude = await Task.detached(priority: .utility) { ClaudeSetup.detect(environment: environment) }.value
+            context.sourceGuide.set(SourceIntros.make(sources: sources, tmuxInstalled: tmuxInstalled, claude: claude))
+        }
     }
 
     /// Screen patterns apply as soon as the config changes; a different list of sources says it needs a restart.

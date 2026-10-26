@@ -18,7 +18,7 @@ public final class StatusModule: ShepherdModule {
             return StatusContribution(symbol: "pawprint", emphasis: .dimmed, accessibilityLabel: "Shepherd: connecting")
         case .disconnected(let reason), .stale(let reason):
             return StatusContribution(symbol: "pawprint", emphasis: .dimmed, accessibilityLabel: "Shepherd: \(reason)")
-        case .live:
+        case .live, .absent:
             let waiting = store.needsYou.count
             guard waiting > 0 else {
                 return StatusContribution(symbol: "pawprint",
