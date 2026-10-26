@@ -10,11 +10,11 @@ import TmuxKit
 struct LiveTmuxTests {
     @Test func agentsOnThisMachineAreReadAsAStatus() throws {
         let binary = try #require(TmuxClient.locate())
-        let scan = TmuxScan.run(binary: binary, directory: TmuxSockets.directory())
+        let scan = TmuxScan.run(binary: binary, directory: TmuxSockets.directory(), screens: ScreenStatus())
         print("tmux servers: \(scan.servers.count), agent panes: \(scan.agents.count)")
         for agent in scan.agents {
             print("agent kind=\(agent.kind) status=\(agent.status) active=\(agent.pane.isActive)")
         }
-        #expect(scan.agents.allSatisfy { ScreenStatus.kinds.contains($0.kind) })
+        #expect(scan.agents.allSatisfy { ScreenPatterns.builtin.keys.contains($0.kind) })
     }
 }

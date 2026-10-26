@@ -28,6 +28,9 @@ final class AppController {
     private var hotKeys: HotKeyCenter?
     private var notch: NotchSurfaceController?
     private var palette: PaletteController?
+    private var tmux: TmuxSource?
+    /// The source order the running sources were built from. A different one applies at the next launch.
+    private var startedOrder: [String] = []
 
     init() {
         store = HerdStore(log: log)
@@ -61,14 +64,42 @@ final class AppController {
         Task {
             // The log restores exact times in state, so read it before the first snapshot.
             let history = await log.load()
-            store.add(HerdrSource(history: history))
-            store.add(ReportSource())
-            // tmux is optional: without it on the machine there is no source at all.
-            if let tmux = TmuxSource() { store.add(tmux) }
+            addSources(history: history)
             context.plugins?.startEvents()
             store.start()
             actions.updatePresence()
         }
+    }
+
+    /// The sources in config, in its order (by default herdr, reports, then tmux).
+    private func addSources(history: [HerdTransition]) {
+        let sources = config.config.sources
+        startedOrder = sources.order
+        for id in sources.order {
+            switch id {
+            case "herdr": store.add(HerdrSource(history: history))
+            case "report": store.add(ReportSource())
+            case "tmux":
+                // tmux is optional: without it on the machine there is no source at all.
+                guard let tmux = TmuxSource(screens: sources.screens) else { continue }
+                self.tmux = tmux
+                store.add(tmux)
+            default: break
+            }
+        }
+        followSourcesConfig()
+    }
+
+    /// Screen patterns apply as soon as the config changes; a different list of sources says it needs a restart.
+    private func followSourcesConfig() {
+        let sources = withObservationTracking {
+            config.config.sources
+        } onChange: { [weak self] in
+            Task { @MainActor in self?.followSourcesConfig() }
+        }
+        tmux?.setScreens(sources.screens)
+        let restart = sources.order == startedOrder ? nil : "config: sources changed; restart Shepherd to apply"
+        config.report(restart, for: "sources")
     }
 
     /// Closes the menu bar panel, the notch bar and the palette, before a hotkey does its thing.
