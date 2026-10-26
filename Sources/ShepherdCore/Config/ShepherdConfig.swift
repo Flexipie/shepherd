@@ -24,6 +24,8 @@ public struct ShepherdConfig: Sendable, Equatable {
     public var disabledPlugins: [String]
     /// Which sources run, in order, and how tmux reads agents' screens.
     public var sources: SourcesConfig
+    /// Which sections each tab shows and in what order, and which project columns come first.
+    public var layout: PanelLayout
 
     public enum Notifications: String, Sendable, Equatable, CaseIterable {
         /// Unless a source already posts its own (herdr with `ui.toast.delivery` "system" or
@@ -46,7 +48,7 @@ public struct ShepherdConfig: Sendable, Equatable {
                 nextHotkey: String? = ShepherdConfig.defaultNextHotkey,
                 paletteHotkey: String? = ShepherdConfig.defaultPaletteHotkey, agents: [String: AgentConfig] = [:],
                 notifications: Notifications = .off, disabledPlugins: [String] = [],
-                sources: SourcesConfig = SourcesConfig()) {
+                sources: SourcesConfig = SourcesConfig(), layout: PanelLayout = PanelLayout()) {
         self.modules = modules
         self.tokens = tokens
         self.nextHotkey = nextHotkey
@@ -55,6 +57,7 @@ public struct ShepherdConfig: Sendable, Equatable {
         self.notifications = notifications
         self.disabledPlugins = disabledPlugins
         self.sources = sources
+        self.layout = layout
     }
 
     public static let defaults = ShepherdConfig()
@@ -79,7 +82,7 @@ public struct ShepherdConfig: Sendable, Equatable {
         var config = ShepherdConfig()
         var problems: [String] = []
         for key in table.keys.sorted() where !["modules", "tokens", "hotkeys", "agents", "notifications", "plugins",
-                                                    "sources"].contains(key) {
+                                                    "sources", "layout"].contains(key) {
             problems.append("config: unknown key \"\(key)\"")
         }
         if let modules = table["modules"] {
@@ -179,6 +182,9 @@ public struct ShepherdConfig: Sendable, Equatable {
         }
         if let sources = table["sources"] {
             config.sources = SourcesConfig.read(sources, problems: &problems)
+        }
+        if let layout = table["layout"] {
+            config.layout = PanelLayout.read(layout, problems: &problems)
         }
         return (config, problems)
     }

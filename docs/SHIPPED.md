@@ -207,3 +207,9 @@ Oldest first.
   Claude Code (when its settings folder exists: hooks on, or the `shepherd-report install claude`
   command) and herdr (connected or not running), saying what each gives. Detection only reads;
   nothing is written or remembered, and with no config file everything runs on defaults.
+- Choose and order columns and gadgets from config (#31): a `layout` key, separate from
+  `modules`. `layout.agents` and `layout.gadgets` list the sections each tab shows, in order
+  (`PanelLayout.arrange`, applied once in `PanelContentSource`, so the menu bar panel, the bar's
+  columns and keyboard navigation agree); `layout.projects` puts the named project and repo
+  columns first (`ProjectsModule`). Left out, nothing changes. Unknown ids are reported under
+  `layout`. Hiding a gadget no longer means listing every other module.

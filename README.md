@@ -121,12 +121,19 @@ can be left out:
   "agents": { "claude": { "args": [] } },
   "notifications": "off",
   "plugins": { "disabled": [] },
-  "sources": ["herdr", "report", "tmux"]
+  "sources": ["herdr", "report", "tmux"],
+  "layout": { "agents": ["sources", "queue", "projects"], "gadgets": ["system", "usage"],
+              "projects": ["api"] }
 }
 ```
 
-- `modules`: which modules run, in order. Panel sections follow this order; in the notch bar the
-  queue stays on the left and the others follow as columns.
+- `modules`: which modules run, in order. Panel sections follow this order (unless `layout`
+  lists that tab); in the notch bar the queue stays on the left and the others follow as columns.
+- `layout`: choose and order what the panel and the bar show, without turning modules off.
+  `agents` and `gadgets` list the sections of that tab in order (`sources`, the first-run guide,
+  `queue` and `projects` on Agents; `usage` and `system` on Gadgets); one you leave out is
+  hidden. `projects` names the project or repo columns to show first, in that order (a project
+  or its repo's name); the rest follow. Left out, everything shows as it does today.
 - `tokens`: per section, lines of tokens in herdr's sidebar syntax (`fg`, `bold`, `dim`, and
   `rules` with `equals`, `contains`, `starts_with`, `gt`, `lt`, `ignore_case`, `hide`). A section
   you define replaces herdr's for that section; one you leave out uses herdr's
