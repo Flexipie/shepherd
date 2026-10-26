@@ -129,7 +129,7 @@ public struct HerdAgent: Sendable, Equatable, Identifiable {
     public let message: String?
     /// The question the agent is waiting on, when the source has one.
     public let question: String?
-    /// The agent's own folder, when the source knows it and it can differ from the project's.
+    /// The agent's own folder, when the source knows it. A project can be wider, such as a whole checkout.
     public let cwd: String?
     /// Read from the agent's terminal screen, not reported by the agent. The state is a best
     /// reading: surfaces may label it, and a notification or plugin event does not come from it.
