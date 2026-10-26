@@ -84,7 +84,7 @@ for things nobody has built yet. Agents working on this repo are encouraged to:
 - prototype an idea behind a module that is off by default,
 - question an existing decision when there is a better way, with reasons.
 
-Write new ideas into [IDEAS.md](IDEAS.md). Move one to [ROADMAP.md](ROADMAP.md) only when it is
+Write new ideas into [IDEAS.md](IDEAS.md). Open a GitHub issue for one only when it is
 decided.
 
 Creativity has guardrails. An idea is good for Shepherd when it:
@@ -92,7 +92,8 @@ Creativity has guardrails. An idea is good for Shepherd when it:
 - helps with attention, awareness or control of agents (the core job), or makes the app a joy to
   use without getting in the way,
 - works for users other than the author,
-- fits the architecture: sources (herdr first) and plugin tokens as data, a module as the unit,
+- fits the architecture: sources (tmux, herdr, agent reports) and plugin tokens as data, a module
+  as the unit,
 - costs little at idle and can be disabled.
 
 ## The quality bar for shipping
@@ -127,9 +128,12 @@ These are part of the product, not afterthoughts:
 ## Non-goals
 
 - Replacing herdr or any agent's own UI. Shepherd sits on top of them.
-- Scraping terminals. A source reads state from an API (herdr's socket, a cloud agent API) or,
-  when an agent has no API, from hooks. Hook code lives only inside that source's adapter; the
-  rest of the app never knows how a source gets its state.
+- Reading terminals outside a source adapter. A source gets state from an API (herdr's socket, a
+  cloud agent API), from agent reports, or from its terminal's screen (tmux) when nothing better
+  exists. That code lives only inside the source's adapter; the rest of the app never knows how a
+  source gets its state.
+- Shipping an AI model. v1 has none. Any future intelligence is a small on-device helper, off by
+  default (`docs/PRD.md`, "Intelligence").
 - Being a general dashboard for other services. No music, payments or LLM chat. Integrations
   arrive as plugin tokens or as agent sources.
 - Matching other apps on the number of agents supported. A few sources done well beat many done

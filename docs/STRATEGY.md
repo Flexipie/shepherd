@@ -71,29 +71,33 @@ What it maximises: changes you are confident to merge, per minute of your attent
 1. **Ready to land.** For finished work, what you would go to the terminal for: the agent's final
    message, its answers to your saved questions (one key, or automatic as a setting), and the
    facts (diff, tests, PR, overlap with other agents). One key to merge, follow up or send back.
-2. **Start from anywhere.** ⌥Space, a repo, a prompt: an agent running in herdr, in a Claude Code
-   background session or in a new terminal window. Scouts too: a question whose answer comes
+2. **Start from anywhere.** ⌥Space, a repo, a prompt: an agent in a tmux pane, in herdr, in a
+   Claude Code background session or in a new terminal window. Scouts too: a question whose answer comes
    back to the palette, not a diff.
 3. **The queue.** Everything that needs you, ranked, keyboard first, answered without leaving the
    app you are in.
-4. **Every agent in one place.** herdr, Claude Code and Codex locally, cloud agents later.
+4. **Every agent in one place.** Any coding agent in a terminal (tmux and agent reports), with
+   herdr and Claude Code as optional adapters; cloud agents later.
 
 Dropped as a pillar: fewer approvals by suggesting allowlists. Auto mode now does most of that
 inside Claude Code.
 
-Ideas behind each pillar are in [IDEAS.md](IDEAS.md); decided ones are in
-[ROADMAP.md](ROADMAP.md).
+Ideas behind each pillar are in [IDEAS.md](IDEAS.md); decided ones are GitHub issues (see
+[ROADMAP.md](ROADMAP.md)).
 
 ## Sources
 
-Shepherd is not herdr-only. Agents arrive through source adapters onto one herd model (PRD
-"Sources"):
+Shepherd is for any coding agent in a terminal, not only herdr users. Agents arrive through source
+adapters onto one herd model (PRD "Sources"):
 
-1. **herdr** through public 0.1. The richest source (state, control, worktrees), and the one the
-   author uses daily, so dogfooding stays honest.
-2. **Claude Code directly**, next. Where most of the audience is. Through its own session
-   interface (`claude agents --json`, `claude --bg`), not hooks; see PRD "Sources".
-3. **Cloud agents** through their APIs. The clearest differentiator.
+1. **tmux** first. It works in every terminal, so any CLI agent in a pane can be seen, read,
+   answered and started from Shepherd. Its screen reads are inferred, not reported.
+2. **Agent reports** (`shepherd report`). Any agent that can run a shell command states its own
+   status through its hooks, rules or skills. This is what makes state exact without tmux.
+3. **herdr**, as an optional adapter. The richest source for people who use it (state, control,
+   worktrees).
+4. **Claude Code's session files**, as an optional adapter. Where most of the audience is.
+5. **Cloud agents** through their APIs. The clearest differentiator, later.
 
 The seam goes in during milestone 1, while it is cheap.
 
@@ -104,7 +108,7 @@ The seam goes in during milestone 1, while it is cheap.
 - **The day card**: the herd timeline as a shareable image. It shows parallelism, which a
   single-session recap cannot.
 - **Demo mode**, so anyone can try it without herdr, and the GIF is reproducible.
-- Launch in herdr's community first, then Show HN at 0.1.
+- Launch where terminal-agent users are (the herdr and tmux communities first), then Show HN at 0.1.
 - Measure without telemetry: GitHub release downloads, Homebrew cask analytics, stars.
 - Talk to the herdr author early: a listing on herdr.dev, and API requests (state timestamps)
   that help both projects.

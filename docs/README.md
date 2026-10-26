@@ -6,5 +6,5 @@
 | [STRATEGY.md](STRATEGY.md) | Positioning, the landscape (Coucou), sources order, growth and revenue bets | Current |
 | [IDEAS.md](IDEAS.md) | Open idea bank, nothing decided | Open |
 | [PRD.md](PRD.md) | What Shepherd is, the architecture, data flow, and how to add a module | Current |
-| [ROADMAP.md](ROADMAP.md) | Open work, by milestone | Current |
+| [ROADMAP.md](ROADMAP.md) | Milestone order and what each must achieve; open work is in GitHub issues | Current |
 | [SHIPPED.md](SHIPPED.md) | What is built, oldest first | Current |

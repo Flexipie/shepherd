@@ -115,3 +115,29 @@ Oldest first.
   environment and `SHEPHERD_EVENT`. Debounced 5 s per plugin, agent and event, with one queued run
   when an event arrives during another. Output is ignored; a failure shows under `plugins` in the
   footer. Not tied to the `plugins` module, so it runs whenever the plugin is on.
+- Agent reports: `shepherd-report report --status working|blocked|done|idle|closed` (`--message`,
+  `--question`, `--agent`, `--kind`, `--from-hook` for a Claude Code hook's stdin) writes one JSON file per
+  agent to the spool (`SHEPHERD_SPOOL_DIR`, else `~/Library/Application Support/Shepherd/reports`), written
+  to a temporary file and renamed into place. `ReportSource` watches the folder (no polling), reads it off
+  the main actor, and maps reports to agents with a pure tracker: a working report silent for 15 minutes
+  shows unknown, blocked and done are removed after 24 hours, `closed` removes the agent. Transitions after
+  startup feed notifications and plugin events unchanged. Identity: `--agent`, `SHEPHERD_AGENT_ID`, the tmux
+  pane, the hook session, then the working directory. `HerdAgent` carries `message` and `question`, not yet
+  shown. The CLI is built as `shepherd-report` until its name is settled (`shepherd` collides with the app
+  binary on a case-insensitive disk); `scripts/bundle.sh` copies it into the app.
+- tmux source (roadmap "Next: any terminal agent", step 2): an agent in a tmux pane shows with no
+  herdr and no hooks. `TmuxKit` wraps the `tmux` command (pane listing with a fixed format,
+  `capture-pane`, `send-keys -l` and key names, `select-window` and `select-pane`), reads control
+  mode (`tmux -C attach-session` with `refresh-client -f ignore-size`, so attaching never resizes a
+  window) and takes one `ps` snapshot when a pane exists. `TmuxSource` matches a pane to an agent
+  when a process under its shell is named `claude` or `codex` (a script run by an interpreter is
+  named by the script), reads the pane's screen with patterns per kind in code, and labels the state
+  inferred. Approval prompts are `blocked` (`ChoiceParser`), the `esc to interrupt` hint is
+  `working`, the idle input line is `idle`, anything else `unknown`. A change waits two seconds
+  before it shows, except a prompt. Output from a pane is the only trigger for a read (debounced
+  300 ms), a window or session change lists the panes again, and the socket folder is watched
+  while no server is up. Answering a prompt, reading, prompting an idle agent and focusing use the
+  same actions as herdr; the private-server tests cover them, and real agents are on the by-hand list. A report from the same pane (`tmux:<socket>:<pane>`) replaces
+  the screen row, and screen readings are not announced to notifications or plugin events. The
+  source is added only when `tmux` is installed. Tests run a private tmux server with fake `claude`
+  scripts; `SHEPHERD_LIVE=1` reads the real servers.

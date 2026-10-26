@@ -1,7 +1,7 @@
 # Ideas
 
-An open idea bank. Nothing here is decided. Add freely; when an idea is chosen, move it to
-[ROADMAP.md](ROADMAP.md). See [VISION.md](VISION.md) for what makes an idea a good fit.
+An open idea bank. Nothing here is decided. Add freely; when an idea is chosen, open a GitHub
+issue for it and remove it here. See [VISION.md](VISION.md) for what makes an idea a good fit.
 
 Format: a short title, what it is, and why a user would care. Note the herdr API it needs when you
 know it.
@@ -37,8 +37,8 @@ know it.
 - **Parked from the old milestone 3 (alerts).** Decided not needed for now: herdr's states in the
   notch are enough. Kept here: notifications for configured token changes (such as a `$lane`
   token turning "needs you"); a first-run choice of which app alerts (mostly covered by
-  `"notifications": "auto"`); an on-device outcome line on `done` or `blocked`
-  (`FoundationModels`); the action model from PRD "Actions" (config and herdr plugin actions on
+  `"notifications": "auto"`); a one-line outcome on `done` or `blocked` when the agent did not
+  write its own message (see PRD "Intelligence"); the action model from PRD "Actions" (config and herdr plugin actions on
   cards, in the notch, as notification buttons); the pill showing the agent's last lines (the
   stage shows them once the bar is open).
 
@@ -75,18 +75,18 @@ know it.
 - **Answer approvals from the notch.** For a `blocked` agent, show the approval text and the
   choices the agent offers, and send the chosen key (`agent.read`, `agent.send_keys`). Off by
   default and always showing the real dialog text, since a wrong answer is costly.
-- **Talk to the herd.** Hold a hotkey and speak. On-device transcription (`SpeechAnalyzer`) turns it into text, the on-device model picks the agent by name or token (tool
-  calling over the agent list), Shepherd shows the routed prompt for a one-key confirm, then
-  sends it (`agent.prompt`). Nothing leaves the Mac.
-- **Async questions.** A token convention (`question`) that an agent sets with
-  `herdr pane report-metadata` to ask something without stopping. Shepherd shows it with a reply
-  box and answers through `agent.prompt`. Works with any agent that can run a shell command, no
-  hooks.
+- **Talk to the herd.** Hold a hotkey and speak. On-device transcription (`SpeechAnalyzer`) turns
+  it into text, the palette's name and token matching picks the agent, Shepherd shows the routed
+  prompt for a one-key confirm, then sends it (`agent.prompt`). No model; nothing leaves the Mac.
+- **Async questions.** An agent asks something without stopping, with `shepherd report --question`
+  (and its choices, if it has them). Shepherd shows it with a reply box and answers through
+  `agent.prompt`. Works with any agent that can run a shell command.
 - **Rules.** Small JSON rules: "when <state or token condition>, run <action>", for example "when
   `review` becomes `changes_requested` and the agent is done, prompt it to address the review".
   Off by default, every automatic send logged and visible, one switch pauses all rules.
 - **Separate reviews.** Beyond the ready-to-land card (roadmap): hand a finished change to a
-  second agent, or another model, to review before you decide, and show its verdict on the card.
+  second agent to review before you decide, and show its verdict on the card. A plugin can call a
+  model if the user wants one.
   The user wants this later, and deeper integration with how teams review.
 - **Review inbox.** Now the "ready to land" milestone in the roadmap. "Done" is where the human's work starts. A lane of finished workspaces with
   diff stats and one key each to open in the editor, run tests, or hand off to a PR action.
@@ -96,30 +96,22 @@ know it.
 
 ## Intelligence
 
-Local first; see PRD "Intelligence" for the rules every idea here follows.
+No model in v1. Every idea here works with rules, search or the agent's own reports; see PRD
+"Intelligence" for the rules that apply to any future model.
 
-- **Blocked question parsing.** The on-device model pulls the question and its choices out of an
-  approval UI, so the notch can show real buttons. Feeds "Answer approvals from the notch".
-- **Bring your own model.** An OpenAI-compatible endpoint in config (local Ollama or LM Studio, or
-  a cloud key) for Macs without Apple Intelligence, or for better summaries. Plain `URLSession`.
 - **Spoken readouts.** Optional `AVSpeechSynthesizer` line such as "the auth agent needs you",
   for when you are on another display or away from the keyboard. Also an accessibility win.
-- **Handoff note.** When a workspace finishes, a short local summary of what the agent did across
-  its turns, ready to paste into a PR description or a standup.
-- **Rules before model for risk labels.** Label approvals (read only, writes repo, network,
-  destructive) with a plain list of known commands first: instant and never wrong. A model only
-  labels what the rules do not know, asynchronously, and nothing waits on it. Count how often the
-  rules say "unknown" in real use before building the model part. A test with a local
-  `qwen3.5:9b` through Ollama (`/api/chat` with a JSON schema in `format`) labelled a
-  `git push --force` approval correctly in about 6 s warm and 14 s cold: good enough to fill in
-  later, too slow to wait for.
+- **Handoff note.** When a workspace finishes, a short summary built from the agent's own final
+  messages and reports (no model), ready to paste into a PR description or a standup.
+- **Rules for risk labels.** Label approvals (read only, writes repo, network, destructive) with a
+  plain list of known commands: instant, and it says "unknown" when it does not know. Count how
+  often "unknown" shows in real use before deciding whether anything else is worth building.
 - **Ask the herd.** Type a question in the palette ("did any agent touch the schema?", "what
   happened while I was in that meeting?") and get one short answer with jump links to the agents
   it is about. Not a chat: no window, no history. Only for questions across agents that no card
-  answers; if a question about one agent needs asking, fix the UI instead. Answers come from what
-  Shepherd already knows (transitions, agent `report` calls, git), not from a model reading raw
-  terminal output. An experiment behind a disabled module, after an agent reporting channel
-  exists.
+  answers; if a question about one agent needs asking, fix the UI instead. Answers come from search
+  over what Shepherd already knows (transitions, agent reports, git), not from a model. An
+  experiment behind a disabled module, after the agent reporting channel exists.
 
 ## Mac integration
 

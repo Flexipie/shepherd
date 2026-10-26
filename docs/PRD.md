@@ -26,7 +26,8 @@ Personal actions are config, not code.
 
 ## Non-goals
 
-- Scraping terminals. Hooks only inside a source adapter, for agents with no API (see "Sources").
+- Reading terminal screens or agent hooks outside a source adapter (see "Sources").
+- Bundling or requiring a model, local or cloud. Nothing waits on one (see "Intelligence").
 - Cross-platform, or macOS before 26. Shepherd targets macOS 26 and later so it can use the
   on-device model, `SpeechAnalyzer`, Liquid Glass and current App Intents without fallbacks for
   old systems.
@@ -54,10 +55,18 @@ their workspace or project, time in state, tokens, and the transitions Shepherd 
 - Each source owns its own connection, recovery and decoding. The "Data flow" rules below are
   herdr's; another source follows the same spirit (no polling where events exist, never show
   stale state as current).
-- Hooks are allowed only inside a source adapter, for an agent that has no API. Nothing outside
-  the adapter knows a hook exists.
-- Order: herdr first, then Claude Code directly, then cloud agents through their APIs (opt-in,
-  the first network-using sources).
+- Hooks and screen reads are allowed only inside a source adapter. Nothing outside the adapter
+  knows how a source gets its state.
+- Screen reads (tmux `capture-pane`) match per-agent patterns. A state from a match is labelled
+  inferred; a state from a report or an API is not. Patterns are shipped in code for Claude Code
+  and Codex only, and move to config with the sources-in-config step, where users can edit or add
+  their own.
+- Agent reports (`shepherd report`) are the generic way for any agent to state its own status,
+  from its own hooks, rules or skills. Shepherd never edits an agent's settings without showing
+  the change first.
+- Order: tmux and agent reports first (any agent in a terminal), then herdr and Claude Code's
+  session files as optional adapters, then cloud agents through their APIs (opt-in, the first
+  network-using sources).
 
 What a Claude Code source can use (checked October 17, 2026 on Claude Code 2.1.299, read only):
 
@@ -139,6 +148,10 @@ than". `SHEPHERD_TRANSITION_LOG` points it elsewhere for development runs.
 | `RecordFixture`, `FakeHerdr` | Dev tools: `make fixture` records a sanitised fixture; `swift run FakeHerdr` runs a fake driven from stdin. |
 | `ShepherdCore` | The herd model, `AgentSource`, `HerdStore`, `TransitionLog`, the `ShepherdModule` protocol and `ModuleRegistry`, config (`ConfigStore`, `FileWatcher`), token layouts and the styler, panel values; later the action model. No source types. |
 | `HerdrSource` | herdr as a source: adapts `HerdrKit` to the herd model. The only target that sees both. |
+| `ReportKit` | The agent report file format, the spool folder (atomic writes, reads, removal), agent identity and the `shepherd-report` command's logic. Foundation and CryptoKit only. No UI, no Shepherd. |
+| `ReportSource` | Agent reports as a source: watches the spool and maps reports to the herd model through a pure tracker. |
+| `TmuxKit` | tmux's command line (`list-panes`, `capture-pane`, `send-keys`, `select-pane`), control mode (`tmux -C`) and the process table (`ps`). Foundation only. No UI, no Shepherd. |
+| `TmuxSource` | tmux as a source: panes whose process tree runs a known agent, read from their screens and labelled inferred. Watches the socket folder and control clients; no polling. |
 | `ShepherdModules` | Built-in features, one folder each, listed in `BuiltinModules.all`. |
 | `ShepherdUI` | SwiftUI views for the panel and the notch surface. Values in, no windows, no glass, so every view can be snapshot tested. |
 | `Shepherd` | The app: status item, panel window, notch surface window, hotkey, later notifications and the palette. Thin. |
@@ -462,20 +475,16 @@ diff stat as the result and `diff_*` tokens).
 
 ## Intelligence
 
-Optional and local first. It never runs at idle; it runs on a transition and only for agents that
-need you.
+v1 has no model. Shepherd does not ship, bundle or require one, and no feature waits on one.
 
-- **Default: Apple's on-device model** (`FoundationModels`; needs Apple Intelligence turned on). When
-  an agent becomes `done` or `blocked`, Shepherd reads its last lines (`agent.read`) and asks for a
-  structured result with guided generation: outcome (success, failure, question, unclear), one line
-  of summary, and for blocked agents the question and its choices. The text read is not stored.
-  On this machine a one-line summary took a few seconds end to end.
-- **Fallback:** without the model (Apple Intelligence off or unsupported, an error, a timeout) the
-  same place shows the last meaningful output line. Nothing depends on the model being there.
-- **Bring your own model** (later): an OpenAI-compatible endpoint in config (a local Ollama or
-  LM Studio, or a cloud key) via plain `URLSession`, used only when configured.
-- Generated text is marked as generated, can be turned off globally, and never triggers an action
-  by itself.
+Later, if it earns its place, Apple's on-device model (`FoundationModels`) for very short jobs
+only, such as a one-line summary when an agent did not write its own message. It would run on a
+transition, only for agents that need you, be off by default, mark its output as generated, and
+never trigger an action by itself. Without it, the last meaningful output line is shown.
+
+Local models (Ollama, LM Studio) and a bring-your-own-model endpoint are out. They are slow, take
+a lot of memory and disk, and are often poor at this job. Anyone who wants a model can build it as
+a plugin.
 
 ## Modules
 
@@ -520,6 +529,10 @@ keeps its instance and state.
 2. Add it to `BuiltinModules.all`.
 3. Give it an `id`; users enable, disable and order it in config by that id.
 
+A gadget's section becomes a bar column (`BarColumn`), can be turned off in `modules`, and costs
+nothing while the bar is closed: it reads or samples only while shown, and never polls in the
+background. Everything stays local.
+
 ## Config
 
 `~/.config/shepherd/config.json` (or `SHEPHERD_CONFIG_PATH`), plain JSON, reloaded on save.
@@ -540,7 +553,8 @@ for a missing directory to appear, debounces 200 ms, and delivers only when the 
 - `plugins.disabled`: plugin ids to skip (see "Plugins").
 
 Planned: `questions` and
-`questions.askOnFinish` (see ROADMAP "ready to land"), `notifications`, `intelligence`. Once released, config changes
+`questions.askOnFinish` (see ROADMAP "ready to land"), `notifications`, and `sources` (see ROADMAP
+"any terminal agent"). Once released, config changes
 are additive or migrated.
 
 ## Tokens

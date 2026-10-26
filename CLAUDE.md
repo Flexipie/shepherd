@@ -10,10 +10,11 @@ written record is in `docs/`.
 - `docs/VISION.md`: **read first.** Shepherd is a real product for every herdr user, published on
   GitHub, not a personal tool. It sets the audience, the principles and the bar a change must
   clear. Creative ideas are welcome: write them in `docs/IDEAS.md`, prototype behind a disabled
-  module, and move them to the roadmap only once decided.
+  module, and open a GitHub issue only once decided.
 - `docs/PRD.md`: what Shepherd is, the architecture, and how to add a module.
-- `docs/ROADMAP.md`: OPEN work only. `docs/SHIPPED.md`: what is built, oldest first. When something
-  ships, move its entry from the roadmap to the end of SHIPPED.
+- Open work lives in GitHub issues, grouped by milestone (`gh issue list`). `docs/ROADMAP.md`
+  holds only the milestone order and each "done when". `docs/SHIPPED.md`: what is built, oldest
+  first. When something ships, close its issue and add an entry to the end of SHIPPED.
 - The code is the authority on the present. A doc that disagrees with it is stale; fix the doc.
 
 Keep the root to `README.md` and `CLAUDE.md`. A new doc goes under `docs/` and gets a line in
@@ -22,9 +23,11 @@ Keep the root to `README.md` and `CLAUDE.md`. A new doc goes under `docs/` and g
 ## What this is
 
 A native macOS menu bar and notch app for running a herd of coding agents, Swift 6 +
-SwiftUI/AppKit, built with SwiftPM (no Xcode project). Agents come from sources; herdr's socket API
-is the first and, until public 0.1, the only one. Shepherd never scrapes terminals. Hooks, for a
-future source with no API, live only inside that source's adapter (`docs/PRD.md`, "Sources").
+SwiftUI/AppKit, built with SwiftPM (no Xcode project). It is for any coding agent that runs in a
+terminal. Agents come from sources: tmux is the generic one, herdr and Claude Code's session files
+are optional adapters, and `shepherd report` lets any agent state its own status. Screen reads and
+hooks live only inside the source adapter that needs them (`docs/PRD.md`, "Sources"). v1 ships no
+AI model (`docs/PRD.md`, "Intelligence").
 
 ## Rules
 

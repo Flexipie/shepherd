@@ -9,7 +9,8 @@ PR number, a diff, a review verdict), and lets you act on it without switching t
 
 > Status: early. The live connection, menu bar item, notch surface, panel, palette and "next"
 > hotkey work;
-> see [docs/ROADMAP.md](docs/ROADMAP.md) for what is next.
+> see the [issues](https://github.com/Flexipie/shepherd/issues) and
+> [docs/ROADMAP.md](docs/ROADMAP.md) for what is next.
 
 ## What it does today
 
@@ -149,8 +150,9 @@ JSON keeps the last good config.
 
 ## Planned
 
-- Action buttons defined in config, and an on-device one-line summary of
-  what an agent did.
+- Any terminal agent: tmux and agent reports, so herdr is no longer required (see the "Any terminal
+  agent" milestone).
+- Action buttons defined in config.
 - A UI and UX pass, columns and gadgets you choose and order in config, and Claude Code as a
   second source.
 
