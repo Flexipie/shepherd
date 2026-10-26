@@ -1,7 +1,8 @@
 import ShepherdCore
 import SwiftUI
 
-/// The right side of the notch bar while an agent is open: its row, its last visible lines, and
+/// The right side of the notch bar while an agent is open: its row, its last visible lines (its
+/// whole last message instead, once it stopped and a reader found one), and
 /// beside them the ways to answer it (its choices with their digits, or Return and Escape when
 /// none were found, and a reply field), or a prompt field when it is not waiting on a question.
 /// Disabled while a send is on its way.
@@ -37,7 +38,7 @@ struct StageView: View {
 
     private var header: some View {
         HStack(spacing: 6) {
-            AgentRow(row: stage.row, now: now, showsProject: true, namesContext: true)
+            AgentRow(row: stage.row, now: now, showsProject: true, namesContext: true, showsPreview: false)
             if let action = stage.row.action {
                 Button("Jump") { perform(action) }
                     .buttonStyle(StageButtonStyle())
@@ -56,6 +57,15 @@ struct StageView: View {
 
     @ViewBuilder
     private var lines: some View {
+        if stage.row.showsFinalMessage, let message = stage.row.finalMessage {
+            FinalMessage(message: message, maxHeight: linesHeight)
+        } else {
+            terminalLines
+        }
+    }
+
+    @ViewBuilder
+    private var terminalLines: some View {
         let text = Text(stage.lines.map { $0.joined(separator: "\n") } ?? "Reading…")
             .font(.system(size: 10.5, design: .monospaced))
             .foregroundStyle(stage.lines == nil ? .secondary : .primary)

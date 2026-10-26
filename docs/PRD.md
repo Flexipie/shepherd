@@ -138,8 +138,13 @@ As built:
   else a one-time search of `projects/*/<id>.jsonl`. Session ids other than letters, digits,
   "-" and "_" are refused. Off the main actor it reads the last 256 KB, drops the first (cut)
   line, and walks back to the last assistant line that is not a sidechain or a synthetic error
-  with `message.usage`; the size is input plus cache read plus cache creation tokens. Readings
-  are cached by path, size and modification date, so an unchanged file costs one `stat`.
+  with `message.usage`; the size is input plus cache read plus cache creation tokens. The same
+  walk gives the final message: the `text` blocks of the last main-thread assistant line that has
+  any (not "(no content)"), trimmed and cut at 10,000 characters, looked for only in the latest
+  turn: a newer prompt, interruption or API error means none (a tool result, a meta entry or a
+  local slash command's entries do not end the turn). Both come back as one
+  `AgentSessionReading`. Readings are cached by path, size and modification date, so an
+  unchanged file costs one `stat`.
 
 ### Transition history
 
@@ -331,13 +336,20 @@ so a module reads only while its tab shows (`Presence.isShowing(_:)`).
   and memory as bars, in the same gadget card as usage. While Gadgets shows it samples once (which only
   primes the CPU reading), after 0.5 s, then every 2 s; leaving the tab or closing cancels the
   task, so nothing runs otherwise.
-- **Context size** (the `context` module, no section of its own): a Claude Code agent's
-  context size on its row ("184k", before the time; help "Context: 184,213 tokens") and in its
-  stage header ("184k context"). While a surface shows Agents the module reads every agent with
-  a session on showing it, then an agent again when its status changes, into
-  `ModuleContext.agentContext` (`AgentContextStore`), which `queue` and `projects` read into
-  `PanelAgentRow.contextTokens`. Otherwise nothing is read; gone agents drop out; turned off, the
-  store empties and rows show no size.
+- **Context size and final message** (the `context` module, no section of its own): a Claude
+  Code agent's context size on its row ("184k", before the time; help "Context: 184,213
+  tokens") and in its stage header ("184k context"), and its last message. While a surface shows
+  Agents (the palette counts as one) the module reads every agent with a session on showing it,
+  then an agent again when its status, its `since` or its session changes, into
+  `ModuleContext.agentContext`
+  (`AgentContextStore`), which `queue`, `projects` and the palette read into
+  `PanelAgentRow.contextTokens` and `finalMessage`. A row shows `messagePreview` under its title,
+  one line with whitespace collapsed and `**` and backticks dropped, unless the agent is working
+  (the message is then an earlier turn's). Once the agent is idle or done
+  (`showsFinalMessage`), the stage and the palette's prompt page show the whole message, inline
+  Markdown drawn and selectable, in place of the last lines, and the header row drops its
+  preview; a blocked or working agent keeps its lines. Otherwise nothing is read; gone agents
+  drop out; turned off, the store empties and rows show neither.
 - **Notifications** (the `notifications` module, off by default). When an agent becomes
   `blocked` (a change seen happening, from a live source) while the user is not looking at it
   (`Presence`), it posts through a `Notifier` (the app's is `UNUserNotificationCenter`), one
@@ -384,8 +396,9 @@ so a module reads only while its tab shows (`Presence.isShowing(_:)`).
   of the query must match one of an item's words (name, kind, project, status, agent and project
   token values); a name counts most, and its matched characters are bold. With no query, agents
   that need the user come first in queue order. It closes on Escape, an outside click, a Space
-  change, losing key or after an action, and is built fresh on every opening. It does not count
-  as a visible panel, so gadgets do not start reading for it. Tab (or →) on an agent whose
+  change, losing key or after an action, and is built fresh on every opening. While open it counts
+  as a panel showing Agents (so `context` reads), never Gadgets, so gadgets do not start reading
+  for it. Tab (or →) on an agent whose
   source can take text opens its prompt page, and the "New task" commands (from `projects`)
   open the new task form; both are a second `StageModel`, so the palette reads an agent's last
   lines only while its prompt shows (on entering and on a status change) and a started task
@@ -525,8 +538,8 @@ none when the source cannot. A section names its tab (`PanelSection.tab`); a gad
 `.gadgets` and reads only while `Presence.isShowing(.gadgets)`. Built in: `status`, `notch`, `queue` (the needs-you queue, live
 sources only), `usage` (plan usage, read through `ModuleContext.usage` only while Gadgets
 shows), `system` (CPU and memory, sampled through `ModuleContext.system` only while Gadgets
-shows), `context` (context sizes, read through `ModuleContext.contextReader` only while Agents
-shows), `sources` (the first-run guide: while the herd has no agents, one card per place agents
+shows), `context` (context sizes and final messages, read through `ModuleContext.contextReader` only
+while Agents or the palette shows), `sources` (the first-run guide: while the herd has no agents, one card per place agents
 can come from, from `ModuleContext.sourceGuide`, which the app fills at launch), `notifications` and `projects` (the cards; a source that is not live shows its last known state,
 dimmed, never as current; two or more checkouts of one repo, by `HerdProject.repo`, share one
 `PanelRepoCard` at the place of the first, main checkout first, each checkout a sub-header

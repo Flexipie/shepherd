@@ -7,10 +7,11 @@ import Testing
 final class StubContextReader: AgentContextReader {
     var reads: [String] = []
     var tokens = 184_213
+    var finalMessage: String? = "Done."
 
-    func contextTokens(for session: AgentSession) async throws -> Int? {
+    func read(_ session: AgentSession) async throws -> AgentSessionReading? {
         reads.append(session.id)
-        return session.kind == "claude" ? tokens : nil
+        return session.kind == "claude" ? AgentSessionReading(contextTokens: tokens, finalMessage: finalMessage) : nil
     }
 }
 
@@ -93,12 +94,30 @@ final class StubContextReader: AgentContextReader {
         presence.setPanel("notch", showing: .agents)
         await until { reader.reads.count == 2 }
         reader.tokens = 190_000
+        reader.finalMessage = "All green."
         send([agent("p1", .idle), agent("p2", .idle)])
         await until { reader.reads.count == 3 }
         await settle()
         #expect(reader.reads.last == "session-p1")
         #expect(reader.reads.count == 3)
         #expect(context.agentContext.tokens[AgentID(source: "herdr", local: "p1")] == 190_000)
+        #expect(context.agentContext.finalMessages[AgentID(source: "herdr", local: "p1")] == "All green.")
+        #expect(context.agentContext.finalMessages[AgentID(source: "herdr", local: "p2")] == "Done.")
+        _ = module
+    }
+
+    /// A cleared or resumed session while the agent stays idle is read again.
+    @Test func aNewSessionIsReadAgain() async {
+        let (module, _) = module()
+        send([agent("p1", .idle)])
+        await until { store.agents.count == 1 }
+        presence.setPanel("menu", showing: .agents)
+        await until { reader.reads.count == 1 }
+        let resumed = HerdAgent(id: AgentID(source: "herdr", local: "p1"), kind: "claude", name: "p1", status: .idle,
+                                session: AgentSession(kind: "claude", id: "session-new", cwd: "/tmp/project-1"))
+        send([resumed])
+        await until { reader.reads.count == 2 }
+        #expect(reader.reads == ["session-p1", "session-new"])
         _ = module
     }
 
@@ -111,6 +130,7 @@ final class StubContextReader: AgentContextReader {
         send([])
         await until { context.agentContext.tokens.isEmpty }
         #expect(context.agentContext.tokens.isEmpty)
+        #expect(context.agentContext.finalMessages.isEmpty)
         _ = module
     }
 
@@ -125,9 +145,10 @@ final class StubContextReader: AgentContextReader {
         module = nil
         await until { context.agentContext.tokens.isEmpty }
         #expect(context.agentContext.tokens.isEmpty)
+        #expect(context.agentContext.finalMessages.isEmpty)
     }
 
-    @Test func rowsCarryTheSize() async {
+    @Test func rowsCarryTheSizeAndMessage() async {
         let context = ModuleContext(store: store, presence: presence, actions: RecordingActions(), contextReader: reader)
         let projects = ProjectsModule(context: context)
         let context2 = ContextModule(context: context)
@@ -140,6 +161,7 @@ final class StubContextReader: AgentContextReader {
             return
         }
         #expect(card.agents.first?.contextTokens == 184_213)
+        #expect(card.agents.first?.finalMessage == "Done.")
         _ = context2
     }
 }

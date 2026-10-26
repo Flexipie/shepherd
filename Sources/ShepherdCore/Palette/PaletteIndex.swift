@@ -26,7 +26,8 @@ public enum PaletteIndex {
         let canPrompt = can(agent.status == .blocked ? .sendText : .prompt, agent.id.source, context)
         let agentTokens = context.tokens(of: agent)
         let row = PanelAgentRow(agent: agent, tokens: context.tokenLines(.agents, values: agentTokens, source: agent.id.source),
-                                action: canFocus ? .jump(agent.id) : nil, contextTokens: context.agentContext.tokens[agent.id])
+                                action: canFocus ? .jump(agent.id) : nil, contextTokens: context.agentContext.tokens[agent.id],
+                                finalMessage: context.agentContext.finalMessages[agent.id])
         let words = [agent.kind ?? "", agent.project, project?.repo?.name ?? "", agent.statusText] + values(agentTokens)
             + values(project.map(context.tokens(of:)) ?? [:])
         return PaletteItem(id: "agent/\(agent.id)", kind: .agent(row), searchText: [agent.name] + words.filter { !$0.isEmpty },

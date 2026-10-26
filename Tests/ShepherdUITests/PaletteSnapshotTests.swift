@@ -57,6 +57,16 @@ import Testing
         }
     }
 
+    /// A finished agent's prompt: its whole last message in place of its last lines.
+    @Test func promptWithFinalMessage() throws {
+        let stage = AgentStage(row: SampleHerd.row(SampleHerd.finished, context: 184_213, message: SampleHerd.finalMessage),
+                               lines: ["PR #12 is up for review.", "", "> "], canReply: true, prompts: true)
+        try Snapshot.check("palette-prompt-final-message", width: PaletteView.width) {
+            PaletteView(content: PaletteContent(items: SamplePalette.content.items, page: .prompt(stage)),
+                        clock: .fixed(SampleHerd.now)) { _ in }
+        }
+    }
+
     /// A blocked agent: its choices with ⌘ digits, and a failed send kept on screen.
     @Test func promptBlocked() throws {
         let text = """

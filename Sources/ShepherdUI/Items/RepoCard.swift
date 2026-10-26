@@ -35,7 +35,7 @@ struct RepoCard: View {
 
     private func soleAgentRow(_ project: PanelProjectCard, _ agent: PanelAgentRow) -> some View {
         let merged = PanelAgentRow(agent: agent.agent, tokens: project.tokens + agent.tokens, isLive: agent.isLive,
-                                   action: agent.action, contextTokens: agent.contextTokens)
+                                   action: agent.action, contextTokens: agent.contextTokens, finalMessage: agent.finalMessage)
         return AgentRow(row: merged, now: now, checkout: project.project, isSelected: rows.isSelected(agent.action),
                         onJump: rows.onJump(agent.action))
             .choosable(agent.action, in: rows)

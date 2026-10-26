@@ -91,7 +91,7 @@ public struct PaletteView: View {
             switch content.page {
             case .list: palette(now: now)
             case .prompt(let stage):
-                PalettePromptPage(stage: stage, now: now, draft: $draft) { event in
+                PalettePromptPage(stage: stage, now: now, maxHeight: maxListHeight, draft: $draft) { event in
                     if event == .back { draft = "" }
                     onEvent(event)
                 }

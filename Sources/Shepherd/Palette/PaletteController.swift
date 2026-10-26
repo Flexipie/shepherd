@@ -9,10 +9,10 @@ import SwiftUI
 /// any app, without activating Shepherd. A fresh view each opening, so the query starts empty.
 /// Its prompt and new task pages are its own `StageModel`, which reads an agent's lines only
 /// while that agent's prompt shows. It closes on Escape from the list, a click outside, a Space
-/// change, losing key, or after an action or a successful send. It does not count as a visible
-/// panel: it shows no gadgets, so nothing starts reading for it. Each opening refreshes the
-/// plugins (their manifests and listed actions); ⌘K shows a selection's plugin actions, and an
-/// action's printed text stays on a result page.
+/// change, losing key, or after an action or a successful send. While open it counts as a panel
+/// showing Agents, so agents' context sizes and last messages are read, but never Gadgets. Each
+/// opening refreshes the plugins (their manifests and listed actions); ⌘K shows a selection's
+/// plugin actions, and an action's printed text stays on a result page.
 @MainActor
 final class PaletteController: NSObject, NSWindowDelegate {
     private let context: ModuleContext
@@ -63,11 +63,14 @@ final class PaletteController: NSObject, NSWindowDelegate {
         panel.makeKeyAndOrderFront(nil)
         host.startMonitoring { [weak self] in self?.close() }
         render(generation)
+        // Its agent rows count as the Agents tab, so their context sizes and messages are read.
+        context.presence.setPanel("palette", showing: .agents)
         if let plugins = context.plugins { Task { await plugins.refresh() } }
     }
 
     func close() {
         guard let panel else { return }
+        context.presence.setPanel("palette", showing: nil)
         stage.close()
         plugin.page = nil
         host.stopMonitoring()

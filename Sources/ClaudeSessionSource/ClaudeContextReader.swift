@@ -1,13 +1,14 @@
 import Foundation
 import ShepherdCore
 
-/// Reads a Claude Code agent's context size from its session file:
+/// Reads a Claude Code agent's context size and last message from its session file:
 /// `<config>/projects/<cwd, every non-alphanumeric character as "-">/<session id>.jsonl`, where
 /// `<config>` is `CLAUDE_CONFIG_DIR` or `~/.claude`. When that file is missing (the agent changed
 /// directory), it looks for `<session id>.jsonl` in every project folder once and remembers it.
 ///
 /// Read-only, and only the file's last `tailBytes`. The size is the last main-thread assistant
-/// turn's input plus cache read plus cache creation tokens. An unchanged file (same size and
+/// turn's input plus cache read plus cache creation tokens; the message is the text of the latest
+/// turn's last main-thread assistant entry that has any. An unchanged file (same size and
 /// modification date) costs one `stat`. Other agent kinds read nothing and give nil.
 @MainActor
 public final class ClaudeContextReader: AgentContextReader {
@@ -25,7 +26,7 @@ public final class ClaudeContextReader: AgentContextReader {
         projects = directory.appending(path: "projects")
     }
 
-    public func contextTokens(for session: AgentSession) async throws -> Int? {
+    public func read(_ session: AgentSession) async throws -> AgentSessionReading? {
         guard session.kind == "claude", ClaudeSessionFile.isSafeID(session.id) else { return nil }
         let expected = session.cwd.map { projects.appending(path: ClaudeSessionFile.folderName($0)).appending(path: "\(session.id).jsonl") }
         let candidates = [paths[session.id], expected].compactMap { $0 }
@@ -34,7 +35,7 @@ public final class ClaudeContextReader: AgentContextReader {
         paths[session.id] = result?.url
         guard let result else { return nil }
         cache[result.url] = result.reading
-        return result.reading.tokens
+        return AgentSessionReading(contextTokens: result.reading.tokens, finalMessage: result.reading.finalMessage)
     }
 }
 
@@ -45,7 +46,18 @@ enum ClaudeSessionFile {
         let size: UInt64
         let modified: Date
         let tokens: Int?
+        let finalMessage: String?
+
+        init(size: UInt64, modified: Date, tokens: Int?, finalMessage: String? = nil) {
+            self.size = size
+            self.modified = modified
+            self.tokens = tokens
+            self.finalMessage = finalMessage
+        }
     }
+
+    /// Longer messages are cut here, so a surface never lays out a whole log.
+    static let messageLimit = 10_000
 
     /// Claude Code's folder name for a working directory: every character that is not an ASCII
     /// letter or digit becomes "-".
@@ -87,25 +99,80 @@ enum ClaudeSessionFile {
         let offset = size > UInt64(tailBytes) ? size - UInt64(tailBytes) : 0
         try handle.seek(toOffset: offset)
         let data = try handle.readToEnd() ?? Data()
-        return Reading(size: size, modified: modified, tokens: lastContextTokens(in: data, cutAtStart: offset > 0))
+        let turn = lastTurn(in: data, cutAtStart: offset > 0)
+        return Reading(size: size, modified: modified, tokens: turn.tokens, finalMessage: turn.finalMessage)
     }
 
-    /// Walks the lines from the end to the last assistant turn of the main thread (not a
-    /// sidechain, not a synthetic error) with usage. `cutAtStart` drops the first line, which the
-    /// tail window may have cut.
     static func lastContextTokens(in data: Data, cutAtStart: Bool) -> Int? {
+        lastTurn(in: data, cutAtStart: cutAtStart).tokens
+    }
+
+    /// Walks the lines from the end over the main thread's entries (not a sidechain): the last
+    /// assistant entry with usage (not a synthetic error) gives the context size, the last one
+    /// with text the final message. The message is only looked for in the latest turn: a prompt,
+    /// an interruption or an API error after it means there is none, so a surface shows the
+    /// agent's lines instead of an earlier answer. `cutAtStart` drops the first line, which the
+    /// tail window may have cut.
+    static func lastTurn(in data: Data, cutAtStart: Bool) -> (tokens: Int?, finalMessage: String?) {
         var lines = data.split(separator: UInt8(ascii: "\n"), omittingEmptySubsequences: true)
         if cutAtStart, !lines.isEmpty { lines.removeFirst() }
-        let marker = Data(#""assistant""#.utf8)
-        for line in lines.reversed() where line.range(of: marker) != nil {
+        let markers = [Data(#""assistant""#.utf8), Data(#""user""#.utf8)]
+        var tokens: Int?
+        var finalMessage: String?
+        var messageDone = false
+        for line in lines.reversed() where markers.contains(where: { line.range(of: $0) != nil }) {
             guard let object = try? JSONSerialization.jsonObject(with: Data(line)) as? [String: Any],
-                  object["type"] as? String == "assistant", object["isSidechain"] as? Bool != true,
-                  let message = object["message"] as? [String: Any], message["model"] as? String != "<synthetic>",
-                  let usage = message["usage"] as? [String: Any] else { continue }
-            let keys = ["input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens"]
-            let total = keys.reduce(0) { $0 + ((usage[$1] as? NSNumber)?.intValue ?? 0) }
-            if total > 0 { return total }
+                  object["isSidechain"] as? Bool != true,
+                  let message = object["message"] as? [String: Any] else { continue }
+            switch object["type"] as? String {
+            case "user":
+                if !messageDone, object["isMeta"] as? Bool != true, !isToolResult(message), !isLocalCommand(message) {
+                    messageDone = true
+                }
+            case "assistant":
+                guard message["model"] as? String != "<synthetic>" else {
+                    messageDone = true
+                    continue
+                }
+                if tokens == nil, let usage = message["usage"] as? [String: Any] {
+                    let keys = ["input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens"]
+                    let total = keys.reduce(0) { $0 + ((usage[$1] as? NSNumber)?.intValue ?? 0) }
+                    if total > 0 { tokens = total }
+                }
+                if !messageDone, let text = text(of: message) {
+                    finalMessage = text
+                    messageDone = true
+                }
+            default: continue
+            }
+            if tokens != nil, messageDone { break }
         }
-        return nil
+        return (tokens, finalMessage)
+    }
+
+    /// A user entry Claude Code writes for a local slash command (`/cost`, `/model`): its name
+    /// and its output, in tags. It starts no turn, so the answer before it still stands. A skill or
+    /// custom command starts with `<command-message>` instead and is a prompt.
+    static func isLocalCommand(_ message: [String: Any]) -> Bool {
+        let text = message["content"] as? String
+            ?? (message["content"] as? [[String: Any]])?.first.flatMap { $0["text"] as? String } ?? ""
+        let start = text.drop { $0.isWhitespace }
+        return start.hasPrefix("<command-name>") || start.hasPrefix("<local-command-")
+    }
+
+    /// A user entry that only carries tool results, which Claude Code writes inside a turn.
+    static func isToolResult(_ message: [String: Any]) -> Bool {
+        guard let blocks = message["content"] as? [[String: Any]], !blocks.isEmpty else { return false }
+        return blocks.allSatisfy { $0["type"] as? String == "tool_result" }
+    }
+
+    /// The message's text blocks joined, trimmed and cut at `messageLimit`; nil when it has none.
+    /// Claude Code writes "(no content)" for an empty one.
+    static func text(of message: [String: Any]) -> String? {
+        let blocks = message["content"] as? [[String: Any]] ?? []
+        let text = blocks.filter { $0["type"] as? String == "text" }.compactMap { $0["text"] as? String }
+            .joined(separator: "\n\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty, text != "(no content)" else { return nil }
+        return text.count > messageLimit ? String(text.prefix(messageLimit)) + "…" : text
     }
 }

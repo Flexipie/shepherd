@@ -93,14 +93,39 @@ public struct PanelAgentRow: Sendable, Equatable {
     public let action: PanelAction?
     /// How many tokens the agent's context holds, when a reader found out.
     public let contextTokens: Int?
+    /// The text of the agent's last message, when a reader found it.
+    public let finalMessage: String?
 
     public init(agent: HerdAgent, tokens: [[StyledToken]] = [], isLive: Bool = true, action: PanelAction? = nil,
-                contextTokens: Int? = nil) {
+                contextTokens: Int? = nil, finalMessage: String? = nil) {
         self.agent = agent
         self.tokens = tokens
         self.isLive = isLive
         self.action = action
         self.contextTokens = contextTokens
+        self.finalMessage = finalMessage
+    }
+
+    /// The last message on one line, for the row: whitespace collapsed and Markdown's heading,
+    /// bold and code marks dropped. nil while the agent works, when the message is an earlier
+    /// turn's.
+    public var messagePreview: String? {
+        guard agent.status != .working, let finalMessage else { return nil }
+        let unheaded = finalMessage.split(separator: "\n", omittingEmptySubsequences: false)
+            .map { line -> Substring in
+                let marks = line.prefix { $0 == "#" }
+                return !marks.isEmpty && line.dropFirst(marks.count).first == " " ? line.dropFirst(marks.count) : line
+            }
+            .joined(separator: "\n")
+        let plain = unheaded.replacing("**", with: "").replacing("`", with: "")
+        let preview = plain.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        return preview.isEmpty ? nil : preview
+    }
+
+    /// Whether a surface shows the whole message in place of the agent's last lines: once it has
+    /// stopped (idle or done). While it works or waits on a question, the lines say more.
+    public var showsFinalMessage: Bool {
+        finalMessage != nil && (agent.status == .idle || agent.status == .done)
     }
 }
 

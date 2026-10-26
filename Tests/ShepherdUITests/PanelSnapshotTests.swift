@@ -32,6 +32,24 @@ import Testing
         }
     }
 
+    /// The last message on one line under a stopped agent's title, in the queue and in a narrow
+    /// card; none while the agent works.
+    @Test func rowsWithMessage() throws {
+        try Snapshot.check("row-message", width: 340) {
+            VStack(alignment: .leading, spacing: 0) {
+                AgentRow(row: SampleHerd.row(SampleHerd.finished, context: 184_213, message: SampleHerd.finalMessage),
+                         now: SampleHerd.now, showsProject: true, isSelected: true, onJump: {})
+                AgentRow(row: SampleHerd.row(SampleHerd.blockedClaude, message: "I need to run the migration first."),
+                         now: SampleHerd.now, showsProject: true, onJump: {})
+                AgentRow(row: SampleHerd.row(SampleHerd.working, message: "Reading the tests."), now: SampleHerd.now, onJump: {})
+                    .frame(width: 230)
+                AgentRow(row: SampleHerd.row(SampleHerd.finished, message: SampleHerd.finalMessage), now: SampleHerd.now, onJump: {})
+                    .frame(width: 230)
+            }
+            .padding(8)
+        }
+    }
+
     /// In the notch bar a selected row shows the jump arrow; unselected rows keep its room.
     @Test func queueRowsWithJump() throws {
         try Snapshot.check("queue-row-jump", width: 340) {

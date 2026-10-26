@@ -18,7 +18,8 @@ public final class QueueModule: ShepherdModule {
             .map { agent in
                 PanelAgentRow(agent: agent, tokens: context.tokenLines(.agents, values: context.tokens(of: agent), source: agent.id.source),
                               action: canFocus(agent.id.source) ? .jump(agent.id) : nil,
-                              contextTokens: context.agentContext.tokens[agent.id])
+                              contextTokens: context.agentContext.tokens[agent.id],
+                              finalMessage: context.agentContext.finalMessages[agent.id])
             }
         return PanelSection(id: Self.id, title: "Needs you", items: rows.map(PanelItem.agent), emptyText: "Nothing needs you")
     }
