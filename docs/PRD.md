@@ -62,7 +62,8 @@ their workspace or project, time in state, tokens, and the transitions Shepherd 
   built-in defaults (`ScreenPatterns.builtin`); config can edit them or add agents (see "Config").
 - Agent reports (`shepherd report`) are the generic way for any agent to state its own status,
   from its own hooks, rules or skills. Shepherd never edits an agent's settings without showing
-  the change first.
+  the change first: `shepherd-report install claude` prints a diff, asks, backs the file up and
+  touches only entries that run `shepherd-report report`.
 - Order: tmux and agent reports first (any agent in a terminal), then herdr and Claude Code's
   session files as optional adapters, then cloud agents through their APIs (opt-in, the first
   network-using sources).
@@ -148,7 +149,7 @@ than". `SHEPHERD_TRANSITION_LOG` points it elsewhere for development runs.
 | `RecordFixture`, `FakeHerdr` | Dev tools: `make fixture` records a sanitised fixture; `swift run FakeHerdr` runs a fake driven from stdin. |
 | `ShepherdCore` | The herd model, `AgentSource`, `HerdStore`, `TransitionLog`, the `ShepherdModule` protocol and `ModuleRegistry`, config (`ConfigStore`, `FileWatcher`), token layouts and the styler, panel values; later the action model. No source types. |
 | `HerdrSource` | herdr as a source: adapts `HerdrKit` to the herd model. The only target that sees both. |
-| `ReportKit` | The agent report file format, the spool folder (atomic writes, reads, removal), agent identity and the `shepherd-report` command's logic. Foundation and CryptoKit only. No UI, no Shepherd. |
+| `ReportKit` | The agent report file format, the spool folder (atomic writes, reads, removal), agent identity and the `shepherd-report` command's logic, including `install`/`uninstall claude` (Claude Code's hooks, edited with key order kept). Foundation and CryptoKit only. No UI, no Shepherd. |
 | `ReportSource` | Agent reports as a source: watches the spool and maps reports to the herd model through a pure tracker. |
 | `TmuxKit` | tmux's command line (`list-panes`, `capture-pane`, `send-keys`, `select-pane`), control mode (`tmux -C`) and the process table (`ps`). Foundation only. No UI, no Shepherd. |
 | `TmuxSource` | tmux as a source: panes whose process tree runs a known agent, read from their screens and labelled inferred. A pane's project is its git checkout (or its folder outside git), with the checkout's repo. Watches the socket folder and control clients; no polling. |

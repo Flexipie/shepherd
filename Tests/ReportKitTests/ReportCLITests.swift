@@ -93,11 +93,14 @@ import Testing
         #expect(try ReportSpool(directory: scratch.url).read().reports.first?.message == "Mine")
     }
 
-    @Test func hookInputThatIsNotAnObjectExitsTwo() {
+    /// Exit 2 from a Claude Code hook blocks Claude (a Stop hook would keep it from stopping), so a
+    /// hook's usage errors exit 1.
+    @Test func hookInputThatIsNotAnObjectExitsOne() {
         let scratch = Scratch()
         let outcome = run(["--status", "done", "--from-hook"], spool: scratch.url, stdin: "[1, 2")
-        #expect(outcome.exitCode == 2)
+        #expect(outcome.exitCode == 1)
         #expect(!FileManager.default.fileExists(atPath: scratch.url.path))
+        #expect(run(["--status", "napping", "--from-hook"], spool: scratch.url, stdin: "{}").exitCode == 1)
     }
 
     @Test func aLongMessageIsCappedNotRejected() throws {
