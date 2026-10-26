@@ -13,7 +13,8 @@ extension View {
     }
 
     /// Makes a row choosable within its section: a click performs `action` (⌘-click jumps when
-    /// the surface offers it), hovering selects it, and its id lets a surface scroll to it.
+    /// the surface offers it), hovering selects it (leaving keeps the selection), and its id lets a
+    /// surface scroll to it.
     func choosable(_ action: PanelAction?, in rows: RowContext) -> some View {
         let id = rows.id(action)
         return onTapGesture { if let action { tap(action, perform: rows.perform, jump: rows.jump) } }
