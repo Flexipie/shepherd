@@ -213,7 +213,14 @@ public final class HerdrSource: AgentSource {
                 marker: Self.marker(terminalID: transition.terminalID, seq: transition.stateChangeSeq))
         }
         for transition in update.transitions where transition.kind == .closed { known[transition.paneID] = nil }
-        return SourceUpdate(agents: agents, projects: projects, state: state(update.connection),
+        let state = state(update.connection)
+        // A herdr that is gone has no panes: its last agents are not kept, even dimmed, so nothing
+        // counts them as waiting.
+        if state.isAbsent {
+            return SourceUpdate(agents: [], projects: [], state: state, statusLines: connectionLines + sidebar.problems,
+                                transitions: transitions, tokenLayout: sidebar.layout, postsSystemAlerts: postsSystemAlerts)
+        }
+        return SourceUpdate(agents: agents, projects: projects, state: state,
                             statusLines: connectionLines + sidebar.problems, transitions: transitions,
                             tokenLayout: sidebar.layout, postsSystemAlerts: postsSystemAlerts)
     }

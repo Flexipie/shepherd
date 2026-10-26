@@ -31,6 +31,8 @@ final class AppController {
     private var tmux: TmuxSource?
     /// The source order the running sources were built from. A different one applies at the next launch.
     private var startedOrder: [String] = []
+    /// The first-run guide has been filled once; after that it is refreshed only when a panel opens.
+    private var guideFilled = false
 
     init() {
         store = HerdStore(log: log)
@@ -91,13 +93,22 @@ final class AppController {
         followSourcesConfig()
     }
 
-    /// Fills the first-run guide. Reading Claude Code's settings is file I/O, so it runs off the main actor.
+    /// Fills the first-run guide, then again each time a panel opens while it shows, so installing
+    /// Claude Code's hooks is seen without a restart. Reading Claude Code's settings is file I/O, so
+    /// it runs off the main actor.
     private func explainSources() {
-        let tmuxInstalled = tmux != nil
+        let visible = withObservationTracking {
+            presence.isPanelVisible
+        } onChange: { [weak self] in
+            Task { @MainActor in self?.explainSources() }
+        }
+        guard !guideFilled || (visible && store.agents.isEmpty) else { return }
+        guideFilled = true
+        let sources = startedOrder, tmuxInstalled = tmux != nil
         Task {
             let environment = ProcessInfo.processInfo.environment
             let claude = await Task.detached(priority: .utility) { ClaudeSetup.detect(environment: environment) }.value
-            context.sourceGuide.set(SourceIntros.make(tmuxInstalled: tmuxInstalled, claude: claude))
+            context.sourceGuide.set(SourceIntros.make(sources: sources, tmuxInstalled: tmuxInstalled, claude: claude))
         }
     }
 

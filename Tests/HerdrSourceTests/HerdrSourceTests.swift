@@ -257,6 +257,22 @@ import Testing
         await store.stop()
     }
 
+    /// herdr quit cleanly (its socket is gone): its last agents are dropped, so nothing counts them as waiting.
+    @Test func aHerdrThatQuitLeavesNoAgentsWaiting() async throws {
+        let fake = FakeHerdrServer()
+        try await fake.start()
+        let (store, _) = running(fake)
+        try await until(store) { $0.overallState == .live && !$0.agents.isEmpty }
+        await fake.setStatus("w1:p1", "blocked")
+        try await until(store) { !$0.needsYou.isEmpty }
+        await fake.stop()
+        try await until(store) { $0.sourceStates[HerdrSource.sourceID] == .absent("herdr is not running") }
+        #expect(store.agents.isEmpty)
+        #expect(store.needsYou.isEmpty)
+        #expect(store.projects.isEmpty)
+        await store.stop()
+    }
+
     @Test func exactTimeSurvivesARestartThroughTheLog() async throws {
         let url = FileManager.default.temporaryDirectory.appending(path: "shepherd-log-\(UUID().uuidString).jsonl")
         defer { try? FileManager.default.removeItem(at: url) }
