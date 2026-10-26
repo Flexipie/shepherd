@@ -156,7 +156,6 @@ public final class TmuxSource: AgentSource {
         guard let checkout = pane.checkout else {
             throw AgentSourceError.failed("\(PaneTracker.projectName(pane.projectPath)) is not in a git repo, so there is no worktree to make")
         }
-        guard let git = TmuxNewTask.locateGit() else { throw AgentSourceError.failed("git is not installed") }
         let branch = task.branch ?? TmuxNewTask.branchName(kind: task.kind)
         let folder = TmuxNewTask.folder(for: checkout, branch: branch)
         let command = TmuxNewTask.command(kind: task.kind, args: args, prompt: task.prompt)
@@ -167,7 +166,16 @@ public final class TmuxSource: AgentSource {
         }
         let client = TmuxClient(binary: binary, socket: pane.socket)
         // Shepherd's own PATH is short when it was opened from Finder; the server's is the user's.
-        let path = await Task.detached { client.globalEnvironment("PATH") }.value
+        // The window runs with it, so the agent must be found on it, else the window would only say
+        // "command not found" while the task looked started.
+        let kind = task.kind
+        let (path, git, agent) = await Task.detached {
+            let path = client.globalEnvironment("PATH")
+            let search = path ?? ProcessInfo.processInfo.environment["PATH"] ?? ""
+            return (path, TmuxNewTask.locateGit(path: search), TmuxNewTask.executable(kind, in: search))
+        }.value
+        guard let git else { throw AgentSourceError.failed("git is not installed") }
+        guard agent != nil else { throw AgentSourceError.failed("\(kind) is not on tmux's PATH") }
         try await tmux { try TmuxNewTask.addWorktree(git: git, checkout: checkout.root, branch: branch, folder: folder, path: path) }
         let paneID: String
         do {
@@ -205,13 +213,6 @@ public final class TmuxSource: AgentSource {
         if let observation = observations[agent.local] { return (observation.socket, observation.paneID) }
         guard let pane = started[agent.local] else { throw AgentSourceError.failed("that agent is no longer in tmux") }
         return (pane.socket, pane.paneID)
-    }
-
-    private func target(_ agent: AgentID) throws -> PaneObservation {
-        guard let observation = observations[agent.local] else {
-            throw AgentSourceError.failed("that agent is no longer in tmux")
-        }
-        return observation
     }
 
     /// Runs a tmux call off the main actor and says a failure in words.

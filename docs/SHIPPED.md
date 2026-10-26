@@ -227,5 +227,5 @@ Oldest first.
   `new-window -d` after one of the project's agents running the agent with its args and the prompt
   as separate arguments (no shell quoting; `--` before the prompt), then the user's shell. git and the
   window get the server's PATH, not the app's. A left-out branch is the kind and a random suffix; a
-  project outside git, a folder already there and a prompt past tmux's ~16 KB are refused before
-  anything is made. A step that fails after the worktree was made says it is there.
+  project outside git, a folder already there, an agent not on the server's PATH and a prompt past
+  about 15 KB (tmux's command limit) are refused before anything is made. A step that fails after the worktree was made says it is there.

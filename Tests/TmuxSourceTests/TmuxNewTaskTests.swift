@@ -25,7 +25,7 @@ extension TmuxSourceTests {
 
     func git(_ arguments: [String], in folder: URL) throws {
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: try #require(TmuxNewTask.locateGit()))
+        process.executableURL = URL(fileURLWithPath: try #require(TmuxNewTask.locateGit(path: ProcessInfo.processInfo.environment["PATH"] ?? "")))
         process.arguments = ["-C", folder.path] + arguments
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice

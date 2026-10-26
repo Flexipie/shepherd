@@ -168,7 +168,7 @@ than". `SHEPHERD_TRANSITION_LOG` points it elsewhere for development runs.
 | `HerdrSource` | herdr as a source: adapts `HerdrKit` to the herd model. The only target that sees both. |
 | `ReportKit` | The agent report file format, the spool folder (atomic writes, reads, removal), agent identity and the `shepherd-report` command's logic, including `install`/`uninstall claude` (Claude Code's hooks, edited with key order kept). Foundation and CryptoKit only. No UI, no Shepherd. |
 | `ReportSource` | Agent reports as a source: watches the spool and maps reports to the herd model through a pure tracker. |
-| `TmuxKit` | tmux's command line (`list-panes`, `capture-pane`, `send-keys`, `select-pane`, `new-window`), control mode (`tmux -C`) and the process table (`ps`). Foundation only. No UI, no Shepherd. |
+| `TmuxKit` | tmux's command line (`list-panes`, `capture-pane`, `send-keys`, `select-pane`, `new-window`, `show-environment`), control mode (`tmux -C`) and the process table (`ps`). Foundation only. No UI, no Shepherd. |
 | `TmuxSource` | tmux as a source: panes whose process tree runs a known agent, read from their screens and labelled inferred. A pane's project is its git checkout (or its folder outside git), with the checkout's repo. Watches the socket folder and control clients; no polling. Starts tasks: a git worktree and a new window. |
 | `ShepherdModules` | Built-in features, one folder each, listed in `BuiltinModules.all`. |
 | `ShepherdUI` | SwiftUI views, values in, no windows, no glass, so every view can be snapshot tested. Three layers: `Components` (shared pieces: row chrome and the choosable row, the card fill, glyphs, tokens), `Items` (one view per `PanelItem` kind, drawn the same on every surface, with `PanelItemView` the one place a kind meets its view) and `Surfaces` (the panel, the notch, the palette: layout, keyboard and the clock, never their own item views). |
@@ -333,9 +333,10 @@ so a module reads only while its tab shows (`Presence.isShowing(_:)`).
     arguments, then `exec`ing the user's login shell, so the window stays when the agent exits.
     The prompt is the agent's first argument, after `--` so a flag taking several values or a
     subcommand name cannot take it; Claude Code and Codex both take one, so it waits through a
-    trust question. No quoting, so any shell; tmux caps a command near 16 KB, so a longer prompt
-    is refused before anything is made, as is a worktree folder that already exists. git and
-    `new-window` run with the server's PATH, since tmux gives a pane its caller's PATH and an app
+    trust question. No quoting, so any shell; tmux caps a command near 16 KB, so a prompt past
+    about 15 KB is refused before anything is made, as are a worktree folder that already exists
+    and an agent not on the server's PATH. git is found on and runs with that PATH, and
+    `new-window` too, since tmux gives a pane its caller's PATH and an app
     opened from Finder has a short one. Until a scan lists the new pane, read, focus and replies
     reach it by its pane id. A project outside git says it has nothing to make a worktree from.
 - **Usage** (the `usage` module), on the Gadgets tab, a column in the bar and a section in the

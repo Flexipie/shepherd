@@ -45,7 +45,7 @@ enum TmuxNewTask {
     static func tooLong(_ command: [String]) -> String? {
         let bytes = command.reduce(0) { $0 + $1.utf8.count + 1 }
         guard bytes > commandLimit else { return nil }
-        return "the prompt is too long to start in tmux (\(bytes / 1000) KB, at most about \(commandLimit / 1000) KB)"
+        return "the prompt is too long to start in tmux (\((bytes + 999) / 1000) KB, at most about \(commandLimit / 1000) KB)"
     }
 
     /// `git worktree add -b <branch> <folder>` from `checkout`, so the branch starts at its HEAD.
@@ -81,10 +81,16 @@ enum TmuxNewTask {
         throw AgentSourceError.failed("git: \(message)\(left)")
     }
 
-    /// The `git` binary: the first on `PATH`, else where Homebrew and the system put it.
-    static func locateGit(environment: [String: String] = ProcessInfo.processInfo.environment) -> String? {
-        let path = (environment["PATH"] ?? "").split(separator: ":").map(String.init)
-        return (path + ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin"]).lazy.map { $0 + "/git" }
-            .first { FileManager.default.isExecutableFile(atPath: $0) }
+    /// The `git` binary: the first on `path`, else where Homebrew and the system put it.
+    static func locateGit(path: String) -> String? {
+        executable("git", in: path + ":/opt/homebrew/bin:/usr/local/bin:/usr/bin")
+    }
+
+    /// Where `program` runs from on `path`, a colon-separated list of folders; a program given with
+    /// a `/` is taken as it is.
+    static func executable(_ program: String, in path: String) -> String? {
+        let candidates = program.contains("/") ? [program]
+            : path.split(separator: ":").map { "\($0)/\(program)" }
+        return candidates.first { FileManager.default.isExecutableFile(atPath: $0) }
     }
 }
