@@ -5,6 +5,8 @@ import Testing
 /// Screens shaped like the agents' own, with paths and text made generic. The shapes were checked
 /// on Claude Code 2.1.299 and Codex 0.162.1.
 @Suite struct ScreenStatusTests {
+    let screens = ScreenStatus()
+
     static let claudeIdle = """
      ▐▛███▛█   Claude Code v2.1.299
     ▝▜██████▀  Opus 5.5 · Claude Team
@@ -79,43 +81,43 @@ import Testing
     """
 
     @Test func claudeIdleInputIsIdle() {
-        #expect(ScreenStatus.status(kind: "claude", screen: Self.claudeIdle) == .idle)
+        #expect(screens.status(kind: "claude", screen: Self.claudeIdle) == .idle)
     }
 
     @Test func theTurnHintIsWorkingEvenWithTheInputLineShowing() {
-        #expect(ScreenStatus.status(kind: "claude", screen: Self.claudeWorking) == .working)
-        #expect(ScreenStatus.status(kind: "codex", screen: Self.codexWorking) == .working)
+        #expect(screens.status(kind: "claude", screen: Self.claudeWorking) == .working)
+        #expect(screens.status(kind: "codex", screen: Self.codexWorking) == .working)
     }
 
     @Test func anApprovalPromptIsBlockedAndATrustPromptIsToo() {
-        #expect(ScreenStatus.status(kind: "claude", screen: Self.claudeApproval) == .blocked)
-        #expect(ScreenStatus.status(kind: "codex", screen: Self.codexUpdate) == .blocked)
+        #expect(screens.status(kind: "claude", screen: Self.claudeApproval) == .blocked)
+        #expect(screens.status(kind: "codex", screen: Self.codexUpdate) == .blocked)
     }
 
     @Test func aTrustPromptWithACursorIsNotIdle() {
-        #expect(ScreenStatus.status(kind: "claude", screen: Self.claudeTrust) == .unknown)
+        #expect(screens.status(kind: "claude", screen: Self.claudeTrust) == .unknown)
     }
 
     @Test func codexIdleInputIsIdle() {
-        #expect(ScreenStatus.status(kind: "codex", screen: Self.codexIdle) == .idle)
+        #expect(screens.status(kind: "codex", screen: Self.codexIdle) == .idle)
     }
 
     @Test func aScreenWithNoMarkersIsUnknown() {
-        #expect(ScreenStatus.status(kind: "claude", screen: "$ ls\nREADME.md\n$ ") == .unknown)
-        #expect(ScreenStatus.status(kind: "codex", screen: "") == .unknown)
+        #expect(screens.status(kind: "claude", screen: "$ ls\nREADME.md\n$ ") == .unknown)
+        #expect(screens.status(kind: "codex", screen: "") == .unknown)
     }
 
     @Test func aMarkerHigherUpTheTranscriptDoesNotCount() {
         let old = "I said esc to interrupt once.\n" + (1...12).map { "line \($0)" }.joined(separator: "\n")
-        #expect(ScreenStatus.status(kind: "claude", screen: old) == .unknown)
+        #expect(screens.status(kind: "claude", screen: old) == .unknown)
     }
 
     @Test func aNumberedListInOutputIsNotAPrompt() {
         let list = "Steps:\n1. Read it\n2. Test it\n3. Ship it\n"
-        #expect(ScreenStatus.status(kind: "claude", screen: list) == .unknown)
+        #expect(screens.status(kind: "claude", screen: list) == .unknown)
     }
 
-    @Test func theAgentKindsAreClaudeAndCodex() {
-        #expect(ScreenStatus.kinds == ["claude", "codex"])
+    @Test func theBuiltInKindsAreClaudeAndCodexByProcessName() {
+        #expect(screens.kindByProcess == ["claude": "claude", "codex": "codex"])
     }
 }

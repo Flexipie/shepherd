@@ -147,3 +147,10 @@ Oldest first.
   the `Clocked` clock they share). `PanelItem.usage` became `PanelItem.gadget(GadgetCard)`, so
   This Mac no longer poses as a usage account and a gadget made of meters and lines touches only
   its module. No pixel changed: every snapshot matches its reference.
+- `sources` in config (#35): `AppController` builds its sources from the `sources` list (default
+  herdr, report, tmux, in that order), so herd order follows the list and a source can be left
+  out. The tmux screen patterns moved from code into config data (`ScreenPatterns`, with Claude
+  Code and Codex as built-in defaults): per agent kind a process name and `blocked`, `working` and
+  `idle` regex lists over the screen's footer. Users edit a built-in kind or add their own, and
+  pattern edits apply on save. A changed list of sources applies at the next launch and the
+  footer says so.

@@ -28,6 +28,9 @@ public final class TmuxSource: AgentSource {
     private let binary: String
     private let directory: URL
     private let activatesTerminal: Bool
+    /// How each agent kind is found and read; replaced when the config changes.
+    private var patterns: [String: ScreenPatterns]
+    private var screens: ScreenStatus
     private var watcher: TmuxSocketWatcher?
     /// Control clients, by socket path.
     private var controls: [String: Control] = [:]
@@ -54,11 +57,13 @@ public final class TmuxSource: AgentSource {
 
     /// Nil when tmux is not installed: the source is then not added at all.
     public init?(binary: String? = TmuxClient.locate(), directory: URL = TmuxSockets.directory(),
-                 activatesTerminal: Bool = true) {
+                 activatesTerminal: Bool = true, screens: [String: ScreenPatterns] = ScreenPatterns.builtin) {
         guard let binary else { return nil }
         self.binary = binary
         self.directory = directory
         self.activatesTerminal = activatesTerminal
+        patterns = screens
+        self.screens = ScreenStatus(screens)
         (updates, continuation) = AsyncStream.makeStream(bufferingPolicy: .bufferingNewest(16))
     }
 
@@ -70,6 +75,15 @@ public final class TmuxSource: AgentSource {
         self.watcher = watcher
         watcher.start()
         scheduleList(after: .zero)
+    }
+
+    /// Uses new screen patterns: every pane is listed and read again with them.
+    public func setScreens(_ patterns: [String: ScreenPatterns]) {
+        guard patterns != self.patterns else { return }
+        self.patterns = patterns
+        screens = ScreenStatus(patterns)
+        // A listing reads `screens` when it runs, so one already waiting covers this.
+        if watcher != nil { scheduleList(after: .zero) }
     }
 
     public func stop() async {
@@ -181,7 +195,10 @@ public final class TmuxSource: AgentSource {
         let generation = lastRequested
         let binary = binary
         let directory = directory
-        let scan = await Task.detached(priority: .utility) { TmuxScan.run(binary: binary, directory: directory) }.value
+        let screens = screens
+        let scan = await Task.detached(priority: .utility) {
+            TmuxScan.run(binary: binary, directory: directory, screens: screens)
+        }.value
         guard generation > lastApplied else { return }
         lastApplied = generation
         apply(scan, at: Date())
@@ -273,15 +290,19 @@ public final class TmuxSource: AgentSource {
         guard let observation = observations[key] else { return }
         let client = TmuxClient(binary: binary, socket: observation.socket)
         let pane = observation.paneID
-        let screen = await Task.detached(priority: .utility) { try? client.screen(pane) }.value
-        guard let screen else {
+        let kind = observation.kind
+        let screens = screens
+        // Patterns come from config, so they are matched off the main actor too.
+        let status = await Task.detached(priority: .utility) {
+            (try? client.screen(pane)).map { screens.status(kind: kind, screen: $0) }
+        }.value
+        guard let status else {
             // The pane or its server is gone; a listing says which.
             scheduleList(after: Self.listDelay)
             return
         }
         guard observations[key] != nil else { return }
         let now = Date()
-        let status = ScreenStatus.status(kind: observation.kind, screen: screen)
         observations[key]?.status = status
         observations[key]?.workingSeen = status == .working ? now : nil
         publish(at: now)

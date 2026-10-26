@@ -22,6 +22,8 @@ public struct ShepherdConfig: Sendable, Equatable {
     public var notifications: Notifications
     /// Plugin ids to skip. Every plugin in the plugins folder is on otherwise.
     public var disabledPlugins: [String]
+    /// Which sources run, in order, and how tmux reads agents' screens.
+    public var sources: SourcesConfig
 
     public enum Notifications: String, Sendable, Equatable, CaseIterable {
         /// Unless a source already posts its own (herdr with `ui.toast.delivery` "system" or
@@ -43,7 +45,8 @@ public struct ShepherdConfig: Sendable, Equatable {
     public init(modules: [String]? = nil, tokens: TokenLayout = TokenLayout(),
                 nextHotkey: String? = ShepherdConfig.defaultNextHotkey,
                 paletteHotkey: String? = ShepherdConfig.defaultPaletteHotkey, agents: [String: AgentConfig] = [:],
-                notifications: Notifications = .off, disabledPlugins: [String] = []) {
+                notifications: Notifications = .off, disabledPlugins: [String] = [],
+                sources: SourcesConfig = SourcesConfig()) {
         self.modules = modules
         self.tokens = tokens
         self.nextHotkey = nextHotkey
@@ -51,6 +54,7 @@ public struct ShepherdConfig: Sendable, Equatable {
         self.agents = agents
         self.notifications = notifications
         self.disabledPlugins = disabledPlugins
+        self.sources = sources
     }
 
     public static let defaults = ShepherdConfig()
@@ -74,7 +78,8 @@ public struct ShepherdConfig: Sendable, Equatable {
 
         var config = ShepherdConfig()
         var problems: [String] = []
-        for key in table.keys.sorted() where !["modules", "tokens", "hotkeys", "agents", "notifications", "plugins"].contains(key) {
+        for key in table.keys.sorted() where !["modules", "tokens", "hotkeys", "agents", "notifications", "plugins",
+                                                    "sources"].contains(key) {
             problems.append("config: unknown key \"\(key)\"")
         }
         if let modules = table["modules"] {
@@ -171,6 +176,9 @@ public struct ShepherdConfig: Sendable, Equatable {
             } else {
                 problems.append("config: plugins must be an object")
             }
+        }
+        if let sources = table["sources"] {
+            config.sources = SourcesConfig.read(sources, problems: &problems)
         }
         return (config, problems)
     }

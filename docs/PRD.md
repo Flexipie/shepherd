@@ -58,9 +58,8 @@ their workspace or project, time in state, tokens, and the transitions Shepherd 
 - Hooks and screen reads are allowed only inside a source adapter. Nothing outside the adapter
   knows how a source gets its state.
 - Screen reads (tmux `capture-pane`) match per-agent patterns. A state from a match is labelled
-  inferred; a state from a report or an API is not. Patterns are shipped in code for Claude Code
-  and Codex only, and move to config with the sources-in-config step, where users can edit or add
-  their own.
+  inferred; a state from a report or an API is not. Patterns for Claude Code and Codex ship as
+  built-in defaults (`ScreenPatterns.builtin`); config can edit them or add agents (see "Config").
 - Agent reports (`shepherd report`) are the generic way for any agent to state its own status,
   from its own hooks, rules or skills. Shepherd never edits an agent's settings without showing
   the change first.
@@ -563,10 +562,19 @@ config. `FileWatcher` watches the directory (atomic saves) and the file (in-plac
 for a missing directory to appear, debounces 200 ms, and delivers only when the bytes changed.
 
 - `plugins.disabled`: plugin ids to skip (see "Plugins").
+- `sources`: the sources `AppController` builds, in herd order; each entry is a source id
+  (`herdr`, `report`, `tmux`) or an object with `source` and that source's settings. Left out, all
+  three run in that order. The list is read at launch; a changed list is reported in the footer
+  as needing a restart. tmux's object takes `agents`: per kind, `process` (default: the kind) and
+  `blocked`, `working`, `idle` lists of regular expressions over the screen's last ten non-empty
+  lines, trimmed. A state applies when all of its patterns match, blocked before working before
+  idle, else unknown; `ChoiceParser` makes any kind blocked. A kind replaces the built-in of that
+  name or process; a second kind on one process is reported and skipped. Pattern changes reach
+  `TmuxSource.setScreens` on save, which lists the panes again. A bad pattern drops that kind (a
+  built-in one keeps its default); an unknown key is only reported.
 
 Planned: `questions` and
-`questions.askOnFinish` (see ROADMAP "ready to land"), `notifications`, and `sources` (see ROADMAP
-"any terminal agent"). Once released, config changes
+`questions.askOnFinish` (see ROADMAP "ready to land"). Once released, config changes
 are additive or migrated.
 
 ## Tokens

@@ -117,7 +117,8 @@ can be left out:
   "hotkeys": { "next": "ctrl+option+cmd+n", "palette": "option+space" },
   "agents": { "claude": { "args": [] } },
   "notifications": "off",
-  "plugins": { "disabled": [] }
+  "plugins": { "disabled": [] },
+  "sources": ["herdr", "report", "tmux"]
 }
 ```
 
@@ -144,6 +145,22 @@ can be left out:
   bar's footer says so.
 
 - `plugins.disabled`: plugin ids to leave off. Every plugin in the plugins folder is on otherwise.
+- `sources`: where agents come from, in the order they are listed: `herdr`, `report`
+  (`shepherd report`) and `tmux`. Left out, all three run. A change to the list applies the next
+  time Shepherd starts. tmux can be an object instead, to teach it an agent or change how it reads
+  one:
+
+  ```json
+  { "source": "tmux", "agents": {
+      "aider": { "process": "aider", "working": ["Thinking"], "idle": ["(?m)^>$"] } } }
+  ```
+
+  A pane is that agent when a process under its shell has the `process` name (by default the kind
+  itself). `blocked`, `working` and `idle` are lists of regular expressions, matched against the
+  last ten non-empty lines of the screen, each line trimmed; a state applies when every pattern in
+  its list is found, checked in that order. A numbered prompt (`1. Yes`) is blocked for any agent.
+  A kind replaces the built-in one of the same name or process (`claude`, `codex`); two of your
+  kinds on one process are reported. Pattern changes apply on save.
 
 A mistake never breaks the app: the panel footer says what is wrong, and a file that is not valid
 JSON keeps the last good config.

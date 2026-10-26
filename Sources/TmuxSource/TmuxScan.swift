@@ -21,7 +21,7 @@ struct TmuxScan: Sendable {
 
     /// Lists every socket's panes. The process table is read only when some pane exists, so a machine
     /// with no tmux server runs no process at all.
-    static func run(binary: String, directory: URL) -> TmuxScan {
+    static func run(binary: String, directory: URL, screens: ScreenStatus) -> TmuxScan {
         var scan = TmuxScan()
         var panes: [(TmuxClient, TmuxPane)] = []
         for socket in TmuxSockets.sockets(in: directory) {
@@ -34,9 +34,9 @@ struct TmuxScan: Sendable {
         guard !panes.isEmpty else { return scan }
         let table = ProcessTable.snapshot()
         for (client, pane) in panes {
-            guard let kind = table.names(under: pane.pid).first(where: { ScreenStatus.kinds.contains($0) }),
+            guard let kind = table.names(under: pane.pid).lazy.compactMap({ screens.kindByProcess[$0] }).first,
                   let screen = try? client.screen(pane.paneID) else { continue }
-            scan.agents.append(Agent(pane: pane, kind: kind, status: ScreenStatus.status(kind: kind, screen: screen)))
+            scan.agents.append(Agent(pane: pane, kind: kind, status: screens.status(kind: kind, screen: screen)))
         }
         return scan
     }
