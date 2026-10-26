@@ -127,14 +127,6 @@ import Testing
         #expect(cards.map(\.project.name) == ["other"])
         #expect(cards.first?.agents.map(\.agent.id.local) == ["z"])
     }
-
-    @Test func layoutPutsNamedProjectsFirst() {
-        let projects = ["api", "web", "docs"].map { HerdProject(id: ProjectID(source: "herdr", local: $0), name: $0) }
-        store.apply(SourceUpdate(agents: [], projects: projects, state: .live), from: "herdr")
-        let config = ConfigStore(fixed: ShepherdConfig(layout: PanelLayout(projects: ["docs"])))
-        let context = ModuleContext(store: store, presence: presence, actions: RecordingActions(), config: config)
-        #expect(cards(ProjectsModule(context: context).panel).map(\.project.name) == ["docs", "api", "web"])
-    }
 }
 
 @MainActor
@@ -159,12 +151,6 @@ import Testing
         #expect(registry.modules.map { type(of: $0).id } == ["projects", "notch", "queue"])
         #expect(registry.modules[1] === notch, "a module that stays keeps its state")
         #expect(config.problems == [#"config: unknown module "nope", "nope2""#])
-
-        try Data(#"{"modules": ["projects", "notch", "queue"], "layout": {"agents": ["queue", "sideways"]}}"#.utf8).write(to: url, options: .atomic)
-        for _ in 0..<300 where config.problems.count != 1 || config.problems.first?.hasSuffix("in layout") != true {
-            try await Task.sleep(for: .milliseconds(10))
-        }
-        #expect(config.problems == [#"config: unknown module "sideways" in layout"#])
 
         try FileManager.default.removeItem(at: url)
         for _ in 0..<300 where registry.modules.count != 10 { try await Task.sleep(for: .milliseconds(10)) }

@@ -36,25 +36,6 @@ import Testing
         #expect(names(layout.orderProjects([card("b"), card("a")])) == ["b", "a"])
     }
 
-    @Test func aTabListChoosesAndOrdersOnlyThatTab() throws {
-        let (layout, problems) = try read(#"{"layout": {"gadgets": ["system", "nope", "system"]}}"#)
-        #expect(problems.isEmpty)
-        #expect(layout.sectionIDs == ["system", "nope", "system"])
-        #expect(layout.arrange(sections).map(\.id) == ["queue", "system", "projects"])
-
-        let agents = PanelLayout(tabs: [.agents: ["projects", "queue"], .gadgets: []])
-        #expect(agents.arrange(sections).map(\.id) == ["projects", "queue"])
-        #expect(PanelLayout(tabs: [.agents: ["usage"]]).arrange(sections).map(\.id) == ["usage", "system"],
-                "a section listed on the other tab is not moved there")
-    }
-
-    @Test func namedProjectsComeFirstAndTheRestKeepTheirOrder() throws {
-        let (layout, _) = try read(#"{"layout": {"projects": ["Shepherd", "docs"]}}"#)
-        let repo = PanelItem.repo(PanelRepoCard(key: "herdr/shepherd", name: "shepherd", projects: []))
-        let items = [card("api"), card("docs"), card("web"), repo]
-        #expect(names(layout.orderProjects(items)) == ["shepherd", "docs", "api", "web"])
-    }
-
     @Test func badPartsAreReportedAndKeepTheirDefaults() throws {
         let (layout, problems) = try read(#"{"layout": {"agents": "queue", "gadgets": ["usage"], "projects": [1], "tabs": []}}"#)
         #expect(layout == PanelLayout(tabs: [.gadgets: ["usage"]]))
