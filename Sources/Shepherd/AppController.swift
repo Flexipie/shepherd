@@ -2,10 +2,12 @@ import AppKit
 import ClaudeSessionSource
 import HerdrSource
 import OpenUsageSource
+import ReportSource
 import ShellPlugins
 import ShepherdCore
 import ShepherdModules
 import SystemSource
+import TmuxSource
 
 /// Wires the store, sources, modules and surfaces together. Owns everything for the app's lifetime.
 @MainActor
@@ -60,6 +62,9 @@ final class AppController {
             // The log restores exact times in state, so read it before the first snapshot.
             let history = await log.load()
             store.add(HerdrSource(history: history))
+            store.add(ReportSource())
+            // tmux is optional: without it on the machine there is no source at all.
+            if let tmux = TmuxSource() { store.add(tmux) }
             context.plugins?.startEvents()
             store.start()
             actions.updatePresence()

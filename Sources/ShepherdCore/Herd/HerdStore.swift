@@ -151,9 +151,8 @@ public final class HerdStore {
 
     package func apply(_ update: SourceUpdate, from source: SourceID) {
         bySource[source] = update
-        let merged = sources.flatMap { bySource[$0.id]?.agents ?? [] }
+        let (merged, mergedProjects) = mergedHerd()
         if agents != merged { agents = merged }
-        let mergedProjects = sources.flatMap { bySource[$0.id]?.projects ?? [] }
         if projects != mergedProjects { projects = mergedProjects }
         let waiting = merged.filter(\.status.needsYou).sorted(by: Self.waitingOrder)
         if needsYou != waiting { needsYou = waiting }
@@ -168,8 +167,28 @@ public final class HerdStore {
         if !update.transitions.isEmpty {
             lastTransitions = update.transitions
             if let log { Task { await log.append(update.transitions) } }
-            publish(.transitions(update.transitions))
+            // A screen reading is a guess, so no event announces it: plugins run for reported changes only.
+            let inferred = Set(update.agents.filter(\.isInferred).map(\.id))
+            let announced = update.transitions.filter { !inferred.contains($0.agent) }
+            if !announced.isEmpty { publish(.transitions(announced)) }
         }
+    }
+
+    /// Every source's agents and projects. A screen reading (inferred) is dropped where a source that
+    /// reports the same agent has it, since a report says more than a screen. A project read from a
+    /// screen is dropped the same way once no agent is left in it.
+    private func mergedHerd() -> (agents: [HerdAgent], projects: [HerdProject]) {
+        let all = sources.flatMap { bySource[$0.id]?.agents ?? [] }
+        let reported = Set(all.filter { !$0.isInferred }.map(\.id.local))
+        let kept = all.filter { !($0.isInferred && reported.contains($0.id.local)) }
+        let allProjects = sources.flatMap { bySource[$0.id]?.projects ?? [] }
+        let reportedPaths = Set(allProjects.filter { !$0.isInferred }.compactMap(\.path))
+        let inUse = Set(kept.compactMap(\.projectID))
+        let projects = allProjects.filter { project in
+            let shadowed = project.path.map { reportedPaths.contains($0) } ?? false
+            return !(project.isInferred && shadowed && !inUse.contains(project.id))
+        }
+        return (kept, projects)
     }
 
     static func waitingOrder(_ a: HerdAgent, _ b: HerdAgent) -> Bool {

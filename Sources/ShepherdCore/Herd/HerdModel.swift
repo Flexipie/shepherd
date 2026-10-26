@@ -75,15 +75,18 @@ public struct HerdProject: Sendable, Equatable, Identifiable {
     public let repo: HerdRepo?
     /// The project's folder on disk, when the source knows.
     public let path: String?
+    /// Read from terminal screens rather than reported by the agent or its source's API.
+    public let isInferred: Bool
 
     public init(id: ProjectID, name: String, tokens: [String: String] = [:], isFocusedInSource: Bool = false,
-                repo: HerdRepo? = nil, path: String? = nil) {
+                repo: HerdRepo? = nil, path: String? = nil, isInferred: Bool = false) {
         self.id = id
         self.name = name
         self.tokens = tokens
         self.isFocusedInSource = isFocusedInSource
         self.repo = repo
         self.path = path
+        self.isInferred = isInferred
     }
 }
 
@@ -122,10 +125,18 @@ public struct HerdAgent: Sendable, Equatable, Identifiable {
     public let isFocusedInSource: Bool
     /// The agent's own session, when the source knows it.
     public let session: AgentSession?
+    /// The agent's latest message to the user, when the source has one.
+    public let message: String?
+    /// The question the agent is waiting on, when the source has one.
+    public let question: String?
+    /// Read from the agent's terminal screen, not reported by the agent. The state is a best
+    /// reading: surfaces may label it, and a notification or plugin event does not come from it.
+    public let isInferred: Bool
 
     public init(id: AgentID, kind: String? = nil, name: String, projectID: ProjectID? = nil, project: String = "",
                 status: HerdStatus, statusLabel: String? = nil, since: Since? = nil, tokens: [String: String] = [:],
-                isFocusedInSource: Bool = false, session: AgentSession? = nil) {
+                isFocusedInSource: Bool = false, session: AgentSession? = nil, message: String? = nil,
+                question: String? = nil, isInferred: Bool = false) {
         self.id = id
         self.kind = kind
         self.name = name
@@ -137,6 +148,9 @@ public struct HerdAgent: Sendable, Equatable, Identifiable {
         self.tokens = tokens
         self.isFocusedInSource = isFocusedInSource
         self.session = session
+        self.message = message
+        self.question = question
+        self.isInferred = isInferred
     }
 }
 

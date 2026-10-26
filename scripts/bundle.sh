@@ -13,6 +13,7 @@ app="$root/build/Shepherd.app"
 rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$bin" "$app/Contents/MacOS/Shepherd"
+cp "$(swift build --package-path "$root" -c "$config" --show-bin-path)/shepherd-report" "$app/Contents/MacOS/shepherd-report"
 
 cat >"$app/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>

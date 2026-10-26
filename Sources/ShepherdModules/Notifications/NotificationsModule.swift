@@ -38,7 +38,7 @@ public final class NotificationsModule: ShepherdModule {
             }
             guard transition.from != nil, transition.to == .blocked, wanted(from: transition.agent.source),
                   let agent = store.agents.first(where: { $0.id == transition.agent }),
-                  !context.presence.isLookingAt(agent) else { continue }
+                  !agent.isInferred, !context.presence.isLookingAt(agent) else { continue }
             let canReply = store.capabilities(of: agent.id).contains(.sendText)
             notifier.post(AgentNotice(agent: agent, reason: .blocked, canReply: canReply))
         }
