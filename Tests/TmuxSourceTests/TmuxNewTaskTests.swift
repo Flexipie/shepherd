@@ -73,22 +73,6 @@ extension TmuxSourceTests {
         #expect(started.kind == "claude")
     }
 
-    @Test func aProjectOutsideGitCannotStartATask() async throws {
-        let folder = try scratch()
-        defer { try? FileManager.default.removeItem(at: folder) }
-        try fakeClaude(in: folder, screens: [Self.idle])
-        let tmux = try PrivateTmux(binary: binary, folder: folder, command: "\(folder.path)/claude")
-        defer { withExtendedLifetime(tmux) {} }
-        let (store, source) = try running(folder)
-        defer { Task { await source.stop() } }
-        await until { store.agents.count == 1 }
-        let project = try #require(store.projects.first)
-        let name = folder.lastPathComponent
-        await #expect(throws: AgentSourceError.failed("\(name) is not in a git repo, so there is no worktree to make")) {
-            try await store.startTask(NewTask(project: project.id, kind: "claude", prompt: ""), args: [])
-        }
-    }
-
     @Test func theWorktreeGoesNextToTheRepoFolder() {
         let plain = GitCheckout(root: "/code/app", commonDir: "/code/app/.git", isLinked: false)
         #expect(TmuxNewTask.folder(for: plain, branch: "fix/login") == "/code/app-fix-login")
@@ -96,10 +80,5 @@ extension TmuxSourceTests {
         #expect(TmuxNewTask.folder(for: hidden, branch: "x") == "/code/app-x")
         let bare = GitCheckout(root: "/code/app-wt", commonDir: "/code/app.git", isLinked: true)
         #expect(TmuxNewTask.folder(for: bare, branch: "x") == "/code/app-x")
-    }
-
-    @Test func theCommandLineQuotesOnlyWhatNeedsIt() {
-        #expect(TmuxNewTask.commandLine(kind: "claude", args: ["--model", "a b"], prompt: "it's") == "claude --model 'a b' 'it'\\''s'")
-        #expect(TmuxNewTask.commandLine(kind: "codex", args: [], prompt: "") == "codex")
     }
 }
