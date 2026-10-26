@@ -41,7 +41,7 @@ import Testing
         try check("notch-alert", .alert(item), height: 32 + NotchPillView.contentHeight + 8)
     }
 
-    /// The bar at its natural height, as the app sizes it.
+    /// The bar at its natural height under ImageRenderer.
     func checkExpanded(_ name: String, _ content: PanelContent, stage: BarStage? = nil, offersNewTask: Bool = false,
                        tab: PanelTab = .agents, sourceLocation: SourceLocation = #_sourceLocation) throws {
         let width = metrics.body(.expanded, expandedHeight: 0).width
