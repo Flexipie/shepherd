@@ -163,3 +163,15 @@ Oldest first.
   git a pane's folder is still its project. A report from a folder inside a screen's checkout
   hides that checkout's card once no screen agent is left in it. `HerdAgent.cwd` keeps the pane's
   own folder, so a plugin still gets it as `SHEPHERD_CWD`.
+- Hook install (#32): `shepherd-report install claude` adds Shepherd's hooks to Claude Code's settings
+  (`$CLAUDE_CONFIG_DIR/settings.json`, else `~/.claude/settings.json`): `SessionStart` idle,
+  `UserPromptSubmit` and `PostToolUse` working, `Notification` on a permission prompt or an MCP question
+  blocked, `Stop` done, `SessionEnd` closed, each running this binary's absolute path with `report
+  --from-hook --kind claude`. It prints the change as a unified diff, asks before writing (`--yes` when
+  stdin is not a terminal, `--print` to only show it), copies the file to
+  `settings.json.shepherd-backup-<time>`, and writes through a symlink so a dotfiles link stays. Only
+  hook entries whose program is `shepherd-report` or `shepherd` followed by `report` are added or
+  removed; installing again replaces an older path and is otherwise a no-op. `uninstall claude` removes
+  exactly those entries, and the groups and events they leave empty. The file is read with key order
+  and numbers kept and printed as Claude Code writes it, so the diff holds only Shepherd's lines. A
+  file that is not strict JSON is refused untouched. Codex waits until its `notify` format is confirmed.

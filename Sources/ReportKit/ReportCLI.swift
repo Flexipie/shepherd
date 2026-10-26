@@ -19,7 +19,7 @@ public enum ReportCLI {
     public static func run(arguments: [String], stdin: () -> Data, environment: [String: String],
                            cwd: String, now: Date = Date()) -> Outcome {
         guard arguments.first == "report" else {
-            return Outcome(exitCode: 2, output: usage)
+            return Outcome(exitCode: 2, output: "\(usage)\n\(InstallCLI.usage)")
         }
         let options: Options
         do {

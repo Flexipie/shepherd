@@ -1,11 +1,28 @@
+import Darwin
 import Foundation
 import ReportKit
 
-let outcome = ReportCLI.run(
-    arguments: Array(CommandLine.arguments.dropFirst()),
-    stdin: { FileHandle.standardInput.readDataToEndOfFile() },
-    environment: ProcessInfo.processInfo.environment,
-    cwd: FileManager.default.currentDirectoryPath)
+let arguments = Array(CommandLine.arguments.dropFirst())
+let outcome: ReportCLI.Outcome
+if arguments.first == "install" || arguments.first == "uninstall" {
+    outcome = InstallCLI.run(
+        arguments: arguments,
+        environment: ProcessInfo.processInfo.environment,
+        executable: Bundle.main.executablePath ?? CommandLine.arguments[0],
+        show: { print($0, terminator: ""); fflush(stdout) },
+        confirm: {
+            guard isatty(STDIN_FILENO) != 0 else { return nil }
+            print("Write this change? [y/N] ", terminator: "")
+            fflush(stdout)
+            return ["y", "yes"].contains(readLine()?.lowercased().trimmingCharacters(in: .whitespaces) ?? "")
+        })
+} else {
+    outcome = ReportCLI.run(
+        arguments: arguments,
+        stdin: { FileHandle.standardInput.readDataToEndOfFile() },
+        environment: ProcessInfo.processInfo.environment,
+        cwd: FileManager.default.currentDirectoryPath)
+}
 if !outcome.output.isEmpty {
     FileHandle.standardError.write(Data((outcome.output + "\n").utf8))
 }
