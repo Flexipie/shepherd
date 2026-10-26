@@ -157,7 +157,6 @@ public final class TmuxSource: AgentSource {
     private static func hostingApps(of pids: [pid_t]) -> [pid_t] {
         TerminalLocator.hostingApps(
             of: pids,
-            parent: TerminalLocator.parent(of:),
             isApp: { NSRunningApplication(processIdentifier: $0)?.activationPolicy == .regular })
     }
 
