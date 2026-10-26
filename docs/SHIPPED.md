@@ -195,3 +195,8 @@ Oldest first.
   The hosting view built real AppKit text fields, whose fitting height came out a few points off
   under load (#54), so a stage or new task snapshot failed on size alone. The height is rounded up
   like `fittingSize`, so every reference is unchanged.
+- Idle budget check: `make perf` (`scripts/perf.sh`) builds the release app, runs it against fake
+  herdr with only the herdr source and every path in a temp folder, and fails if CPU over a 30 s
+  idle window averages more than 0.5% or the physical footprint is over 60 MB (`PERF_SECONDS`,
+  `PERF_CPU_LIMIT`, `PERF_MEMORY_LIMIT_MB` override them). First run: 0.00% CPU, 14.0 MB. The
+  footprint after opening the bar and the palette is still measured by hand.

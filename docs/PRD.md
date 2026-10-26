@@ -607,8 +607,11 @@ against the panel is darkened until it reads. `rows_by_agent` is not read yet.
   go to `.build/snapshot-failures/`). Anti-aliasing differs between OS builds, so comparison is
   strict only on the build in `RECORDED_ON`; elsewhere, such as CI, views are rendered and uploaded
   as an artifact. `SHEPHERD_RECORD_SNAPSHOTS=1` re-records.
-- **Idle budget**: a check that runs the app against fake herdr and fails if idle CPU or memory
-  exceed the budget.
+- **Idle budget**: `make perf` (`scripts/perf.sh`) runs the release app against fake herdr, with
+  only the herdr source and every path in a temp folder, and fails if CPU over a 30 s idle window
+  averages more than 0.5% or the physical footprint is over 60 MB. `PERF_SECONDS`,
+  `PERF_CPU_LIMIT` and `PERF_MEMORY_LIMIT_MB` override them. The footprint after opening the bar
+  and the palette is still measured by hand.
 - The UI is still checked by hand against a real herdr before a feature ships (see VISION).
 
 ## Performance budget
