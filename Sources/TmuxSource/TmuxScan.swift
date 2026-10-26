@@ -20,6 +20,8 @@ struct TmuxScan: Sendable {
 
     var servers: [Server] = []
     var agents: [Agent] = []
+    /// Every pane on every server, by `PaneObservation.key`, agent or not.
+    var panes: Set<String> = []
 
     /// Lists every socket's panes. The process table is read only when some pane exists, so a machine
     /// with no tmux server runs no process at all.
@@ -32,6 +34,7 @@ struct TmuxScan: Sendable {
             guard let found = try? client.panes() else { continue }
             scan.servers.append(Server(socket: socket, clients: (try? client.clients()) ?? []))
             panes += found.map { (client, $0) }
+            scan.panes.formUnion(found.map { PaneObservation.key(socket: socket, paneID: $0.paneID) })
         }
         guard !panes.isEmpty else { return scan }
         let table = ProcessTable.snapshot()

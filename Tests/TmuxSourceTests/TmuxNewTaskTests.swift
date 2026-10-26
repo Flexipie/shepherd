@@ -41,10 +41,8 @@ extension TmuxSourceTests {
         let (repo, bin) = try repoAndRecordingClaude(in: folder)
         let tmux = try PrivateTmux(binary: binary, folder: folder, command: "cd '\(repo.path)' && exec '\(bin.path)/claude'")
         defer { withExtendedLifetime(tmux) {} }
-        // New windows get a plain shell that finds the fake claude. The default is a login shell, whose
-        // profile would reset PATH and find a real one.
-        try PrivateTmux.run(binary, ["-S", tmux.socket, "set-option", "-g", "default-command",
-                                     "env PATH='\(bin.path):/usr/bin:/bin' /bin/sh"])
+        // The new window's command finds the fake claude on the server's PATH.
+        try PrivateTmux.run(binary, ["-S", tmux.socket, "set-environment", "-g", "PATH", "\(bin.path):/usr/bin:/bin"])
         // The pane changes folder before the first agent runs; a scan before that would see the wrong one.
         let args = folder.appending(path: "args")
         #expect(tmux.until { FileManager.default.fileExists(atPath: args.path) })
@@ -56,22 +54,27 @@ extension TmuxSourceTests {
         #expect(store.canStartTask(in: project.id))
 
         let agent = try await store.startTask(
-            NewTask(project: project.id, branch: "fix/login", kind: "claude", prompt: "it's broken"),
+            NewTask(project: project.id, branch: "fix/login", kind: "claude", prompt: Self.longPrompt),
             args: ["--model", "a b"])
+        // Before any scan lists it, the new agent can already be read, as its stage does at once.
+        _ = try await store.read(agent, lines: 5)
 
         #expect(agent.source == "tmux")
         #expect(agent.local.hasPrefix("tmux:\(tmux.socket):%"))
         let worktree = folder.appending(path: "repo-fix-login")
         #expect(FileManager.default.fileExists(atPath: worktree.appending(path: ".git").path))
         #expect(FileManager.default.fileExists(atPath: repo.appending(path: ".git/refs/heads/fix/login").path))
-        await until { (try? String(contentsOf: args, encoding: .utf8)) == "--model\na b\nit's broken\n" }
+        await until { (try? String(contentsOf: args, encoding: .utf8)) == "--model\na b\n\(Self.longPrompt)\n" }
         let recorded = try String(contentsOf: args, encoding: .utf8)
-        #expect(recorded == "--model\na b\nit's broken\n")
+        #expect(recorded == "--model\na b\n\(Self.longPrompt)\n")
         await until { store.agents.contains { $0.id == agent } }
         let started = try #require(store.agents.first { $0.id == agent })
         #expect(started.cwd == worktree.path)
         #expect(started.kind == "claude")
     }
+
+    /// Past the terminal's 1 KB line limit, with a quote, a tab and a backslash: it must reach the agent whole.
+    static let longPrompt = "it's broken:\tsee \\n " + String(repeating: "the login page loops. ", count: 80)
 
     @Test func theWorktreeGoesNextToTheRepoFolder() {
         let plain = GitCheckout(root: "/code/app", commonDir: "/code/app/.git", isLinked: false)
@@ -80,5 +83,7 @@ extension TmuxSourceTests {
         #expect(TmuxNewTask.folder(for: hidden, branch: "x") == "/code/app-x")
         let bare = GitCheckout(root: "/code/app-wt", commonDir: "/code/app.git", isLinked: true)
         #expect(TmuxNewTask.folder(for: bare, branch: "x") == "/code/app-x")
+        let submodule = GitCheckout(root: "/code/app/lib", commonDir: "/code/app/.git/modules/lib", isLinked: false)
+        #expect(TmuxNewTask.folder(for: submodule, branch: "x") == "/code/app/lib-x")
     }
 }

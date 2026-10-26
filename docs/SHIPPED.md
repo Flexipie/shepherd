@@ -223,8 +223,8 @@ Oldest first.
   (`task_complete.last_agent_message`) is a follow-up.
 ||||||| parent of 1323f45 (tmux: start a new task in a git worktree and a new window)
 - tmux starts new tasks (#34): the "+" and the palette's "New task" now work for tmux projects.
-  `git worktree add -b` from the project's checkout into `<repo>-<branch>` next to the repo, a
-  `new-window -d` after one of the project's agents, and `<kind> <args> '<prompt>'` typed into its
-  shell, the prompt as the agent's first argument. A left-out branch is the kind and a random
-  suffix; a project outside git says so. A step that fails after the worktree was made says it is
-  there.
+  `git worktree add -b` from the project's checkout into `<repo>-<branch>` next to the repo, then a
+  `new-window -d` after one of the project's agents running the agent with its args and the prompt
+  as separate arguments (no shell quoting, any length), then the user's shell. The window gets the
+  server's PATH, not the app's. A left-out branch is the kind and a random suffix; a project outside
+  git says so. A step that fails after the worktree was made says it is there.

@@ -37,6 +37,10 @@ public final class TmuxSource: AgentSource {
     /// server is gone, so a client that cannot attach does not restart on every listing.
     private var detached: Set<String> = []
     private var observations: [String: PaneObservation] = [:]
+    /// Panes a task started that no scan has shown as an agent yet, by key, so the new agent's
+    /// stage can read and jump to it at once. `listing` is the last listing requested when it
+    /// started: only a later one can have seen the pane.
+    private var started: [String: (socket: String, paneID: String, listing: Int)] = [:]
     private var tracker = PaneTracker()
     /// The terminals' clients: Shepherd's own control clients are left out.
     private var clients: [TmuxAttachedClient] = []
@@ -103,17 +107,18 @@ public final class TmuxSource: AgentSource {
     // MARK: Actions
 
     public func focus(_ agent: AgentID) async throws {
-        let pane = try target(agent)
+        let pane = try pane(agent)
         let client = TmuxClient(binary: binary, socket: pane.socket)
+        // A pane id names its window too, so a pane no scan has listed yet can be shown.
         try await tmux {
-            try client.selectWindow(pane.windowID)
+            try client.selectWindow(pane.paneID)
             try client.selectPane(pane.paneID)
         }
-        if activatesTerminal { activateTerminal(session: pane.session) }
+        if activatesTerminal { activateTerminal(session: observations[agent.local]?.session) }
     }
 
     public func read(_ agent: AgentID, lines: Int) async throws -> String {
-        let pane = try target(agent)
+        let pane = try pane(agent)
         let client = TmuxClient(binary: binary, socket: pane.socket)
         return try await tmux { try client.history(pane.paneID, lines: lines) }
     }
@@ -139,10 +144,10 @@ public final class TmuxSource: AgentSource {
         try await sendText(agent, text)
     }
 
-    /// `git worktree add` off the project's checkout, a window in the session of one of its agents,
-    /// then the agent's command typed into that window's shell with the prompt as its first
-    /// argument, so it waits through anything the agent asks first. The shell stays when the agent
-    /// exits. A step that fails after the worktree was made says it is there.
+    /// `git worktree add` off the project's checkout, then a window in the session of one of its
+    /// agents running the agent with the prompt as its first argument, so it waits through anything
+    /// the agent asks first (`TmuxNewTask.command`). A step that fails after the worktree was made
+    /// says it is there.
     public func startTask(_ task: NewTask, args: [String]) async throws -> AgentID {
         let panes = observations.values.filter { $0.projectPath == task.project.local }.sorted { $0.key < $1.key }
         guard let pane = panes.first(where: \.isFocused) ?? panes.first else {
@@ -156,22 +161,20 @@ public final class TmuxSource: AgentSource {
         let folder = TmuxNewTask.folder(for: checkout, branch: branch)
         try await tmux { try TmuxNewTask.addWorktree(git: git, checkout: checkout.root, branch: branch, folder: folder) }
         let client = TmuxClient(binary: binary, socket: pane.socket)
+        let command = TmuxNewTask.command(kind: task.kind, args: args, prompt: task.prompt)
         let paneID: String
         do {
-            paneID = try await tmux { try client.newWindow(after: pane.windowID, folder: folder, name: branch) }
-        } catch {
-            throw AgentSourceError.failed("Created worktree \(branch) at \(folder), but its tmux window did not open: \(error)")
-        }
-        let line = TmuxNewTask.commandLine(kind: task.kind, args: args, prompt: task.prompt)
-        do {
-            try await tmux {
-                try client.sendLiteral(paneID, line)
-                try client.sendKeys(paneID, ["enter"])
+            paneID = try await tmux {
+                // Shepherd's own PATH is short when it was opened from Finder; the server's is the user's.
+                let path = client.globalEnvironment("PATH")
+                return try client.newWindow(after: pane.windowID, folder: folder, name: branch, path: path, command: command)
             }
         } catch {
-            throw AgentSourceError.failed("Created worktree \(branch) and its tmux window, but \(task.kind) did not start: \(error)")
+            throw AgentSourceError.failed("Created worktree \(branch) at \(folder), but \(task.kind) did not start: \(error)")
         }
-        return AgentID(source: id, local: PaneObservation.key(socket: pane.socket, paneID: paneID))
+        let key = PaneObservation.key(socket: pane.socket, paneID: paneID)
+        started[key] = (pane.socket, paneID, lastRequested)
+        return AgentID(source: id, local: key)
     }
 
     /// The terminals attached to the servers. Used to tell whether the user is already looking at an agent.
@@ -180,7 +183,7 @@ public final class TmuxSource: AgentSource {
     }
 
     /// Brings forward the terminal of a client on the agent's session, or of any client if none is on it.
-    private func activateTerminal(session: String) {
+    private func activateTerminal(session: String?) {
         let onSession = clients.filter { $0.session == session }.map(\.pid)
         let pids = onSession.isEmpty ? clients.map(\.pid) : onSession
         guard let pid = Self.hostingApps(of: pids).first, let terminal = NSRunningApplication(processIdentifier: pid) else { return }
@@ -192,6 +195,13 @@ public final class TmuxSource: AgentSource {
         TerminalLocator.hostingApps(
             of: pids,
             isApp: { NSRunningApplication(processIdentifier: $0)?.activationPolicy == .regular })
+    }
+
+    /// Where an agent's pane is: a listed agent, or one a task just started.
+    private func pane(_ agent: AgentID) throws -> (socket: String, paneID: String) {
+        if let observation = observations[agent.local] { return (observation.socket, observation.paneID) }
+        guard let pane = started[agent.local] else { throw AgentSourceError.failed("that agent is no longer in tmux") }
+        return (pane.socket, pane.paneID)
     }
 
     private func target(_ agent: AgentID) throws -> PaneObservation {
@@ -257,6 +267,10 @@ public final class TmuxSource: AgentSource {
                 status: agent.status, workingSeen: agent.status == .working ? now : nil)
         }
         observations = current
+        // A started pane stops being one once a later scan lists it as an agent, or not at all.
+        started = started.filter { key, pane in
+            pane.listing >= lastApplied || (current[key] == nil && scan.panes.contains(key))
+        }
         publish(at: now)
         // Output printed before a new control client attached is never sent to it. One more listing,
         // once it is attached, reads those screens.
