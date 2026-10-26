@@ -97,6 +97,7 @@ extension PluginTarget {
                 env["SHEPHERD_SESSION_ID"] = session.id
                 if let cwd = session.cwd { env["SHEPHERD_CWD"] = cwd }
             }
+            if env["SHEPHERD_CWD"] == nil, let cwd = agent.cwd { env["SHEPHERD_CWD"] = cwd }
             if let project = agent.projectID.flatMap({ id in store.projects.first { $0.id == id } }) { add(project) }
         }
         if env["SHEPHERD_CWD"] == nil, let path = env["SHEPHERD_PROJECT_PATH"] { env["SHEPHERD_CWD"] = path }

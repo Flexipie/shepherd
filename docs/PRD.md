@@ -97,7 +97,8 @@ As built:
   are kept, since they are somewhere to go. Project tokens stay on the project and agent tokens
   on the agent. `HerdProject.repo` (`HerdRepo`: a key, a name, whether it is a linked checkout)
   says which git repo a project is a checkout of; herdr fills it from the workspace's
-  `worktree`, and a future source with git checkouts can too.
+  `worktree`, and tmux from `GitCheckout` (the `.git` entries on disk, with the common git dir
+  as the key).
 - `HerdrSource` is the only target that imports both `HerdrKit` and `ShepherdCore`. It adapts
   herdr's session to the herd model, implements focus (`agent.focus`, then the hosting terminal
   forward) and project focus (`workspace.focus`, then the terminal), reports the terminal as its
@@ -150,7 +151,7 @@ than". `SHEPHERD_TRANSITION_LOG` points it elsewhere for development runs.
 | `ReportKit` | The agent report file format, the spool folder (atomic writes, reads, removal), agent identity and the `shepherd-report` command's logic. Foundation and CryptoKit only. No UI, no Shepherd. |
 | `ReportSource` | Agent reports as a source: watches the spool and maps reports to the herd model through a pure tracker. |
 | `TmuxKit` | tmux's command line (`list-panes`, `capture-pane`, `send-keys`, `select-pane`), control mode (`tmux -C`) and the process table (`ps`). Foundation only. No UI, no Shepherd. |
-| `TmuxSource` | tmux as a source: panes whose process tree runs a known agent, read from their screens and labelled inferred. Watches the socket folder and control clients; no polling. |
+| `TmuxSource` | tmux as a source: panes whose process tree runs a known agent, read from their screens and labelled inferred. A pane's project is its git checkout (or its folder outside git), with the checkout's repo. Watches the socket folder and control clients; no polling. |
 | `ShepherdModules` | Built-in features, one folder each, listed in `BuiltinModules.all`. |
 | `ShepherdUI` | SwiftUI views, values in, no windows, no glass, so every view can be snapshot tested. Three layers: `Components` (shared pieces: row chrome and the choosable row, the card fill, glyphs, tokens), `Items` (one view per `PanelItem` kind, drawn the same on every surface, with `PanelItemView` the one place a kind meets its view) and `Surfaces` (the panel, the notch, the palette: layout, keyboard and the clock, never their own item views). |
 | `Shepherd` | The app: status item, panel window, notch surface window, hotkey, later notifications and the palette. Thin. |

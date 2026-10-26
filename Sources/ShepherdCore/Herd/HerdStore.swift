@@ -176,7 +176,8 @@ public final class HerdStore {
 
     /// Every source's agents and projects. A screen reading (inferred) is dropped where a source that
     /// reports the same agent has it, since a report says more than a screen. A project read from a
-    /// screen is dropped the same way once no agent is left in it.
+    /// screen is dropped the same way once no agent is left in it and a reported project is in its
+    /// folder (a screen's project is a whole checkout, a report's the agent's own folder).
     private func mergedHerd() -> (agents: [HerdAgent], projects: [HerdProject]) {
         let all = sources.flatMap { bySource[$0.id]?.agents ?? [] }
         let reported = Set(all.filter { !$0.isInferred }.map(\.id.local))
@@ -185,7 +186,9 @@ public final class HerdStore {
         let reportedPaths = Set(allProjects.filter { !$0.isInferred }.compactMap(\.path))
         let inUse = Set(kept.compactMap(\.projectID))
         let projects = allProjects.filter { project in
-            let shadowed = project.path.map { reportedPaths.contains($0) } ?? false
+            let shadowed = project.path.map { path in
+                reportedPaths.contains { $0 == path || $0.hasPrefix(path.hasSuffix("/") ? path : path + "/") }
+            } ?? false
             return !(project.isInferred && shadowed && !inUse.contains(project.id))
         }
         return (kept, projects)

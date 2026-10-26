@@ -12,6 +12,8 @@ struct PaneObservation: Equatable {
     let kind: String
     /// The pane's folder, possibly empty.
     let path: String
+    /// The git checkout `path` is in, nil outside git.
+    var checkout: GitCheckout? = nil
     let isFocused: Bool
     /// The state the screen showed at the last read, before settling.
     var status: HerdStatus
@@ -21,6 +23,12 @@ struct PaneObservation: Equatable {
     /// The same key `ReportIdentity` gives a pane, so a report and a screen reading of one pane meet.
     static func key(socket: String, paneID: String) -> String {
         "tmux:\(socket):\(paneID)"
+    }
+
+    /// The agent's project folder: its checkout's top folder in git, else the pane's own folder,
+    /// so panes anywhere in one checkout share a project, as herdr's panes share a workspace.
+    var projectPath: String {
+        checkout?.root ?? path
     }
 }
 
@@ -136,25 +144,30 @@ struct PaneTracker {
 
     private static func transition(_ observation: PaneObservation, from: HerdStatus?, to: HerdStatus?, at: Date) -> HerdTransition {
         HerdTransition(agent: AgentID(source: source, local: observation.key), kind: observation.kind,
-                       project: projectName(observation.path), from: from, to: to, at: at)
+                       project: projectName(observation.projectPath), from: from, to: to, at: at)
     }
 
     private static func agent(_ entry: Entry) -> HerdAgent {
         let observation = entry.observation
+        let path = observation.projectPath
         return HerdAgent(id: AgentID(source: source, local: observation.key), kind: observation.kind,
                          name: observation.kind,
-                         projectID: observation.path.isEmpty ? nil : ProjectID(source: source, local: observation.path),
-                         project: projectName(observation.path), status: entry.shown, since: Since(entry.since, .exact),
-                         isFocusedInSource: observation.isFocused, isInferred: true)
+                         projectID: path.isEmpty ? nil : ProjectID(source: source, local: path),
+                         project: projectName(path), status: entry.shown, since: Since(entry.since, .exact),
+                         isFocusedInSource: observation.isFocused, cwd: observation.path.isEmpty ? nil : observation.path,
+                         isInferred: true)
     }
 
-    /// One project per distinct folder, in the agents' order.
+    /// One project per checkout, or per folder outside git, in the agents' order. Checkouts of one
+    /// repo carry its key, so the projects module groups them the way it groups herdr's worktrees.
     private static func projects(_ observations: [PaneObservation]) -> [HerdProject] {
         var seen = Set<String>()
         var projects: [HerdProject] = []
-        for observation in observations where !observation.path.isEmpty && seen.insert(observation.path).inserted {
-            projects.append(HerdProject(id: ProjectID(source: source, local: observation.path),
-                                        name: projectName(observation.path), path: observation.path, isInferred: true))
+        for observation in observations {
+            let path = observation.projectPath
+            guard !path.isEmpty, seen.insert(path).inserted else { continue }
+            projects.append(HerdProject(id: ProjectID(source: source, local: path), name: projectName(path),
+                                        repo: observation.checkout?.repo, path: path, isInferred: true))
         }
         return projects
     }

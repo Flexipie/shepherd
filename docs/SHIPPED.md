@@ -154,3 +154,12 @@ Oldest first.
   `idle` regex lists over the screen's footer. Users edit a built-in kind or add their own, and
   pattern edits apply on save. A changed list of sources applies at the next launch and the
   footer says so.
+- tmux agents grouped by git repo and worktree (#33): `GitCheckout` (in `ShepherdCore`) reads the
+  `.git` entries above a folder with no `git` process: a `.git` folder is a main checkout, a
+  `.git` file points to a linked worktree whose `commondir` names the repo's git dir, and that
+  common dir (its real path) is the repo key. A tmux pane's project is now its checkout's top
+  folder, so panes anywhere in one checkout share a card, and it carries the repo, so the projects
+  module groups a repo's main checkout and worktrees into one card as it does for herdr. Outside
+  git a pane's folder is still its project. A report from a folder inside a screen's checkout
+  hides that checkout's card once no screen agent is left in it. `HerdAgent.cwd` keeps the pane's
+  own folder, so a plugin still gets it as `SHEPHERD_CWD`.

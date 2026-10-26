@@ -219,7 +219,7 @@ public final class TmuxSource: AgentSource {
             let key = PaneObservation.key(socket: pane.socket, paneID: pane.paneID)
             current[key] = PaneObservation(
                 key: key, socket: pane.socket, paneID: pane.paneID, windowID: pane.windowID, session: pane.session,
-                kind: agent.kind, path: pane.path,
+                kind: agent.kind, path: pane.path, checkout: agent.checkout,
                 isFocused: pane.isActive && clients.contains { $0.session == pane.session },
                 status: agent.status, workingSeen: agent.status == .working ? now : nil)
         }
