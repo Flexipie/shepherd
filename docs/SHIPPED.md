@@ -237,3 +237,10 @@ Oldest first.
   says so. It reads and writes nothing of the user's: no herdr, tmux, config, transition log,
   plugins, notifications, usage or session files; the socket and spool are fixed paths under `/tmp`. The
   first-run guide's last card points to it. Idle in demo: 0.0% CPU, 24 MB footprint.
+- README for any terminal agent (#39, and the text of #58): it opens with a short pitch and the
+  notch bar's snapshot, then a table of where agents come from (tmux, agent reports, herdr) and
+  what each gives, stating tmux as what the screen features need. Install is build from source
+  (`make app`, then the hooks with `shepherd-report install claude`), with no signed build or
+  Homebrew yet. A Privacy section lists the one loopback request (OpenUsage), no telemetry, and
+  every file Shepherd reads and writes, each checked against the code. The feature tour is tighter
+  and no longer assumes herdr.
