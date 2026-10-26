@@ -40,7 +40,7 @@ extension PanelContent {
     /// The tab actually shown: `tab`, or Agents when there are no tabs.
     public func shownTab(_ tab: PanelTab) -> PanelTab { hasTabs ? tab : .agents }
 
-    /// The sections on the tab shown for `tab`, in module order.
+    /// The sections on the tab shown for `tab`, in module order or as `layout` arranged them.
     public func sections(on tab: PanelTab) -> [PanelSection] {
         let shown = shownTab(tab)
         return sections.filter { $0.tab == shown }

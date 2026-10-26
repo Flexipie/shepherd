@@ -26,7 +26,8 @@ public final class ProjectsModule: ShepherdModule {
             let project = HerdProject(id: ProjectID(source: source.id, local: ""), name: source.displayName)
             cards.append(card(project, agents: loose.filter { $0.id.source == source.id }, action: nil))
         }
-        return PanelSection(id: Self.id, title: "Projects", items: context.config.config.layout.orderProjects(Self.grouped(cards)), emptyText: "No projects")
+        let items = context.config.config.layout.orderProjects(Self.grouped(cards))
+        return PanelSection(id: Self.id, title: "Projects", items: items, emptyText: "No projects")
     }
 
     /// Cards of two or more checkouts of one repo become one repo card where the first of them

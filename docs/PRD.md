@@ -276,10 +276,10 @@ needs-you queue and the project cards, and **Gadgets**, usage, This Mac and futu
 section says its tab (`PanelSection.tab`, Agents by default), so a new gadget needs no list. A
 surface draws the tab bar, then only the current tab's sections, and its keyboard navigation
 covers only those. Each opening starts on Agents; the tab is not saved. ⌘1 and ⌘2 switch tabs
-while the surface has the keyboard. With no section off Agents (every gadget turned off) there
-is no tab bar. The stage and the "+" live on Agents; switching away closes a stage. The footer
-shows on both tabs. Each surface reports its tab to `Presence`, so a module reads only while
-its tab shows (`Presence.isShowing(_:)`).
+while the surface has the keyboard. With no section off Agents (every gadget turned off, or
+hidden by `layout.gadgets`) there is no tab bar. The stage and the "+" live on Agents; switching
+away closes a stage. The footer shows on both tabs. Each surface reports its tab to `Presence`,
+so a module reads only while its tab shows (`Presence.isShowing(_:)`).
 
 - **Menu bar.** Counts (working, needs you) and a disconnected state. On a MacBook a crowded menu
   bar can hide the item behind the notch, which is one more reason the notch surface exists.
@@ -568,13 +568,15 @@ Every key is optional and a missing file means defaults. As built:
 - `layout`: what the menu bar panel and the notch bar show, without turning modules off.
   `agents` and `gadgets` list section (module) ids for that tab, in order; a section of that tab
   left out is hidden, and a tab with no list shows all of its sections in `modules` order. A list
-  orders only its own tab's sections (an id of a section on the other tab is ignored), and the bar
-  keeps the queue pinned on the left wherever it is listed. Hiding every gadget hides the tabs,
-  so nothing reads for Gadgets. `projects` lists project or repo names, matched without regard to
-  case, whose cards come first in that order; the rest follow in source order, and a name with no
-  project is not an error (projects come and go). An id that names no module is reported under
-  `layout`. A hidden gadget's module still runs while its tab shows; leave it out of `modules` to
-  stop it.
+  orders only its own tab's sections: an id of a section on the other tab is not moved and is
+  reported in the footer. The bar keeps the queue pinned on the left wherever it is listed.
+  Hiding every gadget hides the tabs, like turning every gadget off. `projects` lists names,
+  matched without regard to case, whose cards come first in that order; a card answers to its
+  project's and its repo's names (a repo card also to each checkout's), so a project keeps its
+  place when a second checkout makes it a repo card. The rest follow in source order, and a name
+  with no project is not an error (projects come and go). An id that names no module is reported
+  under `layout`. A hidden gadget's module still runs while its tab shows; leave it out of
+  `modules` to stop it.
 - `tokens`: `projects` and `agents`, each a list of lines in herdr's sidebar syntax (see "Tokens").
 - `hotkeys.next`: the "next" hotkey, `null` to turn it off.
 - `hotkeys.palette`: the palette's hotkey (default `option+space`), `null` to turn it

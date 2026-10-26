@@ -33,17 +33,29 @@ public struct PanelLayout: Sendable, Equatable {
         }
     }
 
+    /// A listed id whose section sits on the other tab, which a list cannot move it to: said in
+    /// the footer, since its own tab would otherwise just lose sections without a word.
+    public func problems(_ sections: [PanelSection]) -> [String] {
+        PanelTab.allCases.flatMap { tab in
+            (tabs[tab] ?? []).compactMap { id in
+                sections.first { $0.id == id && $0.tab != tab }.map { "config: layout.\(tab.rawValue): \"\(id)\" is on the \($0.tab.title) tab" }
+            }
+        }
+    }
+
     /// Project and repo cards named in `projects` first, in that order, then the rest as they were.
+    /// A card answers to its project's name and its repo's, so a project keeps its place when a
+    /// second checkout turns it into a repo card.
     public func orderProjects(_ items: [PanelItem]) -> [PanelItem] {
         guard !projects.isEmpty else { return items }
         let names = projects.map { $0.lowercased() }
         func rank(_ item: PanelItem) -> Int {
-            let name: String? = switch item {
-            case .project(let card): card.project.name
-            case .repo(let card): card.name
-            default: nil
+            let candidates: [String] = switch item {
+            case .project(let card): [card.project.name] + (card.project.repo.map { [$0.name] } ?? [])
+            case .repo(let card): [card.name] + card.projects.map(\.project.name)
+            default: []
             }
-            return name.flatMap { names.firstIndex(of: $0.lowercased()) } ?? names.count
+            return candidates.compactMap { names.firstIndex(of: $0.lowercased()) }.min() ?? names.count
         }
         return items.enumerated().sorted { (rank($0.element), $0.offset) < (rank($1.element), $1.offset) }.map(\.element)
     }
