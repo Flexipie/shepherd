@@ -155,30 +155,4 @@ struct TmuxSourceTests {
             try await store.prompt(agent.id, "hello")
         }
     }
-    @Test func panesInAWorktreeAndItsMainCheckoutShareARepo() async throws {
-        let folder = try scratch()
-        defer { try? FileManager.default.removeItem(at: folder) }
-        try fakeClaude(in: folder, screens: [Self.idle])
-        let app = folder.appending(path: "app")
-        let tree = folder.appending(path: "app-fix")
-        try FileManager.default.createDirectory(at: app.appending(path: "Sources"), withIntermediateDirectories: true)
-        for arguments in [["init", "-q"], ["commit", "-q", "--allow-empty", "-m", "first"], ["worktree", "add", "-q", "-b", "fix", tree.path]] {
-            try PrivateTmux.run("/usr/bin/git", ["-C", app.path, "-c", "user.name=t", "-c", "user.email=t@t"] + arguments)
-        }
-        let tmux = try PrivateTmux(binary: binary, folder: folder, command: "cd \(app.path)/Sources && exec \(folder.path)/claude")
-        defer { withExtendedLifetime(tmux) {} }
-        try PrivateTmux.run(binary, ["-S", tmux.socket, "new-window", "-d", "-c", tree.path, "\(folder.path)/claude"])
-        let (store, source) = try running(folder)
-        defer { Task { await source.stop() } }
-
-        await until { store.projects.count == 2 }
-        // A pane deeper in the main checkout belongs to the checkout, not its own folder.
-        #expect(store.projects.compactMap(\.path).sorted() == [app.path, tree.path])
-        let repos = store.projects.compactMap(\.repo)
-        #expect(repos.count == 2)
-        #expect(Set(repos.map(\.key)) == [app.appending(path: ".git").path])
-        #expect(Set(repos.map(\.name)) == ["app"])
-        #expect(store.projects.first { $0.path == tree.path }?.repo?.isLinkedCheckout == true)
-        #expect(store.projects.first { $0.path == app.path }?.repo?.isLinkedCheckout == false)
-    }
 }

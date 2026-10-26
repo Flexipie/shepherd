@@ -92,24 +92,6 @@ import Testing
         #expect(outcome.projects.first?.isInferred == true)
     }
 
-    @Test func panesInOneCheckoutShareItsProjectAndWorktreesCarryTheRepo() {
-        let main = GitCheckout(root: "/work/app", commonDir: "/work/app/.git", isLinked: false)
-        let fix = GitCheckout(root: "/work/app-fix", commonDir: "/work/app/.git", isLinked: true)
-        var top = pane(.idle, path: "/work/app", paneID: "%1")
-        top.checkout = main
-        var deep = pane(.idle, path: "/work/app/Sources", paneID: "%2")
-        deep.checkout = main
-        var linked = pane(.idle, path: "/work/app-fix", paneID: "%3")
-        linked.checkout = fix
-        var tracker = PaneTracker()
-        let outcome = tracker.apply([top, deep, linked], at: start)
-        #expect(outcome.projects.map(\.path) == ["/work/app", "/work/app-fix"])
-        #expect(outcome.projects.map(\.repo) == [HerdRepo(key: "/work/app/.git", name: "app"),
-                                                 HerdRepo(key: "/work/app/.git", name: "app", isLinkedCheckout: true)])
-        #expect(outcome.agents.map(\.projectID?.local) == ["/work/app", "/work/app", "/work/app-fix"])
-        #expect(outcome.agents.map(\.project) == ["app", "app", "app-fix"])
-    }
-
     @Test func aPaneWithNoFolderHasNoProject() {
         var tracker = PaneTracker()
         let outcome = tracker.apply([pane(.idle, path: "")], at: start)

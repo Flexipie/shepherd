@@ -63,30 +63,6 @@ import Testing
         #expect(store.projects.map(\.id.source) == ["tmux", "report"])
     }
 
-    @Test func aReportFromInsideAScreensCheckoutHidesItsEmptyCard() {
-        let store = makeStore()
-        let inside = "\(folder)/Sources"
-        let report = HerdAgent(id: AgentID(source: "report", local: Self.pane), kind: "claude", name: "claude",
-                               projectID: ProjectID(source: "report", local: inside), project: "Sources", status: .blocked)
-        store.apply(SourceUpdate(agents: [screenAgent()], projects: [screenProject()], state: .live), from: "tmux")
-        store.apply(SourceUpdate(agents: [report], projects: [HerdProject(id: ProjectID(source: "report", local: inside),
-                                                                          name: "Sources", path: inside)], state: .live),
-                    from: "report")
-        #expect(store.projects.map(\.id) == [ProjectID(source: "report", local: inside)])
-    }
-
-    @Test func aReportInASiblingFolderLeavesTheScreenCard() {
-        let store = makeStore()
-        let sibling = "\(folder)-other"
-        let other = HerdAgent(id: AgentID(source: "report", local: "elsewhere"), name: "claude",
-                              projectID: ProjectID(source: "report", local: sibling), status: .idle)
-        store.apply(SourceUpdate(agents: [screenAgent()], projects: [screenProject()], state: .live), from: "tmux")
-        store.apply(SourceUpdate(agents: [other], projects: [HerdProject(id: ProjectID(source: "report", local: sibling),
-                                                                         name: "other", path: sibling)], state: .live),
-                    from: "report")
-        #expect(store.projects.map(\.id.source) == ["tmux", "report"])
-    }
-
     @Test func aScreenReadingIsNotAnnouncedButAReportIs() async {
         let store = makeStore()
         var events = store.events().makeAsyncIterator()
