@@ -14,6 +14,8 @@ struct TmuxScan: Sendable {
         let pane: TmuxPane
         let kind: String
         let status: HerdStatus
+        /// The git checkout the pane's folder is in, nil outside git.
+        let checkout: GitCheckout?
     }
 
     var servers: [Server] = []
@@ -33,10 +35,13 @@ struct TmuxScan: Sendable {
         }
         guard !panes.isEmpty else { return scan }
         let table = ProcessTable.snapshot()
+        var checkouts: [String: GitCheckout?] = [:]
         for (client, pane) in panes {
             guard let kind = table.names(under: pane.pid).lazy.compactMap({ screens.kindByProcess[$0] }).first,
                   let screen = try? client.screen(pane.paneID) else { continue }
-            scan.agents.append(Agent(pane: pane, kind: kind, status: screens.status(kind: kind, screen: screen)))
+            if checkouts[pane.path] == nil { checkouts[pane.path] = .some(GitCheckout.containing(pane.path)) }
+            scan.agents.append(Agent(pane: pane, kind: kind, status: screens.status(kind: kind, screen: screen),
+                                     checkout: checkouts[pane.path] ?? nil))
         }
         return scan
     }
