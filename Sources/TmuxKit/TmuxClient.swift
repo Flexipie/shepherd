@@ -117,6 +117,26 @@ public struct TmuxClient: Sendable {
         _ = try run(["select-pane", "-t", pane])
     }
 
+    /// Opens a window in `folder` running `command` (its program and arguments, with no shell
+    /// between them), placed after `window` in its session, without switching to it. Returns the
+    /// new pane's id, such as `%7`. tmux gives the pane the PATH of the `tmux` process that asked
+    /// for it (`-e` cannot change that), so `path`, when given, is that process's PATH.
+    public func newWindow(after window: String, folder: String, name: String, path: String? = nil,
+                          command: [String]) throws -> String {
+        // The name is a format: `##` keeps a `#` in a branch name from expanding.
+        try run(["new-window", "-d", "-a", "-t", window, "-c", folder, "-n", name.replacingOccurrences(of: "#", with: "##"),
+                 "-P", "-F", "#{pane_id}"] + command,
+                path: path)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// A variable in the server's global environment: what it was started with, from the user's
+    /// terminal. Nil when it is not set.
+    public func globalEnvironment(_ name: String) -> String? {
+        let line = (try? run(["show-environment", "-g", name]))?.trimmingCharacters(in: .newlines) ?? ""
+        return line.hasPrefix(name + "=") ? String(line.dropFirst(name.count + 1)) : nil
+    }
+
     /// Types `text` into the pane as literal characters, so a `-` or a `;` in it is not a flag.
     public func sendLiteral(_ pane: String, _ text: String) throws {
         _ = try run(["send-keys", "-t", pane, "-l", "--", text])
@@ -128,7 +148,7 @@ public struct TmuxClient: Sendable {
     }
 
     /// Runs one command and returns its standard output. A failure says what tmux said.
-    func run(_ arguments: [String]) throws -> String {
+    func run(_ arguments: [String], path: String? = nil) throws -> String {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: binary)
         process.arguments = ["-S", socket] + arguments
@@ -136,6 +156,7 @@ public struct TmuxClient: Sendable {
         // Shepherd may itself run inside tmux; the commands must talk to `socket`, not that server.
         environment["TMUX"] = nil
         environment["TMUX_PANE"] = nil
+        if let path { environment["PATH"] = path }
         process.environment = environment
         process.standardInput = FileHandle.nullDevice
         let stdout = Pipe()

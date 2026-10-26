@@ -221,3 +221,11 @@ Oldest first.
   place of the last lines while the agent is idle or done. The palette now counts as showing
   Agents, so opening it alone reads sessions. Codex's session file
   (`task_complete.last_agent_message`) is a follow-up.
+- tmux starts new tasks (#34): the "+" and the palette's "New task" now work for tmux projects.
+  `git worktree add -b` from the project's checkout into `<repo>-<branch>` next to the repo, then a
+  `new-window -d` after one of the project's agents running the agent with its args and the prompt
+  as separate arguments (no shell quoting; `--` before the prompt), then the user's shell. git and the
+  window get the server's PATH, not the app's. A left-out branch is the kind and a random suffix; a
+  project outside git, a folder already there, an agent not on the server's PATH and a prompt past
+  about 15 KB (tmux's command limit) are refused before anything is made. A step that fails after
+  the worktree was made says it is there.
