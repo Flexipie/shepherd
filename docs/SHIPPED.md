@@ -240,7 +240,7 @@ Oldest first.
 - README for any terminal agent (#39, and the text of #58): it opens with a short pitch and the
   notch bar's snapshot, then a table of where agents come from (tmux, agent reports, herdr) and
   what each gives, stating tmux as what the screen features need. Install is build from source
-  (`make app`, then the hooks with `shepherd-report install claude`), with no signed build or
-  Homebrew yet. A Privacy section lists the one loopback request (OpenUsage), no telemetry, and
+  (`make app`; the Claude Code hooks optional, for agents outside tmux and herdr), with no signed
+  build or Homebrew yet. A Privacy section lists the one loopback request (OpenUsage), no telemetry, and
   every file Shepherd reads and writes, each checked against the code. The feature tour is tighter
   and no longer assumes herdr.

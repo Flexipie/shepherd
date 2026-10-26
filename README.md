@@ -37,8 +37,9 @@ in tmux to get those.
 
 Agent reports are for agents that run outside tmux and herdr. For now, don't install the Claude
 Code hooks if your Claude sessions run in tmux or herdr: in tmux the report replaces the screen
-row, so you lose reading, answering and jumping for that agent, and under herdr the agent shows
-twice.
+row, so you lose reading, answering, prompting and jumping for that agent (and new tasks for its
+project), and under herdr the agent shows twice. The same goes for any agent that reports from
+inside tmux.
 
 With no config file, every source that is on your Mac runs. Until the first agent shows, the
 panel says which sources it found and what to do next.
@@ -102,7 +103,7 @@ Leave Demo in the same menu goes back.
   worktree goes next to the repo's folder (`app-fix-login` beside `app`) and the agent opens in a
   new background window of the same session.
 - **Panel.** Click the paw icon in the menu bar for the same queue and projects as a list. Up and
-  down move, Return jumps, Escape closes. Right-click the icon for the connection state and Quit.
+  down move, Return jumps, Escape closes. Right-click the icon for the connection state, Try Demo and Quit.
 - **Projects and worktrees.** tmux agents are grouped by git checkout and herdr's by workspace,
   and the worktrees of one repo share a card: the repo's name on top, then each checkout with its own agents. Type the repo's
   name in the palette to find them all.
@@ -116,7 +117,7 @@ Leave Demo in the same menu goes back.
   palette show the whole message.
 - **Notifications** (off by default; the notch is the alert). When on, an agent you are not
   looking at that blocks posts a macOS notification (with Jump, and Reply where its source allows it).
-  States read from a screen are a guess, so they never notify; reports and herdr do.
+  Screen readings never notify; reports and herdr do.
 - **Your herdr colours.** With herdr, token colours and rules come from herdr's own `[ui.sidebar]`
   config, so `$pr` and `$ticket_state` look as they do in its sidebar.
 - **Honest state.** A state read from a screen is a best guess, so it never sends a
@@ -134,7 +135,8 @@ check, no account.
 
 - **Network:** none, except the Usage gadget, which asks OpenUsage on `127.0.0.1:6736` (loopback
   only) while the Gadgets tab shows. Shepherd holds no credentials and never calls a vendor API.
-- **What it reads:** herdr's local socket and its `config.toml`; tmux's pane list, the last lines
+- **What it reads:** herdr's local socket and its `config.toml`; tmux's socket folder, to find
+  its servers, and its pane list, the last lines
   of agent panes and the process table (`ps`), to tell which panes run an agent (a control client,
   `tmux -C`, is attached to each server to learn when a pane prints; it keeps only which pane did); the `.git` entries
   above an agent's folder; agent reports in its spool folder; for Claude Code under herdr, the
@@ -199,8 +201,8 @@ can be left out:
 - `modules`: which modules run, in order. Panel sections follow this order (unless `layout`
   lists that tab); in the notch bar the queue stays on the left and the others follow as columns.
   `demo` shows something only in demo mode.
-- `sources`: where agents come from, in this order: `herdr`, `report` (`shepherd-report`) and
-  `tmux`. Left out, all three run. A change applies the next time Shepherd starts. tmux can be an
+- `sources`: where agents come from, in the order listed: `herdr`, `report` (`shepherd-report`)
+  and `tmux`. Left out, all three run, in that order. A change applies the next time Shepherd starts. tmux can be an
   object instead, to teach it an agent or change how it reads one:
 
   ```json
@@ -215,7 +217,7 @@ can be left out:
   A kind replaces the built-in one of the same name or process (`claude`, `codex`); two of your
   kinds on one process are reported. Pattern changes apply on save.
 - `layout`: choose and order what the panel and the bar show, without turning modules off.
-  `agents` and `gadgets` list the sections of that tab in order (`sources`, the first-run guide,
+  `agents` and `gadgets` list the sections of that tab in order (`sources` (the first-run guide),
   `queue` and `projects` on Agents; `usage` and `system` on Gadgets); one you leave out is
   hidden. `projects` names the project or repo columns to show first, in that order (a project
   or its repo's name); the rest follow.
