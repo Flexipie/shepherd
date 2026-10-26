@@ -78,7 +78,7 @@ import Testing
             "config: unknown key \"sources[0].agents.aider.future\"",
             "config: sources[0].agents.codex.working must be a list of regular expressions",
             "config: sources[0].agents.pi.idle: \"(\" is not a valid regular expression",
-            "config: sources[0].agents.zed: process \"claude\" is already sources[0].agents.claude",
+            "config: sources[0].agents.zed: process \"claude\" is already watched by sources[0].agents.claude",
             "config: sources[3]: \"report\" is listed twice",
             "config: sources[4]: unknown source \"zellij\"; known: herdr, report, tmux",
             "config: sources[5] must be a source id or an object",

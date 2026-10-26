@@ -74,7 +74,7 @@ public struct SourcesConfig: Sendable, Equatable {
             do {
                 let patterns = try ScreenPatterns.read(kinds[kind]!, kind: kind, at: "\(path).\(kind)", problems: &problems)
                 if let other = added.first(where: { $0.value.process == patterns.process })?.key {
-                    problems.append("config: \(path).\(kind): process \"\(patterns.process)\" is already \(path).\(other)")
+                    problems.append("config: \(path).\(kind): process \"\(patterns.process)\" is already watched by \(path).\(other)")
                     continue
                 }
                 added[kind] = patterns

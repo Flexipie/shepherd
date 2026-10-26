@@ -569,8 +569,9 @@ for a missing directory to appear, debounces 200 ms, and delivers only when the 
   `blocked`, `working`, `idle` lists of regular expressions over the screen's last ten non-empty
   lines, trimmed. A state applies when all of its patterns match, blocked before working before
   idle, else unknown; `ChoiceParser` makes any kind blocked. A kind replaces the built-in of that
-  name or process; a second kind on one process is reported and skipped. Pattern changes reach `TmuxSource.setScreens` on save, which lists the panes again. A bad
-  pattern drops that kind (a built-in one keeps its default); an unknown key is only reported.
+  name or process; a second kind on one process is reported and skipped. Pattern changes reach
+  `TmuxSource.setScreens` on save, which lists the panes again. A bad pattern drops that kind (a
+  built-in one keeps its default); an unknown key is only reported.
 
 Planned: `questions` and
 `questions.askOnFinish` (see ROADMAP "ready to land"). Once released, config changes
