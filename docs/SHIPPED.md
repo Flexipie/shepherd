@@ -169,9 +169,12 @@ Oldest first.
   blocked, `Stop` done, `SessionEnd` closed, each running this binary's absolute path with `report
   --from-hook --kind claude`. It prints the change as a unified diff, asks before writing (`--yes` when
   stdin is not a terminal, `--print` to only show it), copies the file to
-  `settings.json.shepherd-backup-<time>`, and writes through a symlink so a dotfiles link stays. Only
+  `settings.json.shepherd-backup-<time>` beside the link, and writes through a symlink so a dotfiles
+  link stays. It refuses a link to a missing file, a file changed while it asked, and a binary path
+  with a `'`. A hook's usage error exits 1, never 2, which would block Claude. Only
   hook entries whose program is `shepherd-report` or `shepherd` followed by `report` are added or
   removed; installing again replaces an older path and is otherwise a no-op. `uninstall claude` removes
   exactly those entries, and the groups and events they leave empty. The file is read with key order
-  and numbers kept and printed as Claude Code writes it, so the diff holds only Shepherd's lines. A
+  and numbers kept and printed as Claude Code writes it, so for a file Claude Code wrote the diff holds only Shepherd's
+  lines. A
   file that is not strict JSON is refused untouched. Codex waits until its `notify` format is confirmed.

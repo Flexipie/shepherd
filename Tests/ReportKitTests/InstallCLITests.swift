@@ -144,6 +144,37 @@ import Testing
         #expect(try scratch.backups().isEmpty)
     }
 
+    @Test func aLinkToAMissingFileIsLeftALink() throws {
+        let scratch = try Scratch(contents: nil)
+        let missing = scratch.url.appending(path: "not-cloned/settings.json")
+        try FileManager.default.createSymbolicLink(at: scratch.settings, withDestinationURL: missing)
+        #expect(run(["install", "claude", "--yes"], scratch).0.exitCode == 1)
+        #expect(try FileManager.default.destinationOfSymbolicLink(atPath: scratch.settings.path) == missing.path)
+        #expect(!FileManager.default.fileExists(atPath: missing.path))
+    }
+
+    @Test func aChangeWhileAskingIsNotOverwritten() throws {
+        let scratch = try Scratch(contents: Self.original)
+        let edited = Self.original.replacingOccurrences(of: "opus", with: "sonnet")
+        var shown = ""
+        let outcome = InstallCLI.run(arguments: ["install", "claude"],
+                                     environment: ["CLAUDE_CONFIG_DIR": scratch.url.appending(path: "claude").path],
+                                     executable: executable, show: { shown += $0 },
+                                     confirm: { try? Data(edited.utf8).write(to: scratch.settings); return true }, now: now)
+        #expect(outcome.exitCode == 1)
+        #expect(try scratch.text() == edited)
+        #expect(try scratch.backups().isEmpty)
+    }
+
+    @Test func aPathWithAQuoteIsRefused() throws {
+        let scratch = try Scratch(contents: Self.original)
+        let outcome = InstallCLI.run(arguments: ["install", "claude", "--yes"],
+                                     environment: ["CLAUDE_CONFIG_DIR": scratch.url.appending(path: "claude").path],
+                                     executable: "/Users/x/Sam's Apps/shepherd-report", show: { _ in }, confirm: { true }, now: now)
+        #expect(outcome.exitCode == 1)
+        #expect(try scratch.text() == Self.original)
+    }
+
     @Test(arguments: [["install"], ["install", "codex"], ["install", "claude", "--force"], ["remove", "claude"]])
     func badUsageExitsTwo(_ arguments: [String]) throws {
         let scratch = try Scratch(contents: Self.original)

@@ -18,6 +18,16 @@ public enum ReportCLI {
     /// only with `--from-hook`. Never echoes a report's contents.
     public static func run(arguments: [String], stdin: () -> Data, environment: [String: String],
                            cwd: String, now: Date = Date()) -> Outcome {
+        let outcome = report(arguments: arguments, stdin: stdin, environment: environment, cwd: cwd, now: now)
+        // Exit 2 from a Claude Code hook blocks: a Stop hook would keep Claude from stopping.
+        if outcome.exitCode == 2, arguments.contains("--from-hook") {
+            return Outcome(exitCode: 1, output: outcome.output)
+        }
+        return outcome
+    }
+
+    private static func report(arguments: [String], stdin: () -> Data, environment: [String: String],
+                               cwd: String, now: Date) -> Outcome {
         guard arguments.first == "report" else {
             return Outcome(exitCode: 2, output: "\(usage)\n\(InstallCLI.usage)")
         }

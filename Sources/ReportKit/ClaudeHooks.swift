@@ -36,6 +36,10 @@ public enum ClaudeHooks {
     /// `settings` with Shepherd's hooks in place of any it had. Unchanged when they are already
     /// there exactly, so installing twice changes nothing.
     public static func install(into settings: SettingsJSON, executable: String) throws -> SettingsJSON {
+        // Quoted as `'\''`, which `isOurs` does not read back, so uninstall could not find them.
+        guard !executable.contains("'") else {
+            throw Problem(description: "the path to shepherd-report contains a ' (\(executable)); move it")
+        }
         let wanted = entries.map { ($0.event, $0.matcher, command(executable: executable, status: $0.status)) }
         let present = try ours(in: settings)
         if present.count == wanted.count, zip(present, wanted).allSatisfy({ $0 == $1 }) { return settings }

@@ -37,12 +37,16 @@ public enum InstallCLI {
         // A symlinked settings file (a dotfiles repo) is edited where it points, so the link stays.
         let target = path.resolvingSymlinksInPath()
         let exists = FileManager.default.fileExists(atPath: target.path)
+        if !exists, let link = try? FileManager.default.destinationOfSymbolicLink(atPath: path.path) {
+            return .init(exitCode: 1, output: "\(path.path) links to \(link), which is missing. Nothing written.")
+        }
+        let original: Data?
         let before: String
         let settings: SettingsJSON
         do {
-            let data = exists ? try Data(contentsOf: target) : Data("{}".utf8)
-            before = exists ? String(decoding: data, as: UTF8.self) : ""
-            settings = try SettingsJSON.parse(data)
+            original = exists ? try Data(contentsOf: target) : nil
+            before = original.map { String(decoding: $0, as: UTF8.self) } ?? ""
+            settings = try SettingsJSON.parse(original ?? Data("{}".utf8))
         } catch {
             return .init(exitCode: 1, output: "cannot read \(path.path): \(error). Nothing written.")
         }
@@ -69,10 +73,15 @@ public enum InstallCLI {
             guard answer else { return .init(exitCode: 1, output: "Nothing written.") }
         }
 
+        // Something else (Claude Code itself, an editor) may have saved the file while we asked.
+        guard (try? Data(contentsOf: target)) == original else {
+            return .init(exitCode: 1, output: "\(path.path) changed since the diff was shown. Nothing written; run again.")
+        }
         do {
             var note = "no earlier file, so no backup"
             if exists {
-                let backup = backupURL(for: target, now: now)
+                // Beside the link, not in the folder it points to (often a dotfiles repo).
+                let backup = backupURL(for: path, now: now)
                 try FileManager.default.copyItem(at: target, to: backup)
                 note = "backup at \(backup.path)"
             } else {
@@ -84,7 +93,7 @@ public enum InstallCLI {
             if let permissions {
                 try? FileManager.default.setAttributes([.posixPermissions: permissions], ofItemAtPath: target.path)
             }
-            return .init(exitCode: 0, output: "Wrote \(path.path); \(note).")
+            return .init(exitCode: 0, output: "Wrote \(path.path); \(note). Running Claude sessions pick it up when restarted.")
         } catch {
             return .init(exitCode: 1, output: "cannot write \(path.path): \(error.localizedDescription)")
         }
