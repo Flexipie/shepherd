@@ -1,4 +1,4 @@
-.PHONY: build test app run fixture clean
+.PHONY: build test app run perf fixture clean
 
 build:
 	swift build
@@ -12,6 +12,10 @@ app:
 run: app
 	-pkill -x Shepherd
 	open build/Shepherd.app
+
+# Idle budget check against fake herdr: fails if idle CPU or footprint is over docs/PRD.md
+perf:
+	scripts/perf.sh
 
 # Records a sanitised fixture from the running herdr: make fixture NAME=basic SECONDS=10
 fixture:

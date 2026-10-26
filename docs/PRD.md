@@ -16,8 +16,8 @@ Personal actions are config, not code.
 
 ## Goals
 
-- Clean, small, fast base: near-zero CPU when idle, under 60 MB of memory as physical footprint
-  (see "Performance budget").
+- Clean, small, fast base: near-zero CPU when idle (under 0.5%), under 60 MB of memory as
+  physical footprint (see "Performance budget").
 - Easy to extend: one feature is one module; most customisation is JSON config.
 - Correct under load: follows herdr's documented recovery protocol, never shows silently stale
   state.
@@ -607,13 +607,19 @@ against the panel is darkened until it reads. `rows_by_agent` is not read yet.
   go to `.build/snapshot-failures/`). Anti-aliasing differs between OS builds, so comparison is
   strict only on the build in `RECORDED_ON`; elsewhere, such as CI, views are rendered and uploaded
   as an artifact. `SHEPHERD_RECORD_SNAPSHOTS=1` re-records.
-- **Idle budget**: a check that runs the app against fake herdr and fails if idle CPU or memory
-  exceed the budget.
+- **Idle budget**: `make perf` (`scripts/perf.sh`) runs the release app against fake herdr, with
+  only the herdr source and every path in a temp folder, and fails if CPU over a 30 s idle window
+  averages more than 0.5% or the physical footprint is over 60 MB. `PERF_SECONDS`,
+  `PERF_CPU_LIMIT` and `PERF_MEMORY_LIMIT_MB` override them. The footprint after opening the bar
+  and the palette is still measured by hand. While it runs, a second Shepherd shows its status
+  item and notch for about 35 s, with no hotkeys; a running Shepherd is not touched. Leave the
+  notch alone while it runs: opening the panel costs CPU and fails the check.
 - The UI is still checked by hand against a real herdr before a feature ships (see VISION).
 
 ## Performance budget
 
-- Idle: no timers firing faster than once a minute, no polling.
+- Idle: no timers firing faster than once a minute, no polling, and under 0.5% CPU averaged over
+  30 s (`make perf`).
 - Event bursts coalesced into one snapshot read.
 - Only visible surfaces render; the panel tears down its views when closed, and the notch
   surface renders the panel only while expanded (the ear redraws only when the status changes).

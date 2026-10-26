@@ -55,6 +55,7 @@ make build   # swift build
 make test    # swift test
 make app     # build/Shepherd.app (release, ad-hoc signed)
 make run     # app, then relaunch it
+make perf    # idle budget check: the app against fake herdr, fails if idle CPU or footprint is over
 make fixture NAME=basic SECONDS=10   # record a sanitised fixture from the running herdr
 SHEPHERD_LIVE=1 swift test --filter LiveHerdr   # read-only checks against the real herdr
 SHEPHERD_LIVE=1 swift test --filter LiveClaudeContext   # context size of each live Claude agent (numbers only)
