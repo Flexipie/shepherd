@@ -53,7 +53,9 @@ PR number, a diff, a review verdict), and lets you act on it without switching t
   a prompt field instead. Escape goes back.
 - **New task.** The "+" after the project columns: pick a project, an agent and a prompt
   (a branch name is optional). Shepherd creates a git worktree from that project's repo, starts
-  the agent in it and sends the prompt, then shows you the new agent.
+  the agent in it and sends the prompt, then shows you the new agent. In tmux the worktree goes
+  next to the repo's folder (`app-fix-login` beside `app`) and the agent opens in a new window
+  of the same session, in the background, with the prompt as its first argument.
 - **Usage.** On the Gadgets tab, a column shows your Claude Code plan limits (session,
   weekly, per model, extra usage) for every account, plus Codex and anything else you track, with
   when each resets. It reads them from [OpenUsage](https://github.com/robinebers/openusage), which

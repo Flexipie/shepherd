@@ -169,7 +169,7 @@ than". `SHEPHERD_TRANSITION_LOG` points it elsewhere for development runs.
 | `ReportKit` | The agent report file format, the spool folder (atomic writes, reads, removal), agent identity and the `shepherd-report` command's logic, including `install`/`uninstall claude` (Claude Code's hooks, edited with key order kept). Foundation and CryptoKit only. No UI, no Shepherd. |
 | `ReportSource` | Agent reports as a source: watches the spool and maps reports to the herd model through a pure tracker. |
 | `TmuxKit` | tmux's command line (`list-panes`, `capture-pane`, `send-keys`, `select-pane`), control mode (`tmux -C`) and the process table (`ps`). Foundation only. No UI, no Shepherd. |
-| `TmuxSource` | tmux as a source: panes whose process tree runs a known agent, read from their screens and labelled inferred. A pane's project is its git checkout (or its folder outside git), with the checkout's repo. Watches the socket folder and control clients; no polling. |
+| `TmuxSource` | tmux as a source: panes whose process tree runs a known agent, read from their screens and labelled inferred. A pane's project is its git checkout (or its folder outside git), with the checkout's repo. Watches the socket folder and control clients; no polling. Starts tasks: a git worktree and a new window. |
 | `ShepherdModules` | Built-in features, one folder each, listed in `BuiltinModules.all`. |
 | `ShepherdUI` | SwiftUI views, values in, no windows, no glass, so every view can be snapshot tested. Three layers: `Components` (shared pieces: row chrome and the choosable row, the card fill, glyphs, tokens), `Items` (one view per `PanelItem` kind, drawn the same on every surface, with `PanelItemView` the one place a kind meets its view) and `Surfaces` (the panel, the notch, the palette: layout, keyboard and the clock, never their own item views). |
 | `Shepherd` | The app: status item, panel window, notch surface window, hotkey, later notifications and the palette. Thin. |
@@ -325,7 +325,14 @@ so a module reads only while its tab shows (`Presence.isShowing(_:)`).
     it is left out), `agent.start` in the new workspace's root pane (a unique name, the kind,
     and `agents.<kind>.args` from config), then `agent.prompt`, and opens the new agent's stage.
     A step that fails after an earlier one worked says what was left behind ("Created worktree
-    x, but claude did not start: ...").
+    x, but claude did not start: ..."). tmux (`TmuxSource.startTask`) runs `git worktree add -b
+    <branch>` from the project's checkout into a folder next to the repo's (`~/code/app` and
+    `fix/login` give `~/code/app-fix-login`; a left-out branch is the kind and a random suffix),
+    opens a window after one of the project's agents (`new-window -d`, so the terminal stays
+    where it is) running the default shell there, and types `<kind> <args> '<prompt>'` into it:
+    the prompt is the agent's first argument, which Claude Code and Codex both take, so it waits
+    through a trust question, and the shell stays when the agent exits. A project outside git
+    says it has nothing to make a worktree from.
 - **Usage** (the `usage` module), on the Gadgets tab, a column in the bar and a section in the
   menu bar panel: one card per OpenUsage provider (Claude accounts first), each limit as a thin
   bar (orange from 80%) with its value and "resets in", notes below, dimmed when stale. It reads

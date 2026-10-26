@@ -19,9 +19,8 @@ public final class TmuxSource: AgentSource {
 
     public let id = TmuxSource.sourceID
     public let displayName = "tmux"
-    /// Reads the screen, so it can show and send to the agent. It cannot start one: that needs a
-    /// worktree, which comes in the next step.
-    public let capabilities: SourceCapabilities = [.focus, .readOutput, .sendKeys, .sendText, .prompt]
+    /// Reads the screen, so it can show and send to the agent, and starts tasks in a new window.
+    public let capabilities: SourceCapabilities = [.focus, .readOutput, .sendKeys, .sendText, .prompt, .createWorktree, .startAgent]
     public let updates: AsyncStream<SourceUpdate>
 
     private let continuation: AsyncStream<SourceUpdate>.Continuation
@@ -138,6 +137,41 @@ public final class TmuxSource: AgentSource {
     public func prompt(_ agent: AgentID, _ text: String) async throws {
         guard tracker.shown(agent.local) == .idle else { throw AgentSourceError.failed("the agent is not idle") }
         try await sendText(agent, text)
+    }
+
+    /// `git worktree add` off the project's checkout, a window in the session of one of its agents,
+    /// then the agent's command typed into that window's shell with the prompt as its first
+    /// argument, so it waits through anything the agent asks first. The shell stays when the agent
+    /// exits. A step that fails after the worktree was made says it is there.
+    public func startTask(_ task: NewTask, args: [String]) async throws -> AgentID {
+        let panes = observations.values.filter { $0.projectPath == task.project.local }.sorted { $0.key < $1.key }
+        guard let pane = panes.first(where: \.isFocused) ?? panes.first else {
+            throw AgentSourceError.failed("that project is no longer in tmux")
+        }
+        guard let checkout = pane.checkout else {
+            throw AgentSourceError.failed("\(PaneTracker.projectName(pane.projectPath)) is not in a git repo, so there is no worktree to make")
+        }
+        guard let git = TmuxNewTask.locateGit() else { throw AgentSourceError.failed("git is not installed") }
+        let branch = task.branch ?? TmuxNewTask.branchName(kind: task.kind)
+        let folder = TmuxNewTask.folder(for: checkout, branch: branch)
+        try await tmux { try TmuxNewTask.addWorktree(git: git, checkout: checkout.root, branch: branch, folder: folder) }
+        let client = TmuxClient(binary: binary, socket: pane.socket)
+        let paneID: String
+        do {
+            paneID = try await tmux { try client.newWindow(after: pane.windowID, folder: folder, name: branch) }
+        } catch {
+            throw AgentSourceError.failed("Created worktree \(branch) at \(folder), but its tmux window did not open: \(error)")
+        }
+        let line = TmuxNewTask.commandLine(kind: task.kind, args: args, prompt: task.prompt)
+        do {
+            try await tmux {
+                try client.sendLiteral(paneID, line)
+                try client.sendKeys(paneID, ["enter"])
+            }
+        } catch {
+            throw AgentSourceError.failed("Created worktree \(branch) and its tmux window, but \(task.kind) did not start: \(error)")
+        }
+        return AgentID(source: id, local: PaneObservation.key(socket: pane.socket, paneID: paneID))
     }
 
     /// The terminals attached to the servers. Used to tell whether the user is already looking at an agent.

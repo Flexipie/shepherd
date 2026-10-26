@@ -117,6 +117,13 @@ public struct TmuxClient: Sendable {
         _ = try run(["select-pane", "-t", pane])
     }
 
+    /// Opens a window running the server's default shell in `folder`, placed after `window` in its
+    /// session, without switching to it. Returns the new pane's id, such as `%7`.
+    public func newWindow(after window: String, folder: String, name: String) throws -> String {
+        try run(["new-window", "-d", "-a", "-t", window, "-c", folder, "-n", name, "-P", "-F", "#{pane_id}"])
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     /// Types `text` into the pane as literal characters, so a `-` or a `;` in it is not a flag.
     public func sendLiteral(_ pane: String, _ text: String) throws {
         _ = try run(["send-keys", "-t", pane, "-l", "--", text])
