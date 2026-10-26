@@ -109,13 +109,15 @@ As built:
 - A source that is not on this Mac or not running at all is `SourceState.absent`, not disconnected:
   it has nothing to show and nothing is wrong, so `HerdStore.overallState` leaves it out and the
   menu bar glyph is not dimmed for it. herdr is absent while its socket file is missing; a socket
-  left by a herdr that crashed is still a disconnection. It connects on its own when herdr starts.
+  left by a herdr that crashed is still a disconnection (its last state shown dimmed); an absent herdr
+  keeps no agents. It connects on its own when herdr starts.
 - First run: the app detects what is on the Mac, read only (tmux on PATH, herdr's live state,
   Claude Code's settings folder and whether its `settings.json` runs Shepherd's hooks, via
   `ClaudeSetup` in `ReportSource`), and puts a `SourceIntro` per place agents can come from in
   `ModuleContext.sourceGuide`: whether it was found, what it gives and the next step. The
   `sources` module shows them until the first agent appears. Nothing is remembered and no file is
-  written; with no config file every source runs with defaults.
+  written; with no config file every source runs with defaults. A source left out of `sources` has no
+  card, and the guide is read again when a panel opens while it shows (so installed hooks show).
 - `HerdrKit` stays a standalone herdr client: socket, models, `SessionEngine`, transition tracking.
 - Gadgets read through a reader target the same way: the module decides when, a separate target
   does the I/O. `OpenUsageSource` implements `UsageReader` (in `ShepherdCore`, with
