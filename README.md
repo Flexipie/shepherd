@@ -201,7 +201,11 @@ make test   # unit tests
 make run    # build build/Shepherd.app and launch it
 ```
 
-To try it without real agents, run a fake herdr and point the app at it:
+To try it with a made-up herd (agents from herdr, Claude Code reports and tmux, none real),
+right-click the menu bar icon and choose Try Demo, or run `make demo`. Demo mode never touches
+your herdr, tmux, config or history; Leave Demo in the same menu goes back.
+
+To drive a fake herdr yourself, run it and point the app at it:
 
 ```bash
 swift run FakeHerdr /tmp/shepherd-fake.sock

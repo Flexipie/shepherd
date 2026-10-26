@@ -6,8 +6,8 @@ import HerdrKit
 /// `pane.send_input` and `agent.prompt` (see `FakeHerdrServer+Input.swift`), `worktree.create`
 /// and `agent.start` (`FakeHerdrServer+Tasks.swift`) the way herdr 0.9.3 does: one request per connection, subscriptions
 /// validated against the current panes, both event name spellings, `events_lost` as an error
-/// carrying the subscribe id. Tests drive it and observe what the client did; demo mode will
-/// reuse it.
+/// carrying the subscribe id. Tests drive it and observe what the client did; demo mode
+/// serves its made-up herd with it.
 public actor FakeHerdrServer {
     public nonisolated let path: String
     public internal(set) var herd: FakeHerd

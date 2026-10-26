@@ -4,7 +4,8 @@ import ShepherdCore
 import Testing
 
 @MainActor
-@Suite struct DemoHerdTests {
+/// Serialized: every demo uses the same socket and spool.
+@Suite(.serialized) struct DemoHerdTests {
     /// Waits up to 5 s for `condition`, so a busy test run does not fail on timing.
     func until(_ condition: () -> Bool) async {
         for _ in 0..<500 where !condition() { try? await Task.sleep(for: .milliseconds(10)) }

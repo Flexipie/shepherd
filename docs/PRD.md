@@ -118,6 +118,18 @@ As built:
   `sources` module shows them until the first agent appears. Nothing is remembered and no file is
   written; with no config file every source runs with defaults. A source left out of `sources` has no
   card, and the guide is read again when a panel opens while it shows (so installed hooks show).
+  Its last card offers demo mode.
+- Demo mode (`Shepherd --demo`, or Try Demo in the status item's right-click menu, which opens a
+  new Shepherd with `--demo` and quits this one; Leave Demo goes back) replaces every source with
+  `DemoHerd`'s made-up herd: `HerdrFake`'s `FakeHerd.demo` on `/tmp/shepherd-demo.sock` served by a
+  real `HerdrSource` (no history, no herdr config, no terminal), two Claude Code reports in the
+  spool `/tmp/shepherd-demo` read by a real `ReportSource`, and two screen-read agents from a
+  stand-in for tmux (`DemoScreenSource`, under tmux's source id, labelled inferred, never running
+  tmux). Answering, replying, jumping and new tasks all work against it. Nothing of the user's is
+  read or written: the config is the defaults (no file), there is no transition log, no plugins,
+  no usage and no Claude Code session reads. The herd is fixed, so screenshots come out the same.
+  The `demo` module labels it at the top of the Agents tab, and the menu and the glyph's
+  accessibility label say Demo. Each start replaces the socket and spool; quitting removes them.
 - `HerdrKit` stays a standalone herdr client: socket, models, `SessionEngine`, transition tracking.
 - Gadgets read through a reader target the same way: the module decides when, a separate target
   does the I/O. `OpenUsageSource` implements `UsageReader` (in `ShepherdCore`, with
@@ -162,7 +174,7 @@ than". `SHEPHERD_TRANSITION_LOG` points it elsewhere for development runs.
 | Target | Role |
 | --- | --- |
 | `HerdrKit` | herdr socket client, lenient Codable models, `SessionEngine`, transition tracking. No UI, no Shepherd. Usable on its own. |
-| `HerdrFake` | A fake herdr on a real Unix socket: a scriptable herd or a recorded fixture, with herdr's quirks (one request per connection, subscription validation, both event spellings, `events_lost`). Also the `Sanitiser` for fixtures. Used by tests and later demo mode. No UI. |
+| `HerdrFake` | A fake herdr on a real Unix socket: a scriptable herd or a recorded fixture, with herdr's quirks (one request per connection, subscription validation, both event spellings, `events_lost`). Also the `Sanitiser` for fixtures. Used by tests and demo mode. No UI. |
 | `RecordFixture`, `FakeHerdr` | Dev tools: `make fixture` records a sanitised fixture; `swift run FakeHerdr` runs a fake driven from stdin. |
 | `ShepherdCore` | The herd model, `AgentSource`, `HerdStore`, `TransitionLog`, the `ShepherdModule` protocol and `ModuleRegistry`, config (`ConfigStore`, `FileWatcher`), token layouts and the styler, panel values; later the action model. No source types. |
 | `HerdrSource` | herdr as a source: adapts `HerdrKit` to the herd model. The only target that sees both. |
@@ -170,6 +182,7 @@ than". `SHEPHERD_TRANSITION_LOG` points it elsewhere for development runs.
 | `ReportSource` | Agent reports as a source: watches the spool and maps reports to the herd model through a pure tracker. |
 | `TmuxKit` | tmux's command line (`list-panes`, `capture-pane`, `send-keys`, `select-pane`, `new-window`, `show-environment`), control mode (`tmux -C`) and the process table (`ps`). Foundation only. No UI, no Shepherd. |
 | `TmuxSource` | tmux as a source: panes whose process tree runs a known agent, read from their screens and labelled inferred. A pane's project is its git checkout (or its folder outside git), with the checkout's repo. Watches the socket folder and control clients; no polling. Starts tasks: a git worktree and a new window. |
+| `DemoHerd` | Demo mode's made-up herd: the fake herdr, a report spool and screen-read agents, at fixed temporary paths. |
 | `ShepherdModules` | Built-in features, one folder each, listed in `BuiltinModules.all`. |
 | `ShepherdUI` | SwiftUI views, values in, no windows, no glass, so every view can be snapshot tested. Three layers: `Components` (shared pieces: row chrome and the choosable row, the card fill, glyphs, tokens), `Items` (one view per `PanelItem` kind, drawn the same on every surface, with `PanelItemView` the one place a kind meets its view) and `Surfaces` (the panel, the notch, the palette: layout, keyboard and the clock, never their own item views). |
 | `Shepherd` | The app: status item, panel window, notch surface window, hotkey, later notifications and the palette. Thin. |
@@ -548,7 +561,7 @@ observable state; the app reads them inside observation tracking, so a surface r
 what it shows changes. A panel section holds agent rows and project cards, each with its token
 lines already styled and the `PanelAction` it performs (jump to an agent, focus a project), or
 none when the source cannot. A section names its tab (`PanelSection.tab`); a gadget sets
-`.gadgets` and reads only while `Presence.isShowing(.gadgets)`. Built in: `status`, `notch`, `queue` (the needs-you queue, live
+`.gadgets` and reads only while `Presence.isShowing(.gadgets)`. Built in: `status`, `notch`, `demo` (says the herd is made up, in demo mode only), `queue` (the needs-you queue, live
 sources only), `usage` (plan usage, read through `ModuleContext.usage` only while Gadgets
 shows), `system` (CPU and memory, sampled through `ModuleContext.system` only while Gadgets
 shows), `context` (context sizes and final messages, read through `ModuleContext.contextReader` only
