@@ -26,11 +26,6 @@ import Testing
         // A root process's parent must be readable too: terminals start the shell through `login`,
         // which runs as root. launchd (pid 1) is root and has no parent.
         #expect(TerminalLocator.parent(of: 1) == 0)
-        // Only the user's own processes can be named, which is all herdr needs.
-        var buffer = [UInt8](repeating: 0, count: 256)
-        let length = proc_name(getpid(), &buffer, UInt32(buffer.count))
-        let ownName = String(decoding: buffer.prefix(Int(length)), as: UTF8.self)
-        #expect(TerminalLocator.pids(named: ownName).contains(getpid()))
     }
 
     @Test func elapsedIsHonestAboutPrecision() {

@@ -42,8 +42,8 @@ public protocol AgentSource: AnyObject {
     /// `.startAgent`. A step that fails after an earlier one worked says what was left behind.
     func startTask(_ task: NewTask, args: [String]) async throws -> AgentID
 
-    /// Pids of the apps the source's agents live in (for herdr, the terminal hosting it). Used to
-    /// tell whether the user is already looking at an agent.
+    /// Pids of the apps the source's agents live in, such as the terminal hosting them
+    /// (`TerminalLocator`). Used to tell whether the user is already looking at an agent.
     func hostApplicationPIDs() -> [pid_t]
 }
 

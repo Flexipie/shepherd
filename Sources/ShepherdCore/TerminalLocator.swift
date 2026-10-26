@@ -1,9 +1,14 @@
 import Darwin
 
-/// Finds the terminal app that hosts herdr. The attached herdr client is a descendant of the
-/// terminal (for example herdr, zsh, login, Ghostty), while the herdr server descends from
-/// launchd, so walking up from every `herdr` process finds the terminal and skips the server.
+/// Finds the app hosting a process, such as the terminal an agent runs in, by walking up the
+/// process's ancestors. Knows nothing about any source: each source says which pids to start from.
 public enum TerminalLocator {
+    /// The hosting apps of `pids`, walking the live process table. `isApp` says whether a pid is an
+    /// app the user sees (the sources check `NSRunningApplication`; Core has no AppKit).
+    public static func hostingApps(of pids: [pid_t], isApp: (pid_t) -> Bool) -> [pid_t] {
+        hostingApps(of: pids, parent: parent(of:), isApp: isApp)
+    }
+
     /// Walks each pid's ancestors and returns the first that `isApp` accepts, without duplicates.
     public static func hostingApps(of pids: [pid_t], parent: (pid_t) -> pid_t?, isApp: (pid_t) -> Bool,
                                    maxDepth: Int = 16) -> [pid_t] {
@@ -23,24 +28,9 @@ public enum TerminalLocator {
         return found
     }
 
-    /// Pids of running processes named `name`.
-    public static func pids(named name: String) -> [pid_t] {
-        let capacity = proc_listallpids(nil, 0) + 64
-        guard capacity > 0 else { return [] }
-        var pids = [pid_t](repeating: 0, count: Int(capacity))
-        let count = proc_listallpids(&pids, capacity * Int32(MemoryLayout<pid_t>.size))
-        guard count > 0 else { return [] }
-        var buffer = [UInt8](repeating: 0, count: 256)
-        return pids.prefix(Int(count)).filter { pid in
-            let length = proc_name(pid, &buffer, UInt32(buffer.count))
-            guard pid > 0, length > 0 else { return false }
-            return String(decoding: buffer.prefix(Int(length)), as: UTF8.self) == name
-        }
-    }
-
     /// The parent pid, or nil if the process is gone. Uses the short BSD info: the full one is
     /// refused for another user's process, and terminals start the shell through `login`, which
-    /// runs as root, so the walk from herdr up to the terminal would stop there.
+    /// runs as root, so a walk from an agent up to its terminal would stop there.
     public static func parent(of pid: pid_t) -> pid_t? {
         var info = proc_bsdshortinfo()
         let size = Int32(MemoryLayout<proc_bsdshortinfo>.size)

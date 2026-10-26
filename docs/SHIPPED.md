@@ -187,3 +187,7 @@ Oldest first.
   the palette's first focus no longer loads WebKit and a few hundred other frameworks; spell check,
   autocorrect and completion are unchanged. Against fake herdr: footprint about 14 MB idle and 24 MB
   after the bar and the palette, before and after; RSS after the palette about 77 MB, down from 98.
+- `TerminalLocator` is source-neutral (#37): it finds the app hosting any process by walking up
+  its ancestors, from whatever pids a source gives it, with the "is it an app" check passed in
+  (Core has no AppKit). Finding herdr's processes, and why walking up from them skips the server,
+  moved into `HerdrSource` (`HerdrProcesses`). herdr and tmux call the same entry point.

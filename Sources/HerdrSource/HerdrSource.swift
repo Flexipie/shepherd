@@ -141,11 +141,10 @@ public final class HerdrSource: AgentSource {
         }
     }
 
-    /// The terminal apps hosting an attached herdr client.
+    /// The terminal apps hosting an attached herdr client (see `HerdrProcesses`).
     public func hostApplicationPIDs() -> [pid_t] {
         TerminalLocator.hostingApps(
-            of: TerminalLocator.pids(named: "herdr"),
-            parent: TerminalLocator.parent(of:),
+            of: HerdrProcesses.pids(named: "herdr"),
             isApp: { NSRunningApplication(processIdentifier: $0)?.activationPolicy == .regular })
     }
 
