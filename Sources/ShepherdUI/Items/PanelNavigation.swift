@@ -31,7 +31,7 @@ public struct PanelTarget: Sendable, Hashable, Identifiable {
                 card.projects.flatMap { project in
                     RepoCard.soleAgent(project).map { [$0.action].compactMap { $0 } } ?? actions(in: project)
                 }
-            case .usage, .notice: []
+            case .gadget, .notice: []
             }
         }
     }

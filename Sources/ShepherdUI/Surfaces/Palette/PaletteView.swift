@@ -82,12 +82,7 @@ public struct PaletteView: View {
     }
 
     public var body: some View {
-        Group {
-            switch clock {
-            case .live: TimelineView(.everyMinute) { context in page(now: context.date) }
-            case .fixed(let date): page(now: date)
-            }
-        }
+        Clocked(clock: clock) { now in page(now: now) }
         .frame(width: Self.width)
     }
 

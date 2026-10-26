@@ -58,10 +58,7 @@ struct AgentRow: View {
             }
         }
         .opacity(row.isLive ? 1 : 0.6)
-        .padding(.horizontal, 8)
-        .padding(.vertical, showsProject ? 6 : 4)
-        .background(RoundedRectangle(cornerRadius: 7).fill(isSelected ? Color.accentColor.opacity(0.18) : .clear))
-        .contentShape(Rectangle())
+        .rowChrome(isSelected: isSelected, vertical: showsProject ? 6 : 4)
         .onHover { isHovered = $0 }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)

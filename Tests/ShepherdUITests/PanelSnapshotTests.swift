@@ -44,10 +44,11 @@ import Testing
         }
     }
 
+    private let rows = RowContext(sectionID: "projects", selection: nil, perform: { _ in }, select: { _ in })
+
     @Test func projectCard() throws {
         try Snapshot.check("project-card", width: 340) {
-            ProjectCard(card: SampleHerd.webCard, now: SampleHerd.now, selection: nil, sectionID: "projects",
-                        perform: { _ in }, hover: { _ in })
+            ProjectCard(card: SampleHerd.webCard, now: SampleHerd.now, rows: rows)
                 .padding(8)
         }
     }
@@ -55,8 +56,7 @@ import Testing
     /// A repo's checkouts under one header: main first, then worktrees with a branch glyph.
     @Test func repoCard() throws {
         try Snapshot.check("repo-card", width: 340) {
-            RepoCard(card: SampleHerd.shopCard, now: SampleHerd.now, selection: nil, sectionID: "projects",
-                     perform: { _ in }, hover: { _ in })
+            RepoCard(card: SampleHerd.shopCard, now: SampleHerd.now, rows: rows)
                 .padding(8)
         }
     }
@@ -64,7 +64,7 @@ import Testing
     @Test func staleProjectCard() throws {
         try Snapshot.check("project-card-stale", width: 340) {
             ProjectCard(card: SampleHerd.card(SampleHerd.api, [SampleHerd.blockedCodex], live: false), now: SampleHerd.now,
-                        selection: nil, sectionID: "projects", perform: { _ in }, hover: { _ in })
+                        rows: rows)
                 .padding(8)
         }
     }

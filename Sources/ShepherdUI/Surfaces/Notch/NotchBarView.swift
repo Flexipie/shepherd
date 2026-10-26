@@ -57,12 +57,7 @@ public struct NotchBarView: View {
     }
 
     public var body: some View {
-        Group {
-            switch clock {
-            case .live: TimelineView(.everyMinute) { context in bar(now: context.date) }
-            case .fixed(let date): bar(now: date)
-            }
-        }
+        Clocked(clock: clock) { now in bar(now: now) }
         .frame(width: width)
         .focusable()
         .focusEffectDisabled()
@@ -165,12 +160,13 @@ public struct NotchBarView: View {
 
     @ViewBuilder
     private func columnItems(_ column: BarColumn, now: Date) -> some View {
+        let rows = RowContext(sectionID: column.section.id, selection: selection, jump: perform, perform: barPerform) {
+            selection = $0
+        }
         if column.isCard, let item = column.items.first {
-            PanelItemView(item: item, sectionID: column.section.id, now: now, selection: selection,
-                          jump: perform, perform: barPerform) { selection = $0 }
+            PanelItemView(item: item, now: now, rows: rows)
         } else {
-            PanelSectionView(section: column.section, now: now, selection: selection, jump: perform,
-                             perform: barPerform) { selection = $0 }
+            PanelSectionView(section: column.section, now: now, rows: rows)
         }
     }
 

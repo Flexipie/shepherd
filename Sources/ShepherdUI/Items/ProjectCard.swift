@@ -5,26 +5,14 @@ import SwiftUI
 struct ProjectCard: View {
     let card: PanelProjectCard
     let now: Date
-    let selection: PanelTarget.ID?
-    let sectionID: String
-    var jump: ((PanelAction) -> Void)?
-    let perform: (PanelAction) -> Void
-    let hover: (PanelTarget.ID?) -> Void
+    let rows: RowContext
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            ProjectHeader(card: card, selection: selection, sectionID: sectionID, perform: perform, hover: hover)
-            ProjectAgentRows(card: card, now: now, selection: selection, sectionID: sectionID, jump: jump, perform: perform,
-                             hover: hover)
+            ProjectHeader(card: card, rows: rows)
+            ProjectAgentRows(card: card, now: now, rows: rows)
         }
-        .cardBackground()
-    }
-}
-
-extension View {
-    /// The rounded fill behind a project or repo card.
-    func cardBackground() -> some View {
-        padding(4).background(RoundedRectangle(cornerRadius: 10).fill(Color.primary.opacity(0.045)))
+        .card()
     }
 }
 
@@ -32,21 +20,13 @@ extension View {
 struct ProjectAgentRows: View {
     let card: PanelProjectCard
     let now: Date
-    let selection: PanelTarget.ID?
-    let sectionID: String
-    var jump: ((PanelAction) -> Void)?
-    let perform: (PanelAction) -> Void
-    let hover: (PanelTarget.ID?) -> Void
+    let rows: RowContext
 
     var body: some View {
         ForEach(card.agents.indices, id: \.self) { index in
             let row = card.agents[index]
-            let id = row.action.map { PanelTarget.id(section: sectionID, action: $0) }
-            AgentRow(row: row, now: now, isSelected: id != nil && id == selection,
-                     onJump: jump.flatMap { jump in row.action.map { action in { jump(action) } } })
-                .onTapGesture { if let action = row.action { tap(action, perform: perform, jump: jump) } }
-                .onHover { inside in if let id { hover(inside ? id : nil) } }
-                .id(id)
+            AgentRow(row: row, now: now, isSelected: rows.isSelected(row.action), onJump: rows.onJump(row.action))
+                .choosable(row.action, in: rows)
         }
     }
 }
@@ -57,14 +37,10 @@ struct ProjectAgentRows: View {
 struct ProjectHeader: View {
     let card: PanelProjectCard
     var compact = false
-    let selection: PanelTarget.ID?
-    let sectionID: String
-    let perform: (PanelAction) -> Void
-    let hover: (PanelTarget.ID?) -> Void
+    let rows: RowContext
 
     var body: some View {
-        let id = card.action.map { PanelTarget.id(section: sectionID, action: $0) }
-        return HStack(alignment: .firstTextBaseline, spacing: 6) {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 5) {
                     if compact, card.project.repo?.isLinkedCheckout == true {
@@ -88,16 +64,11 @@ struct ProjectHeader: View {
                 .foregroundStyle(.secondary)
         }
         .opacity(card.isLive ? 1 : 0.6)
-        .padding(.horizontal, 8)
-        .padding(.vertical, compact ? 3 : 5)
-        .background(RoundedRectangle(cornerRadius: 7).fill(id != nil && id == selection ? Color.accentColor.opacity(0.18) : .clear))
-        .contentShape(Rectangle())
-        .onTapGesture { if let action = card.action { perform(action) } }
-        .onHover { inside in if let id { hover(inside ? id : nil) } }
+        .rowChrome(isSelected: rows.isSelected(card.action), vertical: compact ? 3 : 5)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)
         .accessibilityAddTraits(card.action == nil ? .isHeader : [.isHeader, .isButton])
-        .id(id)
+        .choosable(card.action, in: rows.withoutJump)
     }
 
     private var accessibilityText: String {

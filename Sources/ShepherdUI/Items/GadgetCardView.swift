@@ -1,10 +1,11 @@
 import ShepherdCore
 import SwiftUI
 
-/// One account's plan usage: its name and plan, then a thin bar per limit with its value and
-/// when it resets, then notes. Dimmed when the data is stale. One accessibility element.
-struct UsageCard: View {
-    let provider: UsageProvider
+/// A gadget's card: its title and detail, then a thin bar per meter with its value and when it
+/// resets, then its lines. Dimmed when the data is stale. One accessibility element. Usage and
+/// This Mac are both drawn by it; a gadget whose content fits needs no view of its own.
+struct GadgetCardView: View {
+    let card: GadgetCard
     let now: Date
 
     /// A meter at or past this share of its limit turns orange.
@@ -13,32 +14,32 @@ struct UsageCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Text(provider.name)
+                Text(card.title)
                     .font(.system(size: 13, weight: .semibold))
                     .lineLimit(1)
                 Spacer(minLength: 8)
-                if let plan = provider.plan {
-                    Text(plan)
+                if let detail = card.detail {
+                    Text(detail)
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
             }
-            ForEach(provider.meters) { meter in
+            ForEach(card.meters) { meter in
                 meterView(meter)
             }
-            ForEach(provider.notes, id: \.self) { note in
-                Text(note)
+            ForEach(card.lines, id: \.self) { line in
+                Text(line)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .opacity(provider.isStale ? 0.6 : 1)
+        .opacity(card.isStale ? 0.6 : 1)
         .padding(.horizontal, 12)
         .padding(.vertical, 9)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 10).fill(Color.primary.opacity(0.045)))
+        .card(padding: EdgeInsets())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)
     }
@@ -83,14 +84,14 @@ struct UsageCard: View {
     }
 
     private var accessibilityText: String {
-        var parts = [provider.name]
-        if let plan = provider.plan { parts.append(plan) }
-        if provider.isStale { parts.append("out of date") }
-        for meter in provider.meters {
+        var parts = [card.title]
+        if let detail = card.detail { parts.append(detail) }
+        if card.isStale { parts.append("out of date") }
+        for meter in card.meters {
             var text = "\(meter.label) \(meter.valueText)"
             if let resets = meter.resetsAt { text += ", resets in \(Self.remaining(until: resets, now: now))" }
             parts.append(text)
         }
-        return (parts + provider.notes).joined(separator: ", ")
+        return (parts + card.lines).joined(separator: ", ")
     }
 }

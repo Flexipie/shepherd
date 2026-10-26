@@ -16,13 +16,6 @@ public struct PanelContent: Sendable, Equatable {
     }
 }
 
-/// Where the panel's "now" comes from. Views never read the clock themselves, so times tick
-/// once a minute while the panel exists and snapshots are stable.
-public enum PanelClock: Sendable {
-    case live
-    case fixed(Date)
-}
-
 /// The panel under the menu bar icon: the Agents | Gadgets tabs (when any gadget is on), then the
 /// tab's sections (on Agents the needs-you queue and a card per project), then status and
 /// problems. Up and down move the selection, Return chooses it, hovering selects, ⌘1 and ⌘2
@@ -56,12 +49,7 @@ public struct PanelView: View {
     }
 
     public var body: some View {
-        Group {
-            switch clock {
-            case .live: TimelineView(.everyMinute) { context in panel(now: context.date) }
-            case .fixed(let date): panel(now: date)
-            }
-        }
+        Clocked(clock: clock) { now in panel(now: now) }
         .frame(width: Self.width)
         .focusable()
         .focusEffectDisabled()
@@ -98,7 +86,8 @@ public struct PanelView: View {
     private func sections(now: Date) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             ForEach(visibleSections) { section in
-                PanelSectionView(section: section, now: now, selection: selection, perform: perform) { selection = $0 }
+                PanelSectionView(section: section, now: now, rows: RowContext(sectionID: section.id, selection: selection,
+                                                                               perform: perform) { selection = $0 })
             }
         }
         .padding(.horizontal, 10)

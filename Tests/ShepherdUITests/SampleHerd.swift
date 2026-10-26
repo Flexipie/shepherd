@@ -122,7 +122,7 @@ enum SampleHerd {
         meter("weekly", "Weekly", 0.36, resetsIn: 5 * 86_400 + 8 * 3600),
     ])
 
-    static let usage = PanelSection(id: "usage", title: "Usage", items: [.usage(personal), .usage(team), .usage(codex)],
+    static let usage = PanelSection(id: "usage", title: "Usage", items: [personal, team, codex].map { .gadget(GadgetCard($0)) },
                                     emptyText: "Reading usage…", tab: .gadgets)
 
     static let usageNotRunning = PanelSection(id: "usage", title: "Usage", items: [
@@ -132,7 +132,7 @@ enum SampleHerd {
     // MARK: This Mac
 
     static let system = PanelSection(id: "system", title: "This Mac", items: [
-        .usage(UsageProvider(id: "system", name: "CPU and memory", meters: [
+        .gadget(GadgetCard(id: "system", title: "CPU and memory", meters: [
             meter("cpu", "CPU", 0.23),
             meter("memory", "Memory", 0.86, "31.0 of 36 GB"),
         ])),

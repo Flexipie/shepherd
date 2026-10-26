@@ -78,16 +78,16 @@ final class StubSystemSampler: SystemSampler {
     }
 
     @Test func theSampleIsAMeterCard() {
-        let provider = SystemModule.provider(SystemSample(cpu: 0.234, memoryUsed: 19_541_180_416, memoryTotal: 38_654_705_664))
-        #expect(provider.meters.map(\.label) == ["CPU", "Memory"])
-        #expect(provider.meters.map(\.valueText) == ["23%", "18.2 of 36 GB"])
-        #expect(provider.meters[1].fraction == 19_541_180_416.0 / 38_654_705_664.0)
+        let card = SystemModule.card(SystemSample(cpu: 0.234, memoryUsed: 19_541_180_416, memoryTotal: 38_654_705_664))
+        #expect(card.meters.map(\.label) == ["CPU", "Memory"])
+        #expect(card.meters.map(\.valueText) == ["23%", "18.2 of 36 GB"])
+        #expect(card.meters[1].fraction == 19_541_180_416.0 / 38_654_705_664.0)
     }
 
     @Test func noCPUYetIsAnEllipsis() {
-        let provider = SystemModule.provider(SystemSample(cpu: nil, memoryUsed: 0, memoryTotal: 0))
-        #expect(provider.meters[0].valueText == "…")
-        #expect(provider.meters[1].fraction == 0)
+        let card = SystemModule.card(SystemSample(cpu: nil, memoryUsed: 0, memoryTotal: 0))
+        #expect(card.meters[0].valueText == "…")
+        #expect(card.meters[1].fraction == 0)
     }
 
     @Test func noSamplerNoSection() {
