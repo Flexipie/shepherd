@@ -622,5 +622,6 @@ against the panel is darkened until it reads. `rows_by_agent` is not read yet.
   with `footprint <pid>` on the app after the same steps (idle, then the bar and the palette each
   opened and closed). RSS (`ps -o rss`) is not the budget: it also counts clean pages of shared
   system frameworks, which macOS can drop without cost (against fake herdr, RSS is about 50 MB
-  idle and about 77 MB after the palette, footprint about 14 and 24 MB). Panel windows turn Writing Tools off in their field editor
-  (`NSText.withoutWritingTools`), because its first focus loads a few hundred frameworks.
+  idle and about 77 MB after the palette, footprint about 14 and 24 MB). Panel windows turn
+  Writing Tools off in their field editor (`NSText.withoutWritingTools`), because its first focus
+  loads a few hundred frameworks.

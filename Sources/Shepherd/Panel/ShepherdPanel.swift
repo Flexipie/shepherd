@@ -39,6 +39,7 @@ extension NSText {
     /// Turns Writing Tools off in a panel's field editor. Its first focus otherwise loads a few
     /// hundred system frameworks (WebKit among them) that stay resident; the fields here take a
     /// query or a short prompt. Spell check, autocorrect and completion stay as the user set them.
+    /// AppKit turns it back on each time a field takes focus, so this runs on every call, not once.
     func withoutWritingTools() -> NSText {
         if let editor = self as? NSTextView, editor.writingToolsBehavior != .none {
             editor.writingToolsBehavior = .none
