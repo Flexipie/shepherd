@@ -101,7 +101,7 @@ public indirect enum SettingsJSON: Equatable, Sendable {
         public var description: String { "\(reason) at byte \(offset)" }
     }
 
-    /// Strict JSON. Anything else, comments and trailing commas included, throws.
+    /// Strict JSON. Anything else, comments, trailing commas and repeated keys included, throws.
     public static func parse(_ data: Data) throws -> SettingsJSON {
         var parser = Parser(bytes: Array(data))
         let value = try parser.value()
@@ -157,7 +157,12 @@ public indirect enum SettingsJSON: Equatable, Sendable {
             while true {
                 skipSpace()
                 guard index < bytes.count, bytes[index] == UInt8(ascii: "\"") else { throw error("expected a key") }
+                let keyStart = index
                 let key = try string()
+                // JavaScript keeps the last of a repeated key; editing the first would do nothing.
+                guard !pairs.contains(where: { $0.key == key }) else {
+                    throw ParseError(offset: keyStart, reason: "repeated key \(key)")
+                }
                 try expect(UInt8(ascii: ":"))
                 pairs.append((key, try value()))
                 skipSpace()

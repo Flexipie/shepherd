@@ -12,8 +12,8 @@ if arguments.first == "install" || arguments.first == "uninstall" {
         show: { print($0, terminator: ""); fflush(stdout) },
         confirm: {
             guard isatty(STDIN_FILENO) != 0 else { return nil }
-            print("Write this change? [y/N] ", terminator: "")
-            fflush(stdout)
+            // On stderr, so a pager on stdout does not swallow the question.
+            FileHandle.standardError.write(Data("Write this change? [y/N] ".utf8))
             return ["y", "yes"].contains(readLine()?.lowercased().trimmingCharacters(in: .whitespaces) ?? "")
         })
 } else {

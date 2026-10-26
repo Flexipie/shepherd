@@ -134,7 +134,8 @@ import Testing
         #expect(try scratch.backups().isEmpty)
     }
 
-    @Test(arguments: [#"{"hooks": {,}"#, "// mine\n{}", "[]", #"{"hooks": []}"#, #"{"hooks": {"Stop": {}}}"#])
+    @Test(arguments: [#"{"hooks": {,}"#, "// mine\n{}", "[]", #"{"hooks": []}"#, #"{"hooks": {"Stop": {}}}"#,
+                       #"{"hooks": {}, "hooks": {"Stop": []}}"#])
     func aFileItCannotEditIsLeftAlone(_ contents: String) throws {
         let scratch = try Scratch(contents: contents)
         let (outcome, diff) = run(["install", "claude", "--yes"], scratch)
