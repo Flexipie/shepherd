@@ -127,7 +127,10 @@ As built:
   stand-in for tmux (`DemoScreenSource`, under tmux's source id, labelled inferred, never running
   tmux). Answering, replying, jumping and new tasks all work against it. Nothing of the user's is
   read or written: the config is the defaults (no file), there is no transition log, no plugins,
-  no usage and no Claude Code session reads. The herd is fixed, so screenshots come out the same.
+  no notifications, no usage, no Claude Code session reads and no look for herdr's terminal. The
+  herd starts the same each time, so screenshots do (the working report goes quiet after 15
+  minutes, as reports do). Try Demo is left out while another Shepherd runs, and leaving a demo
+  that runs beside one (`make demo`) only quits it.
   The `demo` module labels it at the top of the Agents tab, and the menu and the glyph's
   accessibility label say Demo. Each start replaces the socket and spool; quitting removes them.
 - `HerdrKit` stays a standalone herdr client: socket, models, `SessionEngine`, transition tracking.

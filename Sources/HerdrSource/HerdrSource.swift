@@ -18,6 +18,8 @@ public final class HerdrSource: AgentSource {
     private let client: HerdrClient
     private let engine: SessionEngine
     private let activatesTerminal: Bool
+    /// Off for a herdr on another socket: the herdr processes on this Mac are not its.
+    private var findsHost = true
     private var task: Task<Void, Never>?
     /// Last known kind and project per pane, so a closed agent's transition still says what it was.
     private var known: [String: (kind: String?, project: String)] = [:]
@@ -46,6 +48,7 @@ public final class HerdrSource: AgentSource {
     /// forward and no herdr config read.
     public convenience init(socketPath: String) {
         self.init(client: HerdrClient(socketPath: socketPath), activatesTerminal: false, configURL: nil)
+        findsHost = false
     }
 
     public func start() {
@@ -149,7 +152,8 @@ public final class HerdrSource: AgentSource {
 
     /// The terminal apps hosting an attached herdr client (see `HerdrProcesses`).
     public func hostApplicationPIDs() -> [pid_t] {
-        TerminalLocator.hostingApps(
+        guard findsHost else { return [] }
+        return TerminalLocator.hostingApps(
             of: HerdrProcesses.pids(named: "herdr"),
             isApp: { NSRunningApplication(processIdentifier: $0)?.activationPolicy == .regular })
     }

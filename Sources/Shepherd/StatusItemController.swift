@@ -12,17 +12,17 @@ final class StatusItemController: NSObject {
     private let registry: ModuleRegistry
     private let panel: PanelController
     private let isDemo: Bool
-    /// Whether this Shepherd can open another in or out of demo mode (it runs as an app).
-    private let canSwitchDemo: Bool
+    /// The title of the menu's demo item, read when the menu opens; nil for none.
+    private let demoItem: () -> String?
     private let switchDemo: () -> Void
 
-    init(store: HerdStore, registry: ModuleRegistry, panel: PanelController, isDemo: Bool, canSwitchDemo: Bool,
+    init(store: HerdStore, registry: ModuleRegistry, panel: PanelController, isDemo: Bool, demoItem: @escaping () -> String?,
          switchDemo: @escaping () -> Void) {
         self.store = store
         self.registry = registry
         self.panel = panel
         self.isDemo = isDemo
-        self.canSwitchDemo = canSwitchDemo
+        self.demoItem = demoItem
         self.switchDemo = switchDemo
         super.init()
         // No permanent `item.menu`: while one is set, the button's action never fires.
@@ -93,8 +93,8 @@ final class StatusItemController: NSObject {
             menu.addItem(NSMenuItem(title: line, action: nil, keyEquivalent: ""))
         }
         menu.addItem(.separator())
-        if canSwitchDemo {
-            let item = NSMenuItem(title: isDemo ? "Leave Demo" : "Try Demo", action: #selector(demoChosen), keyEquivalent: "")
+        if let title = demoItem() {
+            let item = NSMenuItem(title: title, action: #selector(demoChosen), keyEquivalent: "")
             item.target = self
             menu.addItem(item)
         }

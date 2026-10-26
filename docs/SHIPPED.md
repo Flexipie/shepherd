@@ -235,5 +235,5 @@ Oldest first.
   Claude Code reports (one working, one asking a question) and two screen-read tmux agents,
   through the real herdr and report sources. A "Demo herd" card tops the Agents tab and the menu
   says so. It reads and writes nothing of the user's: no herdr, tmux, config, transition log,
-  plugins, usage or session files; the socket and spool are fixed paths under `/tmp`. The
+  plugins, notifications, usage or session files; the socket and spool are fixed paths under `/tmp`. The
   first-run guide's last card points to it. Idle in demo: 0.0% CPU, 24 MB footprint.

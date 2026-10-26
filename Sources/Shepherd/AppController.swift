@@ -38,7 +38,8 @@ final class AppController {
     /// The first-run guide has been filled once; after that it is refreshed only when a panel opens.
     private var guideFilled = false
 
-    /// In demo mode no plugin runs and no usage or Claude Code session is read: they are the user's own.
+    /// In demo mode no plugin runs, no notification is posted and no usage or Claude Code session
+    /// is read: they are the user's own.
     init(demo: Bool) {
         isDemo = demo
         log = demo ? nil : TransitionLog(url: ProcessInfo.processInfo.environment["SHEPHERD_TRANSITION_LOG"]
@@ -46,7 +47,8 @@ final class AppController {
         config = demo ? ConfigStore(fixed: .defaults) : ConfigStore()
         store = HerdStore(log: log)
         actions = AppActions(store: store, presence: presence, config: config)
-        notifier = SystemNotifier(store: store, actions: actions, config: config)
+        // Notifications are shared with any other Shepherd, so a demo posts and withdraws none.
+        notifier = demo ? nil : SystemNotifier(store: store, actions: actions, config: config)
         let plugins = demo ? nil : PluginHost(runner: ProcessPluginRunner(), store: store, config: config)
         context = ModuleContext(store: store, presence: presence, actions: actions, config: config, notifier: notifier,
                                     usage: demo ? nil : OpenUsageReader(), system: MachSystemSampler(),
@@ -59,9 +61,8 @@ final class AppController {
         let panel = PanelController(content: content, actions: actions, presence: presence)
         self.panel = panel
         statusItem = StatusItemController(store: store, registry: registry, panel: panel, isDemo: isDemo,
-                                          canSwitchDemo: Bundle.main.bundleURL.pathExtension == "app") { [weak self] in
-            self?.relaunch()
-        }
+                                          demoItem: { [weak self] in self?.demoMenuTitle },
+                                          switchDemo: { [weak self] in self?.relaunch() })
         notch = NotchSurfaceController(registry: registry, content: content, actions: actions, presence: presence)
         palette = PaletteController(context: context, registry: registry, actions: actions)
         hotKeys = HotKeyCenter(config: config, bindings: [
@@ -106,9 +107,27 @@ final class AppController {
         demo?.removeFiles()
     }
 
+    /// The menu's demo item, when this Shepherd runs as an app: Leave Demo in demo mode, else Try
+    /// Demo, left out while another Shepherd runs (a second demo would share its socket and spool).
+    private var demoMenuTitle: String? {
+        guard Bundle.main.bundleURL.pathExtension == "app" else { return nil }
+        if isDemo { return "Leave Demo" }
+        return otherShepherdRunning ? nil : "Try Demo"
+    }
+
+    private var otherShepherdRunning: Bool {
+        NSRunningApplication.runningApplications(withBundleIdentifier: Bundle.main.bundleIdentifier ?? "")
+            .contains { $0.processIdentifier != ProcessInfo.processInfo.processIdentifier }
+    }
+
     /// Opens a new Shepherd in or out of demo mode, then quits this one. The hotkeys are let go
-    /// first, so the new one can take them; they come back if it does not open.
+    /// first, so the new one can take them; they come back if it does not open. Leaving a demo
+    /// that runs beside another Shepherd (`make demo`) only quits it.
     private func relaunch() {
+        if isDemo, otherShepherdRunning {
+            NSApp.terminate(nil)
+            return
+        }
         closeSurfaces()
         hotKeys?.suspend()
         let options = NSWorkspace.OpenConfiguration()

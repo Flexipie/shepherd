@@ -34,12 +34,22 @@ public final class DemoHerd {
         try? FileManager.default.removeItem(at: folder)
         let spool = ReportSpool(directory: folder)
         let now = Date.now
+        do {
+            try writeReports(spool, now: now)
+        } catch {
+            await server.stop()
+            throw error
+        }
+        return DemoHerd(server: server, spool: folder)
+    }
+
+    /// A working report goes quiet after 15 minutes like any other; a new demo starts fresh.
+    private static func writeReports(_ spool: ReportSpool, now: Date) throws {
         try spool.write(ReportFile(agent: "release-notes", status: .working, message: "Drafting the release notes from merged PRs",
                                    kind: "claude", cwd: "/tmp/site", updatedAt: now))
         try spool.write(ReportFile(agent: "migration", status: .blocked,
                                    question: "Run the database migration now, or wait for review?",
                                    kind: "claude", cwd: "/tmp/billing", updatedAt: now))
-        return DemoHerd(server: server, spool: folder)
     }
 
     /// Removes the socket and the spool, for when the app quits. Safe to call from termination.
