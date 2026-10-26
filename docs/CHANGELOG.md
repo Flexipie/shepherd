@@ -21,9 +21,9 @@ they run.
   adds hooks so Claude Code reports its exact state from any terminal, and any agent or script can
   report its own with `shepherd-report report`. With no agents yet, the panel says where agents
   come from and what each source needs.
-- **Try it before your own agents.** Try Demo in the menu bar icon's right-click menu (or `make
-  demo`) runs Shepherd on a made-up herd, with approvals, finished work and questions to click
-  through. It touches nothing of yours; Leave Demo goes back.
+- **Try it before your own agents.** Try Demo in the menu bar icon's right-click menu (or
+  `make demo`) runs Shepherd on a made-up herd, with approvals, finished work and questions to
+  click through. It touches nothing of yours; Leave Demo goes back.
 - **Act without switching to the terminal.** Answer an approval from the notch with buttons or
   digit keys, reply to a blocked agent, prompt an idle one, or start a new task in a fresh
   worktree. Works for agents under herdr and tmux. Jumping brings the right terminal forward, even
