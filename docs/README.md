@@ -18,11 +18,23 @@ binary: users build from source.
 
 1. In a PR: give the version's section in [CHANGELOG.md](CHANGELOG.md) its date and set the same
    version in `scripts/bundle.sh`. Merge it.
-2. Tag `main` and publish the section as the release notes:
+2. Tag the merged `main` and publish the section as a draft release. The `awk` joins wrapped lines,
+   since GitHub keeps line breaks in release notes. Check the draft, then publish it.
 
 ```bash
 v=0.1.0
-git tag "v$v" && git push origin "v$v"
-awk -v v="$v" '$0 ~ "^## \\[" v "\\]" {on=1; next} /^## \[|^\[/ {on=0} on' docs/CHANGELOG.md >/tmp/notes.md
-gh release create "v$v" --title "Shepherd $v" --notes-file /tmp/notes.md
+git fetch origin main
+git tag -a "v$v" -m "Shepherd $v" origin/main && git push origin "v$v"
+awk -v v="$v" '
+  $0 ~ "^## \\[" v "\\]" { on = 1; next }
+  /^## \[|^\[/ { on = 0 }
+  !on { next }
+  $0 != "" && prev != "" && $0 !~ /^ *(- |#)/ { sub(/^ +/, ""); out = out " " $0; prev = $0; next }
+  { if (started) print out; out = $0; prev = $0; started = 1 }
+  END { if (started) print out }
+' docs/CHANGELOG.md >/tmp/notes.md
+test -s /tmp/notes.md && gh release create "v$v" --draft --verify-tag --title "Shepherd $v" --notes-file /tmp/notes.md
 ```
+
+3. Start the next section: add `## [Unreleased]` above the released one, for the changes that
+   follow.
