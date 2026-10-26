@@ -4,6 +4,7 @@ import ShepherdCore
 /// time in state and tokens. Projects without agents are still shown, since they are somewhere
 /// to go. A source that is not live shows its last known state, dimmed, never as current.
 /// Checkouts of one repo share a card, at the place of the first, with the main checkout first.
+/// Cards named in `layout.projects` come first.
 @MainActor
 public final class ProjectsModule: ShepherdModule {
     public static let id = "projects"
@@ -25,7 +26,7 @@ public final class ProjectsModule: ShepherdModule {
             let project = HerdProject(id: ProjectID(source: source.id, local: ""), name: source.displayName)
             cards.append(card(project, agents: loose.filter { $0.id.source == source.id }, action: nil))
         }
-        return PanelSection(id: Self.id, title: "Projects", items: Self.grouped(cards), emptyText: "No projects")
+        return PanelSection(id: Self.id, title: "Projects", items: context.config.config.layout.orderProjects(Self.grouped(cards)), emptyText: "No projects")
     }
 
     /// Cards of two or more checkouts of one repo become one repo card where the first of them

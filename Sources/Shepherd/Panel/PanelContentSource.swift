@@ -2,7 +2,7 @@ import ShepherdCore
 import ShepherdUI
 
 /// What the panel shows, computed from the modules and the store. Shared by the menu bar panel
-/// and the notch surface, so the two never drift. Read inside observation tracking to redraw
+/// and the notch surface, so the two never drift, arranged by `layout` in config. Read inside observation tracking to redraw
 /// when any of it changes.
 @MainActor
 struct PanelContentSource {
@@ -11,7 +11,7 @@ struct PanelContentSource {
     let config: ConfigStore
 
     func current() -> PanelContent {
-        PanelContent(sections: registry.modules.compactMap(\.panel), statusLines: HerdSummary.lines(store),
+        PanelContent(sections: config.config.layout.arrange(registry.modules.compactMap(\.panel)), statusLines: HerdSummary.lines(store),
                      problems: config.problems)
     }
 }

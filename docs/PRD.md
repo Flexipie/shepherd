@@ -565,6 +565,16 @@ handling.
 Every key is optional and a missing file means defaults. As built:
 
 - `modules`: enabled module ids, in order.
+- `layout`: what the menu bar panel and the notch bar show, without turning modules off.
+  `agents` and `gadgets` list section (module) ids for that tab, in order; a section of that tab
+  left out is hidden, and a tab with no list shows all of its sections in `modules` order. A list
+  orders only its own tab's sections (an id of a section on the other tab is ignored), and the bar
+  keeps the queue pinned on the left wherever it is listed. Hiding every gadget hides the tabs,
+  so nothing reads for Gadgets. `projects` lists project or repo names, matched without regard to
+  case, whose cards come first in that order; the rest follow in source order, and a name with no
+  project is not an error (projects come and go). An id that names no module is reported under
+  `layout`. A hidden gadget's module still runs while its tab shows; leave it out of `modules` to
+  stop it.
 - `tokens`: `projects` and `agents`, each a list of lines in herdr's sidebar syntax (see "Tokens").
 - `hotkeys.next`: the "next" hotkey, `null` to turn it off.
 - `hotkeys.palette`: the palette's hotkey (default `option+space`), `null` to turn it
