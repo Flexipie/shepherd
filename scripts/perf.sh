@@ -27,6 +27,8 @@ cleanup() {
     rm -rf "$work"
 }
 trap cleanup EXIT
+# A write to a fake that died fails with an error, through the trap, instead of killing the script.
+trap '' PIPE
 
 # The fake reads commands from stdin and quits at its end; a FIFO this script holds open keeps
 # it running until cleanup.
@@ -38,8 +40,9 @@ exec 3>"$work/stdin"
 for _ in $(seq 50); do [[ -S "$socket" ]] && break; sleep 0.1; done
 [[ -S "$socket" ]] || { echo "perf: fake herdr did not start" >&2; cat "$work/fake.log" >&2; exit 1; }
 
-# herdr only: tmux and the report spool would read the machine's real agents.
-echo '{ "sources": ["herdr"] }' >"$work/config.json"
+# herdr only: tmux and the report spool would read the machine's real agents. No hotkeys, so a
+# running Shepherd keeps its own.
+echo '{ "sources": ["herdr"], "hotkeys": { "next": null, "palette": null } }' >"$work/config.json"
 mkdir -p "$work/plugins" "$work/spool" "$work/claude"
 
 HERDR_SOCKET_PATH="$socket" \
@@ -55,7 +58,7 @@ app_pid=$!
 
 # CPU time from ps ("[hh:]mm:ss.cc") in seconds.
 cpu_seconds() {
-    ps -o time= -p "$app_pid" | awk '{
+    { ps -o time= -p "$app_pid" || true; } | awk '{
         n = split($1, part, ":"); total = 0
         for (i = 1; i <= n; i++) total = total * 60 + part[i]
         print total }'
@@ -88,7 +91,11 @@ lines() { [[ -f "$work/transitions.jsonl" ]] && wc -l <"$work/transitions.jsonl"
 logged="$(lines)"
 echo "block w1:p1" >&3
 for _ in $(seq 50); do (( $(lines) > logged )) && break; sleep 0.1; done
-(( $(lines) > logged )) || { echo "perf: Shepherd never showed fake herdr's agents" >&2; exit 1; }
+(( $(lines) > logged )) || {
+    echo "perf: Shepherd never showed fake herdr's agents" >&2
+    cat "$work/app.log" "$work/fake.log" >&2
+    exit 1
+}
 
 status=0
 cpu_ok="$(awk -v c="$cpu" -v l="$cpu_limit" 'BEGIN { print (c <= l) ? "ok" : "OVER" }')"

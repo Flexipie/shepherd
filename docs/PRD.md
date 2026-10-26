@@ -612,7 +612,7 @@ against the panel is darkened until it reads. `rows_by_agent` is not read yet.
   averages more than 0.5% or the physical footprint is over 60 MB. `PERF_SECONDS`,
   `PERF_CPU_LIMIT` and `PERF_MEMORY_LIMIT_MB` override them. The footprint after opening the bar
   and the palette is still measured by hand. While it runs, a second Shepherd shows its status
-  item and notch for about 35 s; a running Shepherd keeps its hotkeys and is not touched.
+  item and notch for about 35 s, with no hotkeys; a running Shepherd is not touched.
 - The UI is still checked by hand against a real herdr before a feature ships (see VISION).
 
 ## Performance budget
