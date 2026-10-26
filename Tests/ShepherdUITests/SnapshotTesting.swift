@@ -76,6 +76,15 @@ enum Snapshot {
         return pngData(image)
     }
 
+    /// The height `view` takes at `width` under ImageRenderer, which draws text fields as a fixed
+    /// placeholder. Laid out at 1x and rounded up to a whole point, like the `NSView.fittingSize`
+    /// it replaced, so the references kept their heights.
+    static func height(of view: some View, width: CGFloat) -> CGFloat {
+        var height: CGFloat = 0
+        ImageRenderer(content: view.frame(width: width).environment(\.colorScheme, .dark)).render { size, _ in height = size.height }
+        return height.rounded(.up)
+    }
+
     static func pngData(_ image: CGImage) -> Data? {
         NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:])
     }
