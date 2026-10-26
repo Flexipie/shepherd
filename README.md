@@ -14,8 +14,8 @@ without switching to the terminal.
   finished. Hover it for the whole herd: who needs you first, then every project.
 - **Act where you are.** Approval prompts become buttons. Reply, prompt or jump to the agent's
   terminal from any app.
-- **Calm and light.** No network, no telemetry, no CPU when idle (0.00% CPU and 14 MB measured
-  idle against a fake herdr). See [Privacy](#privacy).
+- **Calm and light.** Nothing leaves your Mac, no telemetry, no CPU when idle (0.00% CPU and
+  14 MB measured idle against a fake herdr). See [Privacy](#privacy).
 
 > Status: early, and built from source for now. See the
 > [issues](https://github.com/Flexipie/shepherd/issues) and [docs/ROADMAP.md](docs/ROADMAP.md).
@@ -33,8 +33,12 @@ together or alone:
 
 **tmux is what the screen features need.** Without tmux (or herdr) Shepherd can only show what
 agents report; it cannot read a screen, type into it or press an approval button. Run your agents
-in tmux to get those. Agent reports are for agents outside tmux; inside tmux the screen already
-gives Shepherd their state.
+in tmux to get those.
+
+Agent reports are for agents that run outside tmux and herdr. For now, don't install the Claude
+Code hooks if your Claude sessions run in tmux or herdr: in tmux the report replaces the screen
+row, so you lose reading, answering and jumping for that agent, and under herdr the agent shows
+twice.
 
 With no config file, every source that is on your Mac runs. Until the first agent shows, the
 panel says which sources it found and what to do next.
@@ -55,13 +59,16 @@ cp -R build/Shepherd.app /Applications/
 open /Applications/Shepherd.app
 ```
 
-To have Claude Code report its own state (for sessions outside tmux), add Shepherd's hooks to its
-settings. It shows the change as a diff, asks first and keeps a backup; `uninstall claude` removes
-exactly what it added:
+To have Claude Code report its own state (for sessions outside tmux and herdr), add Shepherd's
+hooks to its settings. It shows the change as a diff, asks first and keeps a backup;
+`uninstall claude` removes exactly what it added:
 
 ```bash
 /Applications/Shepherd.app/Contents/MacOS/shepherd-report install claude
 ```
+
+Claude Code runs the hooks as `shepherd-report`, so it must be on your PATH. If it is not,
+`install claude` says so before asking and prints the `ln -s` that puts it there.
 
 Any other agent can report too, from its own hooks or scripts:
 `shepherd-report report --status working|blocked|done|idle|closed [--message <text>]`.
@@ -105,8 +112,8 @@ config or history; Leave Demo in the same menu goes back.
   context is ("184k"), and once it stops, its last message on one line; the stage and the
   palette show the whole message.
 - **Notifications** (off by default; the notch is the alert). When on, an agent you are not
-  looking at that blocks posts a macOS notification with Jump and Reply. States read from a
-  screen are a guess, so they never notify; reports and herdr do.
+  looking at that blocks posts a macOS notification (with Jump and Reply where its source allows).
+  States read from a screen are a guess, so they never notify; reports and herdr do.
 - **Your herdr colours.** With herdr, token colours and rules come from herdr's own `[ui.sidebar]`
   config, so `$pr` and `$ticket_state` look as they do in its sidebar.
 - **Honest state.** States read from a screen are marked inferred. If a source's connection
@@ -114,7 +121,7 @@ config or history; Leave Demo in the same menu goes back.
   "4m" when Shepherd saw the change and "4m+" when it only knows an upper bound.
 
 A tip for MacBooks with a full menu bar: items can hide behind the notch. The notch and the
-hotkeys work either way; to see the menu bar icon too, Cmd-drag it somewhere visible.
+hotkeys work either way; to see the menu bar icon too, ⌘-drag it somewhere visible.
 
 ## Privacy
 
@@ -129,9 +136,10 @@ check, no account.
   tail of that session's file in `~/.claude/projects`; Claude Code's `settings.json`, to say on
   first run whether the hooks are installed; its own config and plugins folder.
 - **What it writes:** a history of state changes in
-  `~/Library/Application Support/Shepherd/transitions.jsonl` (the newest 5,000), and report files
-  in `~/Library/Application Support/Shepherd/reports`, written by `shepherd-report` and removed
-  by Shepherd when the agent closes or a day after it blocked or finished. Only when you ask: keys and text typed into an agent, a git worktree and branch for a new
+  `~/Library/Application Support/Shepherd/transitions.jsonl` (the newest 5,000). Agent reports
+  are files in `~/Library/Application Support/Shepherd/reports`: `shepherd-report` writes them and
+  removes one when its agent closes, and Shepherd removes one a day after it blocked or finished.
+  Only when you ask: keys and text typed into an agent, a git worktree and branch for a new
   task, and Claude Code's `settings.json` through `shepherd-report install`, after showing the
   diff, with a backup.
 - **Plugins** are your own code and run with your permissions: when the palette opens (to list
@@ -154,7 +162,8 @@ Global actions show up in the palette; ⌘K on an agent or a project lists its o
 gets the target as environment variables (`SHEPHERD_CWD`, `SHEPHERD_PROJECT_PATH`,
 `SHEPHERD_AGENT_ID`, `SHEPHERD_TOKENS` and more) and can print text, which the palette shows, or
 JSON such as `{"tokens": {"pr": "#12"}}`, which sets tokens on that row for any agent. A plugin
-can also run on agent events (`agent.blocked`, `agent.finished` and others). See
+can also run on agent events (`agent.blocked`, `agent.finished` and others), for states that herdr
+or a report gives; a screen reading never fires one. See
 `examples/plugins/` (every herdr plugin action in the palette, and a diff stat) and "Plugins" in
 `docs/PRD.md`.
 
@@ -165,7 +174,8 @@ can be left out:
 
 ```json
 {
-  "modules": ["status", "notch", "sources", "queue", "usage", "system", "projects", "context"],
+  "modules": ["status", "notch", "sources", "queue", "usage", "system", "projects",
+              "notifications", "context", "plugins"],
   "tokens": {
     "projects": [[{ "token": "pr", "fg": "#94e2d5", "rules": [{ "contains": "draft", "dim": true }] }, "ticket_state"]],
     "agents": [["summary"]]
