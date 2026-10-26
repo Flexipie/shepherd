@@ -539,8 +539,9 @@ A gadget is a module whose section sets `tab: .gadgets`. Its items are `PanelIte
 cards (`GadgetCard`: a title, a detail, meters drawn as thin bars, and short lines), which every
 surface already draws, so a gadget that fits that shape touches only its module (and its line in
 `BuiltinModules.all`). A gadget that needs a look of its own adds one view in
-`Sources/ShepherdUI/Items/`, with its value as a `PanelItem` case and one line in
-`PanelItemView`; the surfaces do not change. Rows reuse `rowChrome` and `choosable` and cards
+`Sources/ShepherdUI/Items/`, with its value as a `PanelItem` case, one line in `PanelItemView`
+and one in `PanelTarget.actions` (what the keyboard can select in it, usually nothing); the
+surfaces do not change. Rows reuse `rowChrome` and `choosable` and cards
 `card()` from `Components`, so a new view does not copy their padding, highlight or click
 handling.
 
