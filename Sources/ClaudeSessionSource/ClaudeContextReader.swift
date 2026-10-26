@@ -7,9 +7,9 @@ import ShepherdCore
 /// directory), it looks for `<session id>.jsonl` in every project folder once and remembers it.
 ///
 /// Read-only, and only the file's last `tailBytes`. The size is the last main-thread assistant
-/// turn's input plus cache read plus cache creation tokens; the message is the text of the last
-/// main-thread assistant entry that has any. An unchanged file (same size and modification date)
-/// costs one `stat`. Other agent kinds read nothing and give nil.
+/// turn's input plus cache read plus cache creation tokens; the message is the text of the latest
+/// turn's last main-thread assistant entry that has any. An unchanged file (same size and
+/// modification date) costs one `stat`. Other agent kinds read nothing and give nil.
 @MainActor
 public final class ClaudeContextReader: AgentContextReader {
     public nonisolated static let tailBytes = 256 * 1024
@@ -126,7 +126,9 @@ enum ClaudeSessionFile {
                   let message = object["message"] as? [String: Any] else { continue }
             switch object["type"] as? String {
             case "user":
-                if !messageDone, object["isMeta"] as? Bool != true, !isToolResult(message) { messageDone = true }
+                if !messageDone, object["isMeta"] as? Bool != true, !isToolResult(message), !isLocalCommand(message) {
+                    messageDone = true
+                }
             case "assistant":
                 guard message["model"] as? String != "<synthetic>" else {
                     messageDone = true
@@ -146,6 +148,15 @@ enum ClaudeSessionFile {
             if tokens != nil, messageDone { break }
         }
         return (tokens, finalMessage)
+    }
+
+    /// A user entry Claude Code writes for a local slash command (`/cost`, `/model`): its name
+    /// and its output, in tags. It starts no turn, so the answer before it still stands.
+    static func isLocalCommand(_ message: [String: Any]) -> Bool {
+        let text = message["content"] as? String
+            ?? (message["content"] as? [[String: Any]])?.first.flatMap { $0["text"] as? String } ?? ""
+        let start = text.drop { $0.isWhitespace }
+        return ["<command-name>", "<command-message>", "<local-command-"].contains { start.hasPrefix($0) }
     }
 
     /// A user entry that only carries tool results, which Claude Code writes inside a turn.

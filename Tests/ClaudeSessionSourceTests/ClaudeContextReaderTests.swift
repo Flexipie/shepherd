@@ -71,9 +71,11 @@ import Testing
             #expect(ClaudeSessionFile.lastTurn(in: data, cutAtStart: false).finalMessage == nil)
             #expect(ClaudeSessionFile.lastTurn(in: data, cutAtStart: false).tokens == 7)
         }
-        // A meta entry (a local command's output) does not end the turn.
-        let meta = #"{"type":"user","isMeta":true,"message":{"role":"user","content":"<local-command-stdout>"}}"#
-        #expect(ClaudeSessionFile.lastTurn(in: Data((lines + [meta]).joined(separator: "\n").utf8), cutAtStart: false).finalMessage != nil)
+        // A meta entry and a local command (its name, then its output) do not end the turn.
+        let local = [#"{"type":"user","isMeta":true,"message":{"role":"user","content":"<local-command-caveat>x</local-command-caveat>"}}"#,
+                     #"{"type":"user","message":{"role":"user","content":"<command-name>/cost</command-name>"}}"#,
+                     #"{"type":"user","message":{"role":"user","content":"<local-command-stdout>x</local-command-stdout>"}}"#]
+        #expect(ClaudeSessionFile.lastTurn(in: Data((lines + local).joined(separator: "\n").utf8), cutAtStart: false).finalMessage != nil)
         // The fixture has usage but no text.
         #expect(ClaudeSessionFile.lastTurn(in: Data(#"{"type":"assistant","message":{"model":"m","usage":{"input_tokens":1}}}"#.utf8),
                                            cutAtStart: false).finalMessage == nil)

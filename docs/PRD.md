@@ -139,8 +139,10 @@ As built:
   "-" and "_" are refused. Off the main actor it reads the last 256 KB, drops the first (cut)
   line, and walks back to the last assistant line that is not a sidechain or a synthetic error
   with `message.usage`; the size is input plus cache read plus cache creation tokens. The same
-  walk gives the final message: the `text` blocks of the last such line that has any (not
-  "(no content)"), trimmed and cut at 10,000 characters. Both come back as one
+  walk gives the final message: the `text` blocks of the last main-thread assistant line that has
+  any (not "(no content)"), trimmed and cut at 10,000 characters, looked for only in the latest
+  turn: a newer prompt, interruption or API error means none (a tool result, a meta entry or a
+  local slash command's entries do not end the turn). Both come back as one
   `AgentSessionReading`. Readings are cached by path, size and modification date, so an
   unchanged file costs one `stat`.
 
@@ -338,7 +340,8 @@ so a module reads only while its tab shows (`Presence.isShowing(_:)`).
   Code agent's context size on its row ("184k", before the time; help "Context: 184,213
   tokens") and in its stage header ("184k context"), and its last message. While a surface shows
   Agents (the palette counts as one) the module reads every agent with a session on showing it,
-  then an agent again when its status changes, into `ModuleContext.agentContext`
+  then an agent again when its status, its `since` or its session changes, into
+  `ModuleContext.agentContext`
   (`AgentContextStore`), which `queue`, `projects` and the palette read into
   `PanelAgentRow.contextTokens` and `finalMessage`. A row shows `messagePreview` under its title,
   one line with whitespace collapsed and `**` and backticks dropped, unless the agent is working

@@ -106,6 +106,21 @@ final class StubContextReader: AgentContextReader {
         _ = module
     }
 
+    /// A cleared or resumed session while the agent stays idle is read again.
+    @Test func aNewSessionIsReadAgain() async {
+        let (module, _) = module()
+        send([agent("p1", .idle)])
+        await until { store.agents.count == 1 }
+        presence.setPanel("menu", showing: .agents)
+        await until { reader.reads.count == 1 }
+        let resumed = HerdAgent(id: AgentID(source: "herdr", local: "p1"), kind: "claude", name: "p1", status: .idle,
+                                session: AgentSession(kind: "claude", id: "session-new", cwd: "/tmp/project-1"))
+        send([resumed])
+        await until { reader.reads.count == 2 }
+        #expect(reader.reads == ["session-p1", "session-new"])
+        _ = module
+    }
+
     @Test func aGoneAgentLosesItsSize() async {
         let (module, context) = module()
         send([agent("p1", .idle)])

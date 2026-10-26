@@ -24,7 +24,7 @@ struct FinalMessage: View {
         .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.06)))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Last message")
-        .accessibilityValue(message)
+        .accessibilityValue(String(Self.attributed(message).characters))
     }
 
     private var text: some View {

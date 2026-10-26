@@ -11,9 +11,8 @@ import SwiftUI
 /// while that agent's prompt shows. It closes on Escape from the list, a click outside, a Space
 /// change, losing key, or after an action or a successful send. While open it counts as a panel
 /// showing Agents, so agents' context sizes and last messages are read, but never Gadgets. Each
-/// opening refreshes the
-/// plugins (their manifests and listed actions); ⌘K shows a selection's plugin actions, and an
-/// action's printed text stays on a result page.
+/// opening refreshes the plugins (their manifests and listed actions); ⌘K shows a selection's
+/// plugin actions, and an action's printed text stays on a result page.
 @MainActor
 final class PaletteController: NSObject, NSWindowDelegate {
     private let context: ModuleContext
