@@ -126,11 +126,12 @@ public struct TmuxClient: Sendable {
         }
     }
 
-    /// Every session, least recently used first.
+    /// Every session, least recently used first. Activity is in whole seconds; within one second
+    /// the older session id, made earlier, comes first.
     public func sessions() throws -> [TmuxSession] {
         try run(["list-sessions", "-F", TmuxSession.format]).split(separator: "\n")
             .compactMap { TmuxSession.parse(String($0)) }
-            .sorted { $0.activity < $1.activity }
+            .sorted { ($0.activity, Int($0.id.dropFirst()) ?? 0) < ($1.activity, Int($1.id.dropFirst()) ?? 0) }
     }
 
     public func clients() throws -> [TmuxAttachedClient] {

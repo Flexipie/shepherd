@@ -140,7 +140,8 @@ check, no account.
   `tmux -C`, per server learns when a pane prints, and keeps only which pane did. It sits on a
   session a terminal is already on, or else the least recently used one, so a plain `tmux attach`
   still lands where it would without Shepherd, and a session with `destroy-unattached` still
-  closes with its terminal. That one session shows as attached in `tmux ls` when no terminal is on any); the `.git` entries
+  closes with its terminal. When it sits on a session no terminal is on, `tmux ls` shows that one
+  as attached, and after Shepherd quits it looks recently used, since tmux counts an attach as use); the `.git` entries
   above an agent's folder; agent reports in its spool folder; for Claude Code under herdr, the
   tail of that session's file in `~/.claude/projects`; Claude Code's `settings.json`, to say on
   first run whether the hooks are installed; its own config and plugins folder.

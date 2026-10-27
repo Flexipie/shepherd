@@ -34,6 +34,16 @@ import Testing
             == .init(session: "$a", parked: true))
     }
 
+    @Test func aParkedSessionThatIsTheLastWithoutATerminalIsLeft() {
+        // Parked on `a` with no terminal anywhere; then a terminal attaches to `b`. A second plain
+        // attach would go to `a`, the one session left without a terminal, so the client moves to `b`.
+        let parked = TmuxFollow.Choice(session: "$a", parked: true)
+        #expect(TmuxFollow.choose(sessions: [session("a"), session("b")], terminals: [terminal(on: "b")], current: parked)
+            == .init(session: "$b", parked: false))
+        // A lone session is parked on: any attach picks it anyway.
+        #expect(TmuxFollow.choose(sessions: [session("a")], terminals: [], current: nil) == .init(session: "$a", parked: true))
+    }
+
     @Test func aSessionTmuxClosesUnattachedIsNeverHeldWithoutATerminal() {
         let sessions = [session("a", closes: true), session("b")]
         #expect(TmuxFollow.choose(sessions: sessions, terminals: [], current: nil) == .init(session: "$b", parked: true))

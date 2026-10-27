@@ -80,6 +80,8 @@ public actor ControlClient {
         environment["TMUX_PANE"] = nil
         process.environment = environment
         let stdin = Pipe()
+        // A write after tmux exited (an attach that failed) must fail, not kill Shepherd with SIGPIPE.
+        _ = fcntl(stdin.fileHandleForWriting.fileDescriptor, F_SETNOSIGPIPE, 1)
         let stdout = Pipe()
         process.standardInput = stdin
         process.standardOutput = stdout

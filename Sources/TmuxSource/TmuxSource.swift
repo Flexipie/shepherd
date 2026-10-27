@@ -19,9 +19,6 @@ public final class TmuxSource: AgentSource {
     static let newPaneDelay: Duration = .seconds(1)
     /// One more read after a pane the subscription reported changed (`scheduleFollowUp`).
     static let followUpDelay: Duration = .milliseconds(1100)
-    /// Output from a pane a listing already saw without an agent: a log or a dev server in any
-    /// session prints all the time, so it lists rarely. An agent started in that shell shows this late.
-    static let shellPaneDelay: Duration = .seconds(5)
 
     public let id = TmuxSource.sourceID
     public let displayName = "tmux"
@@ -59,7 +56,8 @@ public final class TmuxSource: AgentSource {
     private var listing: Task<Void, Never>?
     /// When the waiting listing runs.
     private var listingAt: ContinuousClock.Instant?
-    /// Every pane the last listing saw, agent or not (`TmuxScan.panes`).
+    /// Every pane the last listing saw, agent or not (`TmuxScan.panes`). Output from one of these
+    /// that is not an agent lists nothing: the subscription says when its command changes.
     private var listedPanes: Set<String> = []
     private var deadline: Task<Void, Never>?
     /// Listings are numbered as they start. One that finishes after a newer one is dropped.
@@ -284,6 +282,7 @@ public final class TmuxSource: AgentSource {
         let live = Set(scan.servers.map(\.socket))
         for socket in controls.keys.filter({ !live.contains($0) }) { stopControl(socket) }
         failed = failed.filter { live.contains($0.key) }
+        activity = activity.filter { live.contains($0.key) }
         var attaching = false
         for server in scan.servers {
             let socket = server.socket
@@ -331,7 +330,6 @@ public final class TmuxSource: AgentSource {
         let client = ControlClient(binary: binary, socket: socket, session: choice.session)
         let token = UUID()
         controls[socket] = Control(client: client, token: token, choice: choice)
-        activity[socket] = nil
         Task {
             // Dropped or stopped before it started.
             guard controls[socket]?.token == token else { return }
@@ -349,7 +347,6 @@ public final class TmuxSource: AgentSource {
     }
 
     private func stopControl(_ socket: String) {
-        activity[socket] = nil
         guard let control = controls.removeValue(forKey: socket) else { return }
         Task { await control.client.stop() }
     }
@@ -360,16 +357,14 @@ public final class TmuxSource: AgentSource {
         if event != .exit, event != .other { controls[socket]?.attached = true }
         switch event {
         case .output(let pane):
-            changed(PaneObservation.key(socket: socket, paneID: pane), subscribed: false)
-        case .subscription(let name, let value) where name == TmuxActivity.subscription:
-            let panes = TmuxActivity.parse(value)
-            let before = activity[socket]
-            activity[socket] = panes
-            // The first value is where the panes stand; the listing after attaching reads them.
-            guard let before else { return }
-            for pane in TmuxActivity.changed(from: before, to: panes) {
-                changed(PaneObservation.key(socket: socket, paneID: pane), subscribed: true)
+            let key = PaneObservation.key(socket: socket, paneID: pane)
+            if observations[key] != nil {
+                scheduleRead(key)
+            } else if !listedPanes.contains(key) {
+                scheduleList(after: Self.newPaneDelay)
             }
+        case .subscription(let name, let value) where name == TmuxActivity.subscription:
+            subscribed(TmuxActivity.parse(value), socket: socket)
         case .layout:
             scheduleList(after: Self.listDelay)
         case .clients:
@@ -381,21 +376,33 @@ public final class TmuxSource: AgentSource {
         }
     }
 
-    /// A pane printed. An agent's screen is read; any other pane may have just started one.
-    /// The subscription already waited for its once-a-second check, so its reads do not wait more.
-    private func changed(_ key: String, subscribed: Bool) {
-        if observations[key] != nil {
-            scheduleRead(key, after: subscribed ? .zero : Self.readDelay)
-            if subscribed { scheduleFollowUp(key) }
-        } else {
-            scheduleList(after: listedPanes.contains(key) ? Self.shellPaneDelay : Self.newPaneDelay)
+    /// A new subscription value. A changed agent pane is read at once (the subscription already
+    /// waited for its check); another pane whose command changed may have just started an agent; a
+    /// pane gone means a listing. With no earlier value for the server, every agent is read.
+    private func subscribed(_ panes: [String: String], socket: String) {
+        let before = activity[socket]
+        activity[socket] = panes
+        guard let before else {
+            for observation in observations.values where observation.socket == socket {
+                scheduleRead(observation.key, after: .zero)
+            }
+            return
+        }
+        if before.keys.contains(where: { panes[$0] == nil }) { scheduleList(after: Self.listDelay) }
+        for pane in TmuxActivity.changed(from: before, to: panes) {
+            let key = PaneObservation.key(socket: socket, paneID: pane)
+            if observations[key] != nil {
+                scheduleRead(key, after: .zero)
+                scheduleFollowUp(key)
+            } else if TmuxActivity.command(before[pane]) != TmuxActivity.command(panes[pane]) {
+                scheduleList(after: Self.newPaneDelay)
+            }
         }
     }
 
     private func controlEnded(_ socket: String, token: UUID) {
         guard let control = controls[socket], control.token == token else { return }
         controls[socket] = nil
-        activity[socket] = nil
         if !control.attached { failed[socket, default: []].insert(control.choice.session) }
         scheduleList(after: Self.listDelay)
     }
