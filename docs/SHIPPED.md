@@ -138,8 +138,8 @@ Oldest first.
   before it shows, except a prompt. Output from a pane is the only trigger for a read (debounced
   300 ms), a window or session change lists the panes again, and the socket folder is watched
   while no server is up. Answering a prompt, reading, prompting an idle agent and focusing use the
-  same actions as herdr; the private-server tests cover them, and real agents are on the by-hand list. A report from the same pane (`tmux:<socket>:<pane>`) replaces
-  the screen row, and screen readings are not announced to notifications or plugin events. The
+  same actions as herdr; the private-server tests cover them, and real agents are on the by-hand list. A report from the same pane (`tmux:<socket>:<pane>`) replaced
+  the screen row (one row since #84), and screen readings are not announced to notifications or plugin events. The
   source is added only when `tmux` is installed. Tests run a private tmux server with fake `claude`
   scripts; `SHEPHERD_LIVE=1` reads the real servers.
 - Shared row and card components and a surface layer (#30): `ShepherdUI` is split into
@@ -244,3 +244,11 @@ Oldest first.
   build or Homebrew yet. A Privacy section lists the one loopback request (OpenUsage), no telemetry, and
   every file Shepherd reads and writes, each checked against the code. The feature tour is tighter
   and no longer assumes herdr.
+- Claude Code hooks under tmux or herdr (#84): a report and a tmux or herdr agent for the same
+  process are one row (`HerdMerge` in `HerdStore`), matched by the pane key or by Claude's session
+  id, which a hook's report now carries. The row is the pane's, so a hooked Claude in tmux can
+  still be read, answered, prompted, jumped to and given new tasks in its checkout, with the
+  report's exact state, message and question; under herdr it no longer shows twice (herdr's state,
+  the report's message where herdr has none). Changes are told once under the row's id. A hooked
+  session outside tmux now also gets its context size and final message. The first-run card says
+  the hooks work in tmux and herdr too, and the README and changelog warnings are gone.

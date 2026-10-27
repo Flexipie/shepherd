@@ -96,7 +96,15 @@ As built:
   to the owning source. Agent and project ids are namespaced by source (`herdr:w1:p1`,
   `herdr:w1`). A project is where agents work (for herdr, a workspace); projects without agents
   are kept, since they are somewhere to go. Project tokens stay on the project and agent tokens
-  on the agent. `HerdProject.repo` (`HerdRepo`: a key, a name, whether it is a linked checkout)
+  on the agent. One agent seen by two sources is one row (`HerdMerge`): a screen reading and a
+  report with the same key (`tmux:<socket>:<pane>`), or two agents with the same session (a
+  hook's report is keyed `session:<id>` and carries it, herdr's agent has it from
+  `agent_session`). The row is the one whose source has more capabilities, so reading,
+  answering, jumping and new tasks keep working; a report's state, message and question replace
+  a screen reading's, while herdr's own state stays and the report only fills its message and
+  question. Its transitions are told once, under the row's id: the side that gives the state
+  counts, and the report appearing or going is not the row's. A project only a folded-in agent
+  used is dropped. `HerdProject.repo` (`HerdRepo`: a key, a name, whether it is a linked checkout)
   says which git repo a project is a checkout of; herdr fills it from the workspace's
   `worktree`, and tmux from `GitCheckout` (the `.git` entries on disk, with the common git dir
   as the key).
