@@ -123,7 +123,16 @@ struct ReportTracker {
             name: name(key: key, kind: entry.report.kind),
             projectID: entry.report.cwd.map { ProjectID(source: source, local: $0) },
             project: projectName(entry.report), status: entry.status, since: Since(entry.since, .exact),
-            message: entry.report.message, question: entry.report.question)
+            session: session(key: key, report: entry.report), message: entry.report.message,
+            question: entry.report.question)
+    }
+
+    /// The agent's own session when the key is a hook's session id and the report says its kind, so
+    /// another source's agent for that session (herdr's) is known as the same one.
+    static func session(key: String, report: ReportFile) -> AgentSession? {
+        let prefix = "session:"
+        guard key.hasPrefix(prefix), let kind = report.kind, key.count > prefix.count else { return nil }
+        return AgentSession(kind: kind, id: String(key.dropFirst(prefix.count)), cwd: report.cwd)
     }
 
     private static func transition(_ key: String, _ report: ReportFile, from: HerdStatus?, to: HerdStatus?,

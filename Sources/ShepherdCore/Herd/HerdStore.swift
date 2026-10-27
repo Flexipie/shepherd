@@ -27,6 +27,8 @@ public final class HerdStore {
     @ObservationIgnored private var tasks: [Task<Void, Never>] = []
     @ObservationIgnored private let log: TransitionLog?
     @ObservationIgnored private var subscribers: [UUID: AsyncStream<HerdEvent>.Continuation] = [:]
+    /// Agents seen by two sources and shown as one row, as of the last update.
+    @ObservationIgnored private var merges: [HerdMerge] = []
 
     public init(log: TransitionLog? = nil) {
         self.log = log
@@ -153,6 +155,7 @@ public final class HerdStore {
 
     package func apply(_ update: SourceUpdate, from source: SourceID) {
         bySource[source] = update
+        let previousMerges = merges
         let (merged, mergedProjects) = mergedHerd()
         if agents != merged { agents = merged }
         if projects != mergedProjects { projects = mergedProjects }
@@ -166,27 +169,43 @@ public final class HerdStore {
         if sourcesPostingAlerts.contains(source) != update.postsSystemAlerts {
             if update.postsSystemAlerts { sourcesPostingAlerts.insert(source) } else { sourcesPostingAlerts.remove(source) }
         }
-        if !update.transitions.isEmpty {
-            lastTransitions = update.transitions
-            if let log { Task { await log.append(update.transitions) } }
+        // A merged row's changes are told once, under its row's id. A pair that just ended still
+        // decides, so a report going away is not told as its own agent leaving.
+        let transitions = update.transitions.compactMap { transition in
+            let merge = (merges + previousMerges).first { $0.host == transition.agent || $0.guest == transition.agent }
+            return merge.map { $0.view(of: transition) } ?? transition
+        }
+        if !transitions.isEmpty {
+            lastTransitions = transitions
+            if let log { Task { await log.append(transitions) } }
             // A screen reading is a guess, so no event announces it: plugins run for reported changes only.
             let inferred = Set(update.agents.filter(\.isInferred).map(\.id))
-            let announced = update.transitions.filter { !inferred.contains($0.agent) }
+            let announced = transitions.filter { !inferred.contains($0.agent) }
             if !announced.isEmpty { publish(.transitions(announced)) }
         }
     }
 
-    /// Every source's agents and projects. A screen reading (inferred) is dropped where a source that
-    /// reports the same agent has it, since a report says more than a screen. A project read from a
-    /// screen is dropped the same way once no agent is left in it and a reported project is in its
-    /// folder (a screen's project is a whole checkout, a report's the agent's own folder).
+    /// Every source's agents and projects. An agent two sources see is one row (`HerdMerge`): the
+    /// row of the source that can act on it, with a report's state over a screen reading. A project
+    /// is dropped when only a folded-in agent used it. A project read from a screen is dropped once
+    /// no agent is left in it and a reported project is in its folder (a screen's project is a whole
+    /// checkout, a report's the agent's own folder).
     private func mergedHerd() -> (agents: [HerdAgent], projects: [HerdProject]) {
         let all = sources.flatMap { bySource[$0.id]?.agents ?? [] }
-        let reported = Set(all.filter { !$0.isInferred }.map(\.id.local))
-        let kept = all.filter { !($0.isInferred && reported.contains($0.id.local)) }
-        let allProjects = sources.flatMap { bySource[$0.id]?.projects ?? [] }
-        let reportedPaths = Set(allProjects.filter { !$0.isInferred }.compactMap(\.path))
+        let byID = Dictionary(all.map { ($0.id, $0) }) { first, _ in first }
+        merges = HerdMerge.find(in: all) { source($0)?.capabilities ?? [] }
+        let byHost = Dictionary(merges.map { ($0.host, $0) }) { first, _ in first }
+        let guests = Set(merges.map(\.guest))
+        let kept: [HerdAgent] = all.compactMap { agent in
+            if guests.contains(agent.id) { return nil }
+            guard let merge = byHost[agent.id], let guest = byID[merge.guest] else { return agent }
+            return merge.row(host: agent, guest: guest)
+        }
         let inUse = Set(kept.compactMap(\.projectID))
+        let guestProjects = Set(guests.compactMap { byID[$0]?.projectID })
+        let allProjects = sources.flatMap { bySource[$0.id]?.projects ?? [] }
+            .filter { !guestProjects.contains($0.id) || inUse.contains($0.id) }
+        let reportedPaths = Set(allProjects.filter { !$0.isInferred }.compactMap(\.path))
         let projects = allProjects.filter { project in
             let shadowed = project.path.map { path in
                 reportedPaths.contains { $0 == path || $0.hasPrefix(path.hasSuffix("/") ? path : path + "/") }

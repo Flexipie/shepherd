@@ -107,7 +107,8 @@ struct TmuxSourceTests {
         #expect(store.agents.first?.status == .working)
     }
 
-    @Test func aReportFromTheSamePaneReplacesTheScreenRow() async throws {
+    // A hooked Claude Code in tmux (#84): one row, the pane's, with the report's state, still read and answered.
+    @Test func aReportFromTheSamePaneIsOneRowThatCanBeAnswered() async throws {
         let folder = try scratch()
         defer { try? FileManager.default.removeItem(at: folder) }
         try fakeClaude(in: folder, screens: [Self.prompt])
@@ -123,9 +124,13 @@ struct TmuxSourceTests {
         await until { store.agents.first { !$0.isInferred } != nil && store.sourceStates[TmuxSource.sourceID] == .live }
         try await Task.sleep(for: .milliseconds(300))
         #expect(store.agents.count == 1)
-        #expect(store.agents.first?.id.source == "report")
-        #expect(store.agents.first?.status == .working)
-        #expect(store.projects.allSatisfy { !$0.isInferred })
+        let row = try #require(store.agents.first)
+        #expect(row.id.source == TmuxSource.sourceID)
+        #expect(row.status == .working)
+        #expect(row.isInferred == false)
+        #expect(store.capabilities(of: row.id).isSuperset(of: [.readOutput, .sendKeys, .sendText, .focus]))
+        #expect(try await store.read(row.id, lines: 20).contains("Do you want to proceed?"))
+        #expect(store.projects.map(\.id.source) == [TmuxSource.sourceID])
     }
 
     @Test func focusingAnAgentSelectsItsPane() async throws {
