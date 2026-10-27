@@ -51,10 +51,13 @@ import Testing
     }
 
     @Test func clientLinesSayWhetherTheyAreControlClients() throws {
-        let terminal = try #require(TmuxAttachedClient.parse("1234\tw\t0"))
-        #expect(terminal == TmuxAttachedClient(pid: 1234, session: "w", isControl: false))
-        #expect(try #require(TmuxAttachedClient.parse("99\tw\t1")).isControl)
-        #expect(TmuxAttachedClient.parse("x\tw\t0") == nil)
+        let terminal = try #require(TmuxAttachedClient.parse("1234\t0\t1700000000\t/dev/ttys003\tw"))
+        #expect(terminal == TmuxAttachedClient(pid: 1234, session: "w", isControl: false, name: "/dev/ttys003",
+                                               activity: 1_700_000_000))
+        #expect(try #require(TmuxAttachedClient.parse("99\t1\t0\tclient-99\tw")).isControl)
+        // A session name with a tab stays whole.
+        #expect(try #require(TmuxAttachedClient.parse("1\t0\t0\t/dev/ttys1\ta\tb")).session == "a\tb")
+        #expect(TmuxAttachedClient.parse("x\t0\t0\t/dev/ttys1\tw") == nil)
     }
 
     @Test func surfaceKeyNamesBecomeTmuxNames() {

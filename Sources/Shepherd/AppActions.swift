@@ -24,8 +24,24 @@ final class AppActions: AgentActions {
         }
     }
 
+    /// A source that tried and could not show the agent (tmux with no terminal attached) says why
+    /// in an alert; otherwise the jump would do nothing at all.
     func jump(to agent: AgentID) {
-        Task { try? await store.focus(agent) }
+        Task {
+            do {
+                try await store.focus(agent)
+            } catch AgentSourceError.failed(let reason) {
+                Self.alert("Cannot show the agent", reason)
+            } catch {}
+        }
+    }
+
+    private static func alert(_ title: String, _ message: String) {
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = message
+        NSApp.activate()
+        alert.runModal()
     }
 
     /// Jumps to the next waiting agent; with nothing waiting, does nothing.

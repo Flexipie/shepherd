@@ -76,13 +76,28 @@ public struct TmuxAttachedClient: Sendable, Equatable {
     public let session: String
     /// Shepherd's own control-mode clients. Not a terminal, so nothing shows them.
     public let isControl: Bool
+    /// Its tty, such as `/dev/ttys003`: what `switch-client -c` names it by.
+    public let name: String
+    /// When it last had input, in whole seconds.
+    public let activity: Int
 
-    public static let format = ["#{client_pid}", "#{client_session}", "#{client_control_mode}"].joined(separator: "\t")
+    public init(pid: pid_t, session: String, isControl: Bool, name: String = "", activity: Int = 0) {
+        self.pid = pid
+        self.session = session
+        self.isControl = isControl
+        self.name = name
+        self.activity = activity
+    }
+
+    /// One tab-separated line per client. The session comes last, since its name may hold a tab.
+    public static let format = ["#{client_pid}", "#{client_control_mode}", "#{client_activity}", "#{client_name}",
+                                "#{client_session}"].joined(separator: "\t")
 
     public static func parse(_ line: String) -> TmuxAttachedClient? {
-        let fields = line.split(separator: "\t", maxSplits: 2, omittingEmptySubsequences: false)
-        guard fields.count == 3, let pid = Int32(fields[0]) else { return nil }
-        return TmuxAttachedClient(pid: pid, session: String(fields[1]), isControl: fields[2] == "1")
+        let fields = line.split(separator: "\t", maxSplits: 4, omittingEmptySubsequences: false)
+        guard fields.count == 5, let pid = Int32(fields[0]) else { return nil }
+        return TmuxAttachedClient(pid: pid, session: String(fields[4]), isControl: fields[1] == "1",
+                                  name: String(fields[3]), activity: Int(fields[2]) ?? 0)
     }
 }
 
@@ -159,6 +174,11 @@ public struct TmuxClient: Sendable {
 
     public func selectPane(_ pane: String) throws {
         _ = try run(["select-pane", "-t", pane])
+    }
+
+    /// Shows `pane` in the client named `client` (`TmuxAttachedClient.name`): its session, window and pane.
+    public func switchClient(_ client: String, to pane: String) throws {
+        _ = try run(["switch-client", "-c", client, "-t", pane])
     }
 
     /// Opens a window in `folder` running `command` (its program and arguments, with no shell

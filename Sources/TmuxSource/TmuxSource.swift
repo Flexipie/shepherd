@@ -34,6 +34,9 @@ public final class TmuxSource: AgentSource {
     private let binary: String
     private let directory: URL
     private let activatesTerminal: Bool
+    /// The app on this Mac a client's terminal runs in, nil for one over ssh. Tests stand in for it:
+    /// their clients run under no app.
+    var hostingApp: (pid_t) -> pid_t? = { TmuxSource.hostingApps(of: [$0]).first }
     /// How each agent kind is found and read; replaced when the config changes.
     private var patterns: [String: ScreenPatterns]
     private var screens: ScreenStatus
@@ -136,15 +139,33 @@ public final class TmuxSource: AgentSource {
 
     // MARK: Actions
 
+    /// Shows the agent's pane in a terminal (`TmuxJump`) and brings that terminal forward. With no
+    /// terminal to show it in, the pane is still selected, so the next attach shows it, and the jump
+    /// fails saying why.
     public func focus(_ agent: AgentID) async throws {
         let pane = try pane(agent)
         let client = TmuxClient(binary: binary, socket: pane.socket)
+        let session = observations[agent.local]?.session ?? started[agent.local]?.session
         // A pane id names its window too, so a pane no scan has listed yet can be shown.
-        try await tmux {
+        let (clients, sessions) = try await tmux {
             try client.selectWindow(pane.paneID)
             try client.selectPane(pane.paneID)
+            return (try client.clients(), (try? client.sessions()) ?? [])
         }
-        if activatesTerminal { activateTerminal(session: observations[agent.local]?.session ?? started[agent.local]?.session) }
+        var hosts: [pid_t: pid_t] = [:]
+        for attached in clients { hosts[attached.pid] = hostingApp(attached.pid) }
+        let attach = session.map { " Attach to session \"\($0)\" to see it." } ?? ""
+        switch TmuxJump.outcome(session: session, clients: clients, sessions: sessions, own: controls[pane.socket]?.pid,
+                                isLocal: { hosts[$0.pid] != nil }) {
+        case .noTerminal:
+            throw AgentSourceError.failed("No terminal on this Mac is attached to this tmux server, so the agent cannot be shown.\(attach)")
+        case .wouldClose(let other):
+            throw AgentSourceError.failed(
+                "Switching your terminal to the agent would close tmux session \"\(other)\", so it was left as it is.\(attach)")
+        case .show(let target):
+            if target.switches { try await tmux { try client.switchClient(target.client.name, to: pane.paneID) } }
+            if activatesTerminal, let host = hosts[target.client.pid] { activate(host) }
+        }
     }
 
     public func read(_ agent: AgentID, lines: Int) async throws -> String {
@@ -223,11 +244,8 @@ public final class TmuxSource: AgentSource {
         Self.hostingApps(of: clients.map(\.pid))
     }
 
-    /// Brings forward the terminal of a client on the agent's session, or of any client if none is on it.
-    private func activateTerminal(session: String?) {
-        let onSession = clients.filter { $0.session == session }.map(\.pid)
-        let pids = onSession.isEmpty ? clients.map(\.pid) : onSession
-        guard let pid = Self.hostingApps(of: pids).first, let terminal = NSRunningApplication(processIdentifier: pid) else { return }
+    private func activate(_ app: pid_t) {
+        guard let terminal = NSRunningApplication(processIdentifier: app) else { return }
         NSApp.yieldActivation(to: terminal)
         terminal.activate()
     }
