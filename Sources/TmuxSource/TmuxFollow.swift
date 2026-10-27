@@ -51,8 +51,9 @@ enum TmuxFollow {
 enum TmuxActivity {
     static let subscription = "shepherd-panes"
     /// No commas: inside `#{S:}`, `#{W:}` and `#{P:}` a comma starts the format for the current
-    /// item. The command comes last and may hold spaces; every entry starts with its pane id, so
-    /// entries split on " %". tmux expands this every second for every pane, so it stays plain.
+    /// item. The command comes last (tmux cuts it at its first space; split on " %" anyway, since
+    /// every entry starts with its pane id). tmux expands this every second for every pane, so it
+    /// stays plain.
     static let format = "#{S:#{W:#{P:#{pane_id}=#{cursor_x}.#{cursor_y}.#{history_size}.#{window_activity}.#{pane_current_command} }}}"
 
     /// Each pane's signature, by pane id such as `%3`. A window in several sessions repeats; the same value.

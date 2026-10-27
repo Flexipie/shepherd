@@ -44,6 +44,8 @@ public final class TmuxSource: AgentSource {
     /// until the session is gone, so a client that cannot attach does not restart on every listing.
     /// One that attached and was then detached (`tmux attach -d` detaches every other client) is.
     private var failed: [String: Set<String>] = [:]
+    /// When a server whose control client could not start may try again, by socket.
+    private var retryAt: [String: ContinuousClock.Instant] = [:]
     /// Re-listings after a non-agent pane's command changed, by pane key (`scheduleRechecks`).
     private var rechecks: [String: Task<Void, Never>] = [:]
     /// Each server's last subscription value: every pane's signature (`TmuxActivity`).
@@ -293,6 +295,7 @@ public final class TmuxSource: AgentSource {
         for socket in controls.keys.filter({ !live.contains($0) }) { stopControl(socket) }
         failed = failed.filter { live.contains($0.key) }
         activity = activity.filter { live.contains($0.key) }
+        retryAt = retryAt.filter { live.contains($0.key) && $0.value > .now }
         var attaching = false
         for server in scan.servers {
             let socket = server.socket
@@ -308,7 +311,7 @@ public final class TmuxSource: AgentSource {
                 continue
             }
             stopControl(socket)
-            if let choice {
+            if let choice, retryAt[socket] == nil {
                 startControl(socket, choice)
                 attaching = true
             }
@@ -359,6 +362,7 @@ public final class TmuxSource: AgentSource {
                 // marked failed. A later listing starts it again.
                 guard controls[socket]?.token == token else { return }
                 controls[socket] = nil
+                retryAt[socket] = .now + Self.startRetryDelay
                 scheduleList(after: Self.startRetryDelay)
             }
         }
