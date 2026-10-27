@@ -257,7 +257,7 @@ struct TmuxSourceTests {
         // Shepherd's own control client is attached, but it is not a terminal.
         #expect(await controlClients(tmux, 1))
         await #expect(throws: AgentSourceError.failed(
-            "No terminal on this Mac is attached to tmux, so the agent cannot be shown. Attach to session \"w\" to see it.")) {
+            "No terminal on this Mac is attached to this tmux server, so the agent cannot be shown. Attach to session \"w\" to see it.")) {
             try await store.focus(agent.id)
         }
     }

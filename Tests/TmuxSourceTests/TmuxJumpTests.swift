@@ -44,6 +44,10 @@ import Testing
         let mac = client(2, on: "c", activity: 10)
         #expect(outcome([phone, mac], remote: [1]) == .show(.init(client: mac, switches: true)))
         #expect(outcome([phone], remote: [1]) == .noTerminal)
+        // One with no app found above it that already shows the agent (inside a herdr pane) is used,
+        // and nothing else moves.
+        let inHerdr = client(3, on: "agent", activity: 1)
+        #expect(outcome([inHerdr, mac], remote: [3]) == .show(.init(client: inHerdr, switches: false)))
     }
 
     @Test func aTerminalIsNotSwitchedAwayFromASessionThatWouldClose() {

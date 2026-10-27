@@ -158,7 +158,7 @@ public final class TmuxSource: AgentSource {
         switch TmuxJump.outcome(session: session, clients: clients, sessions: sessions, own: controls[pane.socket]?.pid,
                                 isLocal: { hosts[$0.pid] != nil }) {
         case .noTerminal:
-            throw AgentSourceError.failed("No terminal on this Mac is attached to tmux, so the agent cannot be shown.\(attach)")
+            throw AgentSourceError.failed("No terminal on this Mac is attached to this tmux server, so the agent cannot be shown.\(attach)")
         case .wouldClose(let other):
             throw AgentSourceError.failed(
                 "Switching your terminal to the agent would close tmux session \"\(other)\", so it was left as it is.\(attach)")
