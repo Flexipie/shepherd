@@ -62,6 +62,8 @@ struct TmuxSourceTests {
 
     func running(_ directory: URL, store: HerdStore = HerdStore()) throws -> (HerdStore, TmuxSource) {
         let source = try #require(TmuxSource(binary: binary, directory: directory, activatesTerminal: false))
+        // A test's attached clients run under no app; each stands for a terminal on this Mac.
+        source.hostingApp = { $0 }
         store.add(source)
         store.start()
         return (store, source)
@@ -255,7 +257,7 @@ struct TmuxSourceTests {
         // Shepherd's own control client is attached, but it is not a terminal.
         #expect(await controlClients(tmux, 1))
         await #expect(throws: AgentSourceError.failed(
-            "No terminal is attached to tmux, so the agent cannot be shown. Attach to session \"w\" to see it.")) {
+            "No terminal on this Mac is attached to tmux, so the agent cannot be shown. Attach to session \"w\" to see it.")) {
             try await store.focus(agent.id)
         }
     }

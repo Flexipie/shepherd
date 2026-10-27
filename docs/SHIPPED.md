@@ -268,6 +268,8 @@ Oldest first.
   terminal attached used to raise a terminal showing another session. Now a terminal already on
   the agent's session is used as it is; otherwise the most recently active terminal on that server
   is switched to the agent's pane (`switch-client`), and only that one, before it is brought
-  forward. Shepherd's own control client is never taken for a terminal (iTerm2's `tmux -CC` is).
-  With no terminal attached at all, the pane is still selected and the jump says so in an alert,
-  instead of doing nothing. A failed jump from any source now shows its reason the same way.
+  forward. Only a terminal on this Mac counts (one over ssh would change a screen nobody here
+  sees), Shepherd's own control client never does (iTerm2's `tmux -CC` does), and the last
+  terminal on a session tmux closes once unattached is not moved. When nothing can show the agent,
+  the pane is still selected and the jump says why in an alert, instead of doing nothing. A jump
+  failure a source words for the user (`AgentSourceError.failed`) shows the same way.
