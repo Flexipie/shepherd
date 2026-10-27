@@ -252,3 +252,9 @@ Oldest first.
   the report's message where herdr has none). Changes are told once under the row's id. A hooked
   session outside tmux now also gets its context size and final message. The first-run card says
   the hooks work in tmux and herdr too, and the README and changelog warnings are gone.
+- tmux follows every session (#82): one control client per session of each server, attached and
+  dropped as sessions come and go, so an approval in a session no terminal is on, or one made after
+  Shepherd started, shows as blocked within a second. Clients attach least recently used session
+  first, so the user's latest session stays the one a plain `tmux attach` picks. The control
+  client now reads its pipe with a readability handler: `FileHandle.bytes` reads waited behind
+  each other, so a quiet session held back another's output by seconds.

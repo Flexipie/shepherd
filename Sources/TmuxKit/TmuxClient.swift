@@ -34,6 +34,39 @@ public struct TmuxPane: Sendable, Equatable {
     }
 }
 
+/// A session as `tmux list-sessions` reports it.
+public struct TmuxSession: Sendable, Equatable {
+    /// Such as `$1`; a rename does not change it.
+    public let id: String
+    public let name: String
+    /// When it was last used, in whole seconds.
+    public let activity: Int
+    /// tmux closes it once no client is attached (`destroy-unattached`), so a control client left on
+    /// it would keep it open.
+    public let closesWhenUnattached: Bool
+
+    /// One tab-separated line per session. The name comes last, since it may hold a tab.
+    static let format = ["#{session_activity}", "#{destroy-unattached}", "#{session_grouped}", "#{session_group_size}",
+                         "#{session_id}", "#{session_name}"].joined(separator: "\t")
+
+    public static func parse(_ line: String) -> TmuxSession? {
+        let fields = line.split(separator: "\t", maxSplits: 5, omittingEmptySubsequences: false)
+        guard fields.count == 6, let activity = Int(fields[0]) else { return nil }
+        let grouped = fields[2] == "1"
+        let groupSize = Int(fields[3]) ?? 0
+        // tmux's values: off and on, and since 3.4 keep-last (closes only with others in its group)
+        // and keep-group (closes unless it is the only one in its group). Anything else, empty
+        // included, is read as closing, the side that never keeps a session open.
+        let closes = switch fields[1] {
+        case "off": false
+        case "keep-last": grouped && groupSize > 1
+        case "keep-group": !(grouped && groupSize == 1)
+        default: true
+        }
+        return TmuxSession(id: String(fields[4]), name: String(fields[5]), activity: activity, closesWhenUnattached: closes)
+    }
+}
+
 /// A client attached to a server: a terminal's `tmux` process, or Shepherd's own control client.
 public struct TmuxAttachedClient: Sendable, Equatable {
     public let pid: pid_t
@@ -91,6 +124,15 @@ public struct TmuxClient: Sendable {
         try run(["list-panes", "-a", "-F", TmuxPane.format]).split(separator: "\n").compactMap {
             TmuxPane.parse(String($0), socket: socket)
         }
+    }
+
+    /// Every session, least recently used first. A session a client attaches to becomes the most
+    /// recently used, which is where a plain `tmux attach` goes, so attaching in this order keeps
+    /// the user's latest session the latest.
+    public func sessions() throws -> [TmuxSession] {
+        try run(["list-sessions", "-F", TmuxSession.format]).split(separator: "\n")
+            .compactMap { TmuxSession.parse(String($0)) }
+            .sorted { $0.activity < $1.activity }
     }
 
     public func clients() throws -> [TmuxAttachedClient] {

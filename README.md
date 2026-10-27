@@ -137,7 +137,10 @@ check, no account.
 - **What it reads:** herdr's local socket and its `config.toml`; tmux's socket folder, to find
   its servers, and its pane list, the last lines
   of agent panes and the process table (`ps`), to tell which panes run an agent (a control client,
-  `tmux -C`, is attached to each server to learn when a pane prints; it keeps only which pane did); the `.git` entries
+  `tmux -C`, is attached to each session to learn when a pane prints; it keeps only which pane did. tmux
+  counts it as a client, so every session shows as attached and `detach-on-destroy no-detached`
+  finds no detached session to switch to; a session with `destroy-unattached` is followed only
+  while a terminal is on it, so it still closes with its terminal); the `.git` entries
   above an agent's folder; agent reports in its spool folder; for Claude Code under herdr, the
   tail of that session's file in `~/.claude/projects`; Claude Code's `settings.json`, to say on
   first run whether the hooks are installed; its own config and plugins folder.
