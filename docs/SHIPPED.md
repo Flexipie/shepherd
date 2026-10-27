@@ -258,6 +258,9 @@ Oldest first.
   cursor, history size and window activity. Without changing how tmux behaves: the client sits
   on a session a terminal is already on, or else the least recently used one, so detached
   sessions stay detached for a plain `tmux attach`, and a `destroy-unattached` session is never
-  held open. It reattaches after `tmux attach -d`. The control client reads its pipe with a
-  readability handler (`FileHandle.bytes` delayed lines by seconds in the app), and output from a
-  pane known not to be an agent lists after 5 s, under the idle CPU budget.
+  held open (nor an `exit-unattached` server). It reattaches after `tmux attach -d`, and another
+  control-mode client (iTerm2's `tmux -CC`) counts as a terminal. The control client reads its pipe
+  with a readability handler (`FileHandle.bytes` delayed lines by seconds in the app). A pane that
+  is not an agent lists only when its command changes, then again 5 s and 15 s later for an agent
+  started by a wrapper, so a log tail elsewhere costs nothing. Attaching counts as use in tmux, so
+  the session Shepherd parks on looks recently used to anything that sorts by activity.

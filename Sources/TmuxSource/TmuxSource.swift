@@ -17,6 +17,8 @@ public final class TmuxSource: AgentSource {
     static let listDelay: Duration = .milliseconds(300)
     /// Output from a pane that is not an agent yet waits longer: an agent may have just started there.
     static let newPaneDelay: Duration = .seconds(1)
+    /// Further listings after a non-agent pane's command changed (`scheduleRechecks`), each after the last.
+    static let recheckDelays: [Duration] = [.seconds(4), .seconds(10)]
     /// One more read after a pane the subscription reported changed (`scheduleFollowUp`).
     static let followUpDelay: Duration = .milliseconds(1100)
 
@@ -40,6 +42,8 @@ public final class TmuxSource: AgentSource {
     /// until the session is gone, so a client that cannot attach does not restart on every listing.
     /// One that attached and was then detached (`tmux attach -d` detaches every other client) is.
     private var failed: [String: Set<String>] = [:]
+    /// Re-listings after a non-agent pane's command changed, by pane key (`scheduleRechecks`).
+    private var rechecks: [String: Task<Void, Never>] = [:]
     /// Each server's last subscription value: every pane's signature (`TmuxActivity`).
     private var activity: [String: [String: String]] = [:]
     private var observations: [String: PaneObservation] = [:]
@@ -69,6 +73,8 @@ public final class TmuxSource: AgentSource {
         /// Tells a client that ended apart from its replacement.
         let token: UUID
         var choice: TmuxFollow.Choice
+        /// Its `tmux` process, so it is not taken for a terminal; nil until started.
+        var pid: pid_t?
         /// tmux has sent it something, so it did attach.
         var attached = false
     }
@@ -116,6 +122,8 @@ public final class TmuxSource: AgentSource {
         reads = [:]
         for task in followUps.values { task.cancel() }
         followUps = [:]
+        for task in rechecks.values { task.cancel() }
+        rechecks = [:]
         let running = controls.values.map(\.client)
         controls = [:]
         for client in running { await client.stop() }
@@ -286,9 +294,12 @@ public final class TmuxSource: AgentSource {
         var attaching = false
         for server in scan.servers {
             let socket = server.socket
-            failed[socket]?.formIntersection(server.sessions.map(\.id))
-            let sessions = server.sessions.filter { !(failed[socket]?.contains($0.id) ?? false) }
-            let choice = TmuxFollow.choose(sessions: sessions, terminals: server.clients.filter { !$0.isControl },
+            guard let listed = server.sessions else { continue }
+            failed[socket]?.formIntersection(listed.map(\.id))
+            let sessions = listed.filter { !(failed[socket]?.contains($0.id) ?? false) }
+            // Another control-mode client (iTerm2's `tmux -CC`) is a terminal too; only Shepherd's is not.
+            let own = controls[socket]?.pid
+            let choice = TmuxFollow.choose(sessions: sessions, terminals: server.clients.filter { $0.pid != own },
                                            current: controls[socket]?.choice)
             if let choice, controls[socket]?.choice.session == choice.session {
                 controls[socket]?.choice = choice
@@ -334,11 +345,12 @@ public final class TmuxSource: AgentSource {
             // Dropped or stopped before it started.
             guard controls[socket]?.token == token else { return }
             do {
-                try await client.start(events: { [weak self] event in
+                let pid = try await client.start(events: { [weak self] event in
                     Task { @MainActor in self?.control(event, socket: socket, token: token) }
                 }, ended: { [weak self] in
                     Task { @MainActor in self?.controlEnded(socket, token: token) }
                 })
+                if controls[socket]?.token == token { controls[socket]?.pid = pid }
                 await client.subscribe(TmuxActivity.subscription, format: TmuxActivity.format)
             } catch {
                 controlEnded(socket, token: token)
@@ -395,8 +407,25 @@ public final class TmuxSource: AgentSource {
                 scheduleRead(key, after: .zero)
                 scheduleFollowUp(key)
             } else if TmuxActivity.command(before[pane]) != TmuxActivity.command(panes[pane]) {
-                scheduleList(after: Self.newPaneDelay)
+                scheduleRechecks(key)
             }
+        }
+    }
+
+    /// Lists after a non-agent pane's command changed, and twice more later: an agent started by a
+    /// wrapper (`npx`, a script) runs under a command whose name does not change when it starts.
+    private func scheduleRechecks(_ key: String) {
+        scheduleList(after: Self.newPaneDelay)
+        rechecks[key]?.cancel()
+        rechecks[key] = Task { [weak self] in
+            for delay in Self.recheckDelays {
+                try? await Task.sleep(for: delay)
+                guard !Task.isCancelled, let self else { return }
+                // An agent now: its screen reads take over.
+                if self.observations[key] != nil { break }
+                self.scheduleList(after: .zero)
+            }
+            self?.rechecks[key] = nil
         }
     }
 

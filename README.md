@@ -141,7 +141,8 @@ check, no account.
   session a terminal is already on, or else the least recently used one, so a plain `tmux attach`
   still lands where it would without Shepherd, and a session with `destroy-unattached` still
   closes with its terminal. When it sits on a session no terminal is on, `tmux ls` shows that one
-  as attached, and after Shepherd quits it looks recently used, since tmux counts an attach as use); the `.git` entries
+  as attached and looks recently used, while Shepherd runs and after, since tmux counts an attach
+  as use: a session picker sorted by activity, or `detach-on-destroy off`, may put it first); the `.git` entries
   above an agent's folder; agent reports in its spool folder; for Claude Code under herdr, the
   tail of that session's file in `~/.claude/projects`; Claude Code's `settings.json`, to say on
   first run whether the hooks are installed; its own config and plugins folder.

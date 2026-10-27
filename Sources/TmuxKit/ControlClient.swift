@@ -69,9 +69,11 @@ public actor ControlClient {
     }
 
     /// Attaches and starts reading. `events` gets each line's event in order. `ended` runs once when
-    /// the client goes away, whether it was stopped or tmux detached it. Does nothing once stopped.
-    public func start(events: @escaping @Sendable (ControlEvent) -> Void, ended: @escaping @Sendable () -> Void) throws {
-        guard process == nil, !stopped else { return }
+    /// the client goes away, whether it was stopped or tmux detached it. Returns the client's
+    /// process id, which `tmux list-clients` shows as `client_pid`; nil once stopped.
+    @discardableResult
+    public func start(events: @escaping @Sendable (ControlEvent) -> Void, ended: @escaping @Sendable () -> Void) throws -> pid_t? {
+        guard process == nil, !stopped else { return process?.processIdentifier }
         let process = Process()
         process.executableURL = URL(fileURLWithPath: binary)
         process.arguments = ["-S", socket, "-C", "attach-session"] + (session.map { ["-t", $0] } ?? [])
@@ -102,6 +104,7 @@ public actor ControlClient {
             }
             for line in lines.append(data) { events(ControlEvent.parse(line)) }
         }
+        return process.processIdentifier
     }
 
     /// Asks tmux to check `format` once a second and send `.subscription(name:value:)` when its value

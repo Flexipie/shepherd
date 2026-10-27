@@ -8,7 +8,8 @@ struct TmuxScan: Sendable {
     struct Server: Sendable {
         let socket: String
         /// Least recently used first (`TmuxClient.sessions`).
-        let sessions: [TmuxSession]
+        /// Nil when tmux could not list them; the server's control client is then left as it is.
+        let sessions: [TmuxSession]?
         let clients: [TmuxAttachedClient]
     }
 
@@ -34,7 +35,7 @@ struct TmuxScan: Sendable {
             let client = TmuxClient(binary: binary, socket: socket)
             // A socket nothing answers on is stale: it is skipped, not a failure.
             guard let found = try? client.panes() else { continue }
-            scan.servers.append(Server(socket: socket, sessions: (try? client.sessions()) ?? [],
+            scan.servers.append(Server(socket: socket, sessions: try? client.sessions(),
                                       clients: (try? client.clients()) ?? []))
             panes += found.map { (client, $0) }
             scan.panes.formUnion(found.map { PaneObservation.key(socket: socket, paneID: $0.paneID) })

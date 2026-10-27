@@ -41,17 +41,18 @@ public struct TmuxSession: Sendable, Equatable {
     public let name: String
     /// When it was last used, in whole seconds.
     public let activity: Int
-    /// tmux closes it once no client is attached (`destroy-unattached`), so a control client left on
-    /// it would keep it open.
+    /// tmux closes it once no client is attached (`destroy-unattached`), or the whole server exits
+    /// once no client is attached anywhere (`exit-unattached`), so a control client left on it would
+    /// keep it open.
     public let closesWhenUnattached: Bool
 
     /// One tab-separated line per session. The name comes last, since it may hold a tab.
     static let format = ["#{session_activity}", "#{destroy-unattached}", "#{session_grouped}", "#{session_group_size}",
-                         "#{session_id}", "#{session_name}"].joined(separator: "\t")
+                         "#{exit-unattached}", "#{session_id}", "#{session_name}"].joined(separator: "\t")
 
     public static func parse(_ line: String) -> TmuxSession? {
-        let fields = line.split(separator: "\t", maxSplits: 5, omittingEmptySubsequences: false)
-        guard fields.count == 6, let activity = Int(fields[0]) else { return nil }
+        let fields = line.split(separator: "\t", maxSplits: 6, omittingEmptySubsequences: false)
+        guard fields.count == 7, let activity = Int(fields[0]) else { return nil }
         let grouped = fields[2] == "1"
         let groupSize = Int(fields[3]) ?? 0
         // tmux's values: off and on, and since 3.4 keep-last (closes only with others in its group)
@@ -63,7 +64,9 @@ public struct TmuxSession: Sendable, Equatable {
         case "keep-group": !(grouped && groupSize == 1)
         default: true
         }
-        return TmuxSession(id: String(fields[4]), name: String(fields[5]), activity: activity, closesWhenUnattached: closes)
+        let serverExits = fields[4] == "1" || fields[4] == "on"
+        return TmuxSession(id: String(fields[5]), name: String(fields[6]), activity: activity,
+                           closesWhenUnattached: closes || serverExits)
     }
 }
 
