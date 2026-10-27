@@ -136,15 +136,27 @@ public final class TmuxSource: AgentSource {
 
     // MARK: Actions
 
+    /// Shows the agent's pane in a terminal (`TmuxJump`) and brings that terminal forward. With no
+    /// terminal attached, the pane is still selected, so the next attach shows it, and the jump fails
+    /// saying so.
     public func focus(_ agent: AgentID) async throws {
         let pane = try pane(agent)
         let client = TmuxClient(binary: binary, socket: pane.socket)
+        let session = observations[agent.local]?.session ?? started[agent.local]?.session
+        let own = controls[pane.socket]?.pid
         // A pane id names its window too, so a pane no scan has listed yet can be shown.
-        try await tmux {
+        let shown = try await tmux { () -> TmuxAttachedClient? in
             try client.selectWindow(pane.paneID)
             try client.selectPane(pane.paneID)
+            guard let target = TmuxJump.target(session: session, clients: try client.clients(), own: own) else { return nil }
+            if target.switches { try client.switchClient(target.client.name, to: pane.paneID) }
+            return target.client
         }
-        if activatesTerminal { activateTerminal(session: observations[agent.local]?.session ?? started[agent.local]?.session) }
+        guard let shown else {
+            let attach = session.map { " Attach to session \"\($0)\" to see it." } ?? ""
+            throw AgentSourceError.failed("No terminal is attached to tmux, so the agent cannot be shown.\(attach)")
+        }
+        if activatesTerminal { activateTerminal(of: shown.pid) }
     }
 
     public func read(_ agent: AgentID, lines: Int) async throws -> String {
@@ -223,11 +235,9 @@ public final class TmuxSource: AgentSource {
         Self.hostingApps(of: clients.map(\.pid))
     }
 
-    /// Brings forward the terminal of a client on the agent's session, or of any client if none is on it.
-    private func activateTerminal(session: String?) {
-        let onSession = clients.filter { $0.session == session }.map(\.pid)
-        let pids = onSession.isEmpty ? clients.map(\.pid) : onSession
-        guard let pid = Self.hostingApps(of: pids).first, let terminal = NSRunningApplication(processIdentifier: pid) else { return }
+    /// Brings forward the terminal app a client runs in.
+    private func activateTerminal(of client: pid_t) {
+        guard let pid = Self.hostingApps(of: [client]).first, let terminal = NSRunningApplication(processIdentifier: pid) else { return }
         NSApp.yieldActivation(to: terminal)
         terminal.activate()
     }

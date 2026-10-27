@@ -28,7 +28,8 @@ they run.
   click through. It touches nothing of yours; Leave Demo goes back.
 - **Act without switching to the terminal.** Answer an approval from the notch with buttons or digit
   keys, reply to a blocked agent, prompt an idle one, or start a new task in a fresh worktree. Works
-  for agents under herdr and tmux. Jumping brings the agent's terminal app forward.
+  for agents under herdr and tmux. Jumping brings the agent's terminal app forward; under tmux, an
+  agent in a session no terminal shows is switched into your most recently used terminal.
 - **A palette on ⌥Space.** Fuzzy search over agents, projects and commands from any app; Return
   jumps, Tab opens an agent's prompt page. ⌃⌥⌘N jumps to the next agent that needs you.
 - **Judge finished work from the row.** Claude Code agents under herdr show their context size and,

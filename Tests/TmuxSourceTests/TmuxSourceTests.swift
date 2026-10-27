@@ -219,7 +219,30 @@ struct TmuxSourceTests {
         #expect(try String(contentsOf: answer, encoding: .utf8) == "1\n")
     }
 
-    @Test func focusingAnAgentSelectsItsPane() async throws {
+    /// A terminal attached to `session`, as `tmux attach` in a terminal window: `script` gives it a
+    /// tty. Ends when the test does.
+    func attach(_ tmux: PrivateTmux, _ session: String) throws -> Process {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/script")
+        process.arguments = ["-q", "/dev/null", binary, "-S", tmux.socket, "attach", "-t", session]
+        var environment = ProcessInfo.processInfo.environment
+        environment["TMUX"] = nil
+        process.environment = environment
+        // Kept open, so the client does not read an end of input and leave.
+        process.standardInput = Pipe()
+        process.standardOutput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
+        try process.run()
+        _ = tmux.until { ((try? tmux.client.clients()) ?? []).contains { !$0.isControl && $0.session == session } }
+        return process
+    }
+
+    func terminals(_ tmux: PrivateTmux) -> [String: String] {
+        let clients = ((try? tmux.client.clients()) ?? []).filter { !$0.isControl }
+        return Dictionary(clients.map { ($0.name, $0.session) }, uniquingKeysWith: { first, _ in first })
+    }
+
+    @Test func jumpingWithNoTerminalAttachedSaysSo() async throws {
         let folder = try scratch()
         defer { try? FileManager.default.removeItem(at: folder) }
         try fakeClaude(in: folder, screens: [Self.idle])
@@ -229,7 +252,43 @@ struct TmuxSourceTests {
         defer { Task { await source.stop() } }
         await until { store.agents.count == 1 }
         let agent = try #require(store.agents.first)
+        // Shepherd's own control client is attached, but it is not a terminal.
+        #expect(await controlClients(tmux, 1))
+        await #expect(throws: AgentSourceError.failed(
+            "No terminal is attached to tmux, so the agent cannot be shown. Attach to session \"w\" to see it.")) {
+            try await store.focus(agent.id)
+        }
+    }
+
+    @Test func jumpingToASessionNoTerminalShowsSwitchesTheLatestTerminalToIt() async throws {
+        let folder = try scratch()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        try fakeClaude(in: folder, screens: [Self.idle])
+        let tmux = try PrivateTmux(binary: binary, folder: folder, command: "\(folder.path)/claude")
+        defer { withExtendedLifetime(tmux) {} }
+        for session in ["older", "latest"] {
+            try PrivateTmux.run(binary, ["-S", tmux.socket, "new-session", "-d", "-s", session, "cat"])
+        }
+        let older = try attach(tmux, "older")
+        defer { older.terminate() }
+        // Client activity is in whole seconds.
+        try await Task.sleep(for: .milliseconds(1100))
+        let latest = try attach(tmux, "latest")
+        defer { latest.terminate() }
+        let (store, source) = try running(folder)
+        defer { Task { await source.stop() } }
+        await until { store.agents.count == 1 }
+        let agent = try #require(store.agents.first)
+        let before = terminals(tmux)
+        let olderName = try #require(before.first { $0.value == "older" }?.key)
+        let latestName = try #require(before.first { $0.value == "latest" }?.key)
+
         try await store.focus(agent.id)
+        // The most recently active terminal now shows the agent's session; the other is left alone.
+        #expect(terminals(tmux) == [latestName: "w", olderName: "older"])
+        // A terminal already on the agent's session is used as it is: nothing else moves.
+        try await store.focus(agent.id)
+        #expect(terminals(tmux) == [latestName: "w", olderName: "older"])
     }
 
     @Test func aPromptToABusyAgentIsRefused() async throws {

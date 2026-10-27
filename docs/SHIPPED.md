@@ -264,3 +264,10 @@ Oldest first.
   is not an agent lists only when its command changes, then again 5 s and 15 s later for an agent
   started by a wrapper, so a log tail elsewhere costs nothing. Attaching counts as use in tmux, so
   the session Shepherd parks on looks recently used to anything that sorts by activity.
+- tmux jump to a session no terminal shows (#83): jumping to an agent in a session with no
+  terminal attached used to raise a terminal showing another session. Now a terminal already on
+  the agent's session is used as it is; otherwise the most recently active terminal on that server
+  is switched to the agent's pane (`switch-client`), and only that one, before it is brought
+  forward. Shepherd's own control client is never taken for a terminal (iTerm2's `tmux -CC` is).
+  With no terminal attached at all, the pane is still selected and the jump says so in an alert,
+  instead of doing nothing. A failed jump from any source now shows its reason the same way.
