@@ -133,7 +133,13 @@ struct TmuxSourceTests {
         #expect(row.status == .working)
         #expect(row.isInferred == false)
         #expect(store.capabilities(of: row.id).isSuperset(of: [.readOutput, .sendKeys, .sendText, .focus]))
-        #expect(try await store.read(row.id, lines: 20).contains("Do you want to proceed?"))
+        // The row's state comes from the report, so nothing above waited for the fake to draw its screen.
+        var screen = ""
+        for _ in 0..<300 where !screen.contains("Do you want to proceed?") {
+            screen = try await store.read(row.id, lines: 20)
+            if !screen.contains("Do you want to proceed?") { try await Task.sleep(for: .milliseconds(10)) }
+        }
+        #expect(screen.contains("Do you want to proceed?"))
         #expect(store.projects.map(\.id.source) == [TmuxSource.sourceID])
         try await store.sendText(row.id, "1")
         await until { (try? String(contentsOf: answer, encoding: .utf8)) == "1\n" }

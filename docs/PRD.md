@@ -103,7 +103,8 @@ As built:
   capabilities, so reading, answering, jumping and new tasks keep working; a report's state, message and question replace
   a screen reading's, while herdr's own state stays and the report only fills its message and
   question. Its transitions are told once, under the row's id: the side that gives the state
-  counts, the report going is not the row's, and the report appearing is the row starting. A project only a folded-in agent
+  counts, the report going is not the row's, and the report appearing is the row starting
+  when the report gives the row's state. A project only a folded-in agent
   used is dropped. `HerdProject.repo` (`HerdRepo`: a key, a name, whether it is a linked checkout)
   says which git repo a project is a checkout of; herdr fills it from the workspace's
   `worktree`, and tmux from `GitCheckout` (the `.git` entries on disk, with the common git dir
