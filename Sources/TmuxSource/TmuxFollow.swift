@@ -51,15 +51,17 @@ enum TmuxFollow {
 enum TmuxActivity {
     static let subscription = "shepherd-panes"
     /// No commas: inside `#{S:}`, `#{W:}` and `#{P:}` a comma starts the format for the current
-    /// item. Spaces in a command become `_`, since a space separates panes.
-    static let format = "#{S:#{W:#{P:#{pane_id}=#{cursor_x}.#{cursor_y}.#{history_size}.#{window_activity}.#{s/ /_/:pane_current_command} }}}"
+    /// item. The command comes last and may hold spaces; every entry starts with its pane id, so
+    /// entries split on " %". tmux expands this every second for every pane, so it stays plain.
+    static let format = "#{S:#{W:#{P:#{pane_id}=#{cursor_x}.#{cursor_y}.#{history_size}.#{window_activity}.#{pane_current_command} }}}"
 
     /// Each pane's signature, by pane id such as `%3`. A window in several sessions repeats; the same value.
     static func parse(_ value: String) -> [String: String] {
         var panes: [String: String] = [:]
-        for word in value.split(separator: " ") {
-            guard let equals = word.firstIndex(of: "=") else { continue }
-            panes[String(word[..<equals])] = String(word[word.index(after: equals)...])
+        for (index, part) in value.dropLast(value.hasSuffix(" ") ? 1 : 0).components(separatedBy: " %").enumerated() {
+            let entry = index == 0 ? Substring(part) : "%" + part
+            guard entry.hasPrefix("%"), let equals = entry.firstIndex(of: "=") else { continue }
+            panes[String(entry[..<equals])] = String(entry[entry.index(after: equals)...])
         }
         return panes
     }

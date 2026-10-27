@@ -17,6 +17,8 @@ public final class TmuxSource: AgentSource {
     static let listDelay: Duration = .milliseconds(300)
     /// Output from a pane that is not an agent yet waits longer: an agent may have just started there.
     static let newPaneDelay: Duration = .seconds(1)
+    /// How long after a control client that could not start the listing that starts it again.
+    static let startRetryDelay: Duration = .seconds(5)
     /// Further listings after a non-agent pane's command changed (`scheduleRechecks`), each after the last.
     static let recheckDelays: [Duration] = [.seconds(4), .seconds(10)]
     /// One more read after a pane the subscription reported changed (`scheduleFollowUp`).
@@ -353,7 +355,11 @@ public final class TmuxSource: AgentSource {
                 if controls[socket]?.token == token { controls[socket]?.pid = pid }
                 await client.subscribe(TmuxActivity.subscription, format: TmuxActivity.format)
             } catch {
-                controlEnded(socket, token: token)
+                // tmux did not start (out of processes, say): not the session's fault, so it is not
+                // marked failed. A later listing starts it again.
+                guard controls[socket]?.token == token else { return }
+                controls[socket] = nil
+                scheduleList(after: Self.startRetryDelay)
             }
         }
     }
