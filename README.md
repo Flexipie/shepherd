@@ -136,8 +136,13 @@ check, no account.
   only) while the Gadgets tab shows. Shepherd holds no credentials and never calls a vendor API.
 - **What it reads:** herdr's local socket and its `config.toml`; tmux's socket folder, to find
   its servers, and its pane list, the last lines
-  of agent panes and the process table (`ps`), to tell which panes run an agent (a control client,
-  `tmux -C`, is attached to each server to learn when a pane prints; it keeps only which pane did); the `.git` entries
+  of agent panes and the process table (`ps`), to tell which panes run an agent (one control client,
+  `tmux -C`, per server learns when a pane prints, and keeps only which pane did. It sits on a
+  session a terminal is already on, or else the least recently used one, so a plain `tmux attach`
+  still lands where it would without Shepherd, and a session with `destroy-unattached` still
+  closes with its terminal. When it sits on a session no terminal is on, `tmux ls` shows that one
+  as attached and looks recently used, while Shepherd runs and after, since tmux counts an attach
+  as use: a session picker sorted by activity, or `detach-on-destroy off`, may put it first); the `.git` entries
   above an agent's folder; agent reports in its spool folder; for Claude Code under herdr, the
   tail of that session's file in `~/.claude/projects`; Claude Code's `settings.json`, to say on
   first run whether the hooks are installed; its own config and plugins folder.

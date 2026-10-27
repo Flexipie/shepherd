@@ -19,11 +19,11 @@ struct TmuxSourceTests {
         for _ in 0..<600 where !condition() { try? await Task.sleep(for: .milliseconds(10)) }
     }
 
-    /// A folder with a `claude` script that prints each screen in turn, a second apart, then waits.
-    func fakeClaude(in folder: URL, screens: [String]) throws {
+    /// A folder with a `claude` script that prints each screen in turn, `pause` seconds apart, then waits.
+    func fakeClaude(in folder: URL, screens: [String], pause: Int = 1) throws {
         var script = "#!/bin/sh\n"
         for (index, screen) in screens.enumerated() {
-            if index > 0 { script += "sleep 1\n" }
+            if index > 0 { script += "sleep \(pause)\n" }
             script += "cat <<'SCREEN'\n\(screen)\nSCREEN\n"
         }
         script += "sleep 120\n"
@@ -105,6 +105,79 @@ struct TmuxSourceTests {
         // on when the listing ran, so only the change is asserted.
         await until { store.agents.first?.status == .working }
         #expect(store.agents.first?.status == .working)
+    }
+
+    /// Waits up to 6 s until Shepherd's control clients on `tmux` number `count`, and none of them is
+    /// `besides`. tmux is asked off the main actor, so the wait does not hold up the other tests.
+    @discardableResult
+    func controlClients(_ tmux: PrivateTmux, _ count: Int, besides: pid_t? = nil) async -> Bool {
+        for _ in 0..<120 {
+            let pids = await Task.detached { ((try? tmux.client.clients()) ?? []).filter(\.isControl).map(\.pid) }.value
+            if pids.count == count, !pids.contains(where: { $0 == besides }) { return true }
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+        return false
+    }
+
+    /// Each session's attached count, by name, asked off the main actor.
+    func attached(_ tmux: PrivateTmux) async -> [String: Int] {
+        await Task.detached {
+            let lines = (try? PrivateTmux.run(tmux.binary, ["-S", tmux.socket, "list-sessions", "-F", "#{session_name} #{session_attached}"])) ?? ""
+            return Dictionary(lines.split(separator: "\n").compactMap { line -> (String, Int)? in
+                let words = line.split(separator: " ")
+                guard words.count == 2, let count = Int(words[1]) else { return nil }
+                return (String(words[0]), count)
+            }, uniquingKeysWith: { first, _ in first })
+        }.value
+    }
+
+    @Test func anApprovalInASessionNoTerminalUsesIsSeen() async throws {
+        let folder = try scratch()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        try fakeClaude(in: folder, screens: [Self.idle, Self.prompt], pause: 3)
+        let tmux = try PrivateTmux(binary: binary, folder: folder)
+        // The agent's session is the newer one: the one a plain `tmux attach` would pick.
+        try await Task.sleep(for: .seconds(1))
+        try PrivateTmux.run(binary, ["-S", tmux.socket, "new-session", "-d", "-s", "b", "\(folder.path)/claude"])
+        let (store, source) = try running(folder)
+        defer { Task { await source.stop() } }
+        #expect(await controlClients(tmux, 1))
+        await until { store.agents.first?.status == .idle }
+
+        // Shepherd's one client sits on the older session, so `b` stays unattached, and the prompt
+        // in it is heard through the subscription.
+        #expect(await attached(tmux) == ["w": 1, "b": 0])
+        await until { store.needsYou.count == 1 }
+        #expect(store.agents.first?.status == .blocked)
+    }
+
+    @Test func aSessionMadeAfterStartIsFollowed() async throws {
+        let folder = try scratch()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        try fakeClaude(in: folder, screens: [Self.idle, Self.prompt], pause: 3)
+        let tmux = try PrivateTmux(binary: binary, folder: folder)
+        let (store, source) = try running(folder)
+        defer { Task { await source.stop() } }
+        #expect(await controlClients(tmux, 1))
+
+        try PrivateTmux.run(binary, ["-S", tmux.socket, "new-session", "-d", "-s", "b", "\(folder.path)/claude"])
+        await until { store.needsYou.count == 1 }
+        #expect(store.agents.first?.status == .blocked)
+        #expect(await attached(tmux) == ["w": 1, "b": 0])
+    }
+
+    @Test func aControlClientDetachedByTheUserAttachesAgain() async throws {
+        let folder = try scratch()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let tmux = try PrivateTmux(binary: binary, folder: folder)
+        let (_, source) = try running(folder)
+        defer { Task { await source.stop() } }
+        #expect(await controlClients(tmux, 1))
+        let first = try #require(try tmux.client.clients().first(where: \.isControl)).pid
+
+        // What `tmux attach -d` does to every other client on the session.
+        try PrivateTmux.run(binary, ["-S", tmux.socket, "detach-client", "-s", "w"])
+        #expect(await controlClients(tmux, 1, besides: first))
     }
 
     // A hooked Claude Code in tmux (#84): one row, the pane's, with the report's state, still read and answered.

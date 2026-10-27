@@ -6,6 +6,10 @@ public enum ControlEvent: Sendable, Equatable {
     case output(pane: String)
     /// Windows, sessions or layouts changed, so the set of panes may have changed.
     case layout
+    /// A terminal left a session or moved to another, so which sessions are watched may have changed.
+    case clients
+    /// A subscription's format has a new value (`ControlClient.subscribe`).
+    case subscription(name: String, value: String)
     /// The client was detached, usually because its server exited.
     case exit
     case other
@@ -27,6 +31,12 @@ public enum ControlEvent: Sendable, Equatable {
             return .output(pane: String(words[1]))
         case "%exit":
             return .exit
+        case "%client-detached", "%client-session-changed":
+            return .clients
+        case "%subscription-changed":
+            // `%subscription-changed name $1 @2 3 %4 : value`, with `-` for the ids that do not apply.
+            guard words.count > 1, let colon = line.range(of: " : ") else { return .other }
+            return .subscription(name: String(words[1]), value: String(line[colon.upperBound...]))
         case let word where layoutEvents.contains(String(word)):
             return .layout
         default:
@@ -35,33 +45,45 @@ public enum ControlEvent: Sendable, Equatable {
     }
 }
 
-/// A control-mode client on one server: `tmux -C attach-session`, so tmux pushes output and layout
-/// events to Shepherd rather than Shepherd asking. The client ignores window size, so attaching
-/// never resizes the user's windows. Its reader runs on this actor's own task, off the main actor.
+/// A control-mode client on one session of a server: `tmux -C attach-session`, so tmux pushes
+/// output and layout events to Shepherd rather than Shepherd asking. tmux sends output only for
+/// panes in the session a client is attached to; a subscription (`subscribe`) can watch the rest.
+/// The client ignores window size, so attaching never resizes the user's windows. Its
+/// output is read by a readability handler on the pipe's own queue, off the main actor: a read on
+/// `FileHandle.bytes` waited behind the other clients' reads, so a quiet session held up the rest.
 public actor ControlClient {
     private let binary: String
     private let socket: String
+    private let session: String?
     private var process: Process?
     private var input: FileHandle?
-    private var reader: Task<Void, Never>?
+    /// Set by `stop`, so a `start` that arrives after it does not attach.
+    private var stopped = false
 
-    public init(binary: String, socket: String) {
+    /// `session` is a session id such as `$1`, which a rename does not change. Nil attaches to the
+    /// session tmux picks, the most recently used.
+    public init(binary: String, socket: String, session: String? = nil) {
         self.binary = binary
         self.socket = socket
+        self.session = session
     }
 
     /// Attaches and starts reading. `events` gets each line's event in order. `ended` runs once when
-    /// the client goes away, whether it was stopped or tmux detached it.
-    public func start(events: @escaping @Sendable (ControlEvent) -> Void, ended: @escaping @Sendable () -> Void) throws {
-        guard process == nil else { return }
+    /// the client goes away, whether it was stopped or tmux detached it. Returns the client's
+    /// process id, which `tmux list-clients` shows as `client_pid`; nil once stopped.
+    @discardableResult
+    public func start(events: @escaping @Sendable (ControlEvent) -> Void, ended: @escaping @Sendable () -> Void) throws -> pid_t? {
+        guard process == nil, !stopped else { return process?.processIdentifier }
         let process = Process()
         process.executableURL = URL(fileURLWithPath: binary)
-        process.arguments = ["-S", socket, "-C", "attach-session"]
+        process.arguments = ["-S", socket, "-C", "attach-session"] + (session.map { ["-t", $0] } ?? [])
         var environment = ProcessInfo.processInfo.environment
         environment["TMUX"] = nil
         environment["TMUX_PANE"] = nil
         process.environment = environment
         let stdin = Pipe()
+        // A write after tmux exited (an attach that failed) must fail, not kill Shepherd with SIGPIPE.
+        _ = fcntl(stdin.fileHandleForWriting.fileDescriptor, F_SETNOSIGPIPE, 1)
         let stdout = Pipe()
         process.standardInput = stdin
         process.standardOutput = stdout
@@ -71,26 +93,49 @@ public actor ControlClient {
         input = stdin.fileHandleForWriting
         // A command on the control client's input. The flag keeps the client from resizing windows.
         try? input?.write(contentsOf: Data("refresh-client -f ignore-size\n".utf8))
-        let output = stdout.fileHandleForReading
-        reader = Task {
-            do {
-                for try await line in output.bytes.lines {
-                    events(ControlEvent.parse(line))
-                }
-            } catch {
-                // A read that fails ends the client the same way a closed pipe does.
+        let lines = ControlLines()
+        stdout.fileHandleForReading.readabilityHandler = { handle in
+            let data = handle.availableData
+            // End of the pipe: tmux exited, whether stopped or detached.
+            guard !data.isEmpty else {
+                handle.readabilityHandler = nil
+                ended()
+                return
             }
-            ended()
+            for line in lines.append(data) { events(ControlEvent.parse(line)) }
         }
+        return process.processIdentifier
+    }
+
+    /// Asks tmux to check `format` once a second and send `.subscription(name:value:)` when its value
+    /// changes, the first value at its first check. The format must not hold a single quote.
+    public func subscribe(_ name: String, format: String) {
+        try? input?.write(contentsOf: Data("refresh-client -B '\(name)::\(format)'\n".utf8))
     }
 
     /// Detaches: closing the input lets tmux exit cleanly, and the process is terminated if it has not.
     public func stop() {
-        reader?.cancel()
-        reader = nil
+        stopped = true
         try? input?.close()
         input = nil
         if process?.isRunning == true { process?.terminate() }
         process = nil
+    }
+}
+
+/// Splits the control client's output into lines. Only touched on the output handle's own serial
+/// queue, hence the unchecked conformance.
+private final class ControlLines: @unchecked Sendable {
+    private var pending = Data()
+
+    /// The complete lines `data` finishes; a partial line waits for the rest.
+    func append(_ data: Data) -> [String] {
+        pending.append(data)
+        var lines: [String] = []
+        while let end = pending.firstIndex(of: 0x0A) {
+            lines.append(String(decoding: pending[pending.startIndex..<end], as: UTF8.self))
+            pending.removeSubrange(pending.startIndex...end)
+        }
+        return lines
     }
 }

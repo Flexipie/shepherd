@@ -28,6 +28,28 @@ import Testing
         #expect(TmuxPane.parse("", socket: "s") == nil)
     }
 
+    /// A session tmux closes once unattached must never be held open by Shepherd's control client.
+    @Test func destroyUnattachedSaysWhetherTheSessionClosesUnattached() throws {
+        func closes(_ value: String, grouped: Bool = false, size: Int = 0) throws -> Bool {
+            let line = ["100", value, grouped ? "1" : "0", grouped ? "\(size)" : "", "0", "$3", "work"].joined(separator: "\t")
+            return try #require(TmuxSession.parse(line)).closesWhenUnattached
+        }
+        #expect(try closes("off") == false)
+        #expect(try closes("") == true)
+        #expect(try closes("on") == true)
+        #expect(try closes("on", grouped: true, size: 2) == true)
+        #expect(try closes("keep-last") == false)
+        #expect(try closes("keep-last", grouped: true, size: 1) == false)
+        #expect(try closes("keep-last", grouped: true, size: 2) == true)
+        #expect(try closes("keep-group") == true)
+        #expect(try closes("keep-group", grouped: true, size: 1) == false)
+        #expect(try closes("keep-group", grouped: true, size: 2) == true)
+        #expect(try closes("something-new") == true)
+        // `exit-unattached`: the whole server exits once no client is left.
+        let exits = ["100", "off", "0", "", "1", "$3", "work"].joined(separator: "\t")
+        #expect(try #require(TmuxSession.parse(exits)).closesWhenUnattached)
+    }
+
     @Test func clientLinesSayWhetherTheyAreControlClients() throws {
         let terminal = try #require(TmuxAttachedClient.parse("1234\tw\t0"))
         #expect(terminal == TmuxAttachedClient(pid: 1234, session: "w", isControl: false))
