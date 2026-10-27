@@ -112,8 +112,8 @@ Leave Demo in the same menu goes back.
   memory). A gadget reads only while its tab shows. With every gadget turned off there are no
   tabs.
 - **Context size and final message** (Claude Code under herdr, or reporting through its hooks
-  outside tmux). A row shows how full the agent's context is ("184k"), and once it stops, its last message on one line; the stage and the
-  palette show the whole message.
+  outside tmux). A row shows how full the agent's context is ("184k"), and once it stops, its
+  last message on one line; the stage and the palette show the whole message.
 - **Notifications** (off by default; the notch is the alert). When on, an agent you are not
   looking at that blocks posts a macOS notification (with Jump, and Reply where its source allows it).
   Screen readings never notify; reports and herdr do.

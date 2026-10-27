@@ -58,12 +58,13 @@ struct HerdMerge: Equatable {
     }
 
     /// The transition as the merged row sees it, or nil when the other side's describes the row.
-    /// The host's appearing and going are the row's; the guest's are not, since the host's row was
-    /// there before and stays.
+    /// The host's appearing and going are the row's. The guest going is not, since the host's row
+    /// stays. The guest appearing is told as the row's when it gives the state: a screen reading's
+    /// own appearing is never announced, so plugins hear the agent start from the report.
     func view(of transition: HerdTransition) -> HerdTransition? {
         let changesState = transition.from != nil && transition.to != nil
         if transition.agent == host { return stateFromGuest && changesState ? nil : transition }
-        guard transition.agent == guest, stateFromGuest, changesState else { return nil }
+        guard transition.agent == guest, stateFromGuest, transition.to != nil else { return nil }
         return HerdTransition(agent: host, kind: hostKind ?? transition.kind, project: hostProject, from: transition.from,
                               to: transition.to, at: transition.at, precision: transition.precision,
                               marker: transition.marker)

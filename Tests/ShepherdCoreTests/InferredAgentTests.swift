@@ -103,18 +103,22 @@ import Testing
         let report = HerdTransition(agent: reportAgent().id, from: .working, to: .blocked, at: Date())
         store.apply(SourceUpdate(agents: [screenAgent()], state: .live), from: "tmux")
         store.apply(SourceUpdate(agents: [reportAgent(status: .working)], state: .live, transitions: [appeared]), from: "report")
-        #expect(store.lastTransitions.isEmpty)
+        // The report appearing is the row starting: plugins hear it under the row's id.
+        let started = HerdTransition(agent: tmuxID, kind: "claude", project: "app", from: nil, to: .working, at: appeared.at)
+        #expect(store.lastTransitions == [started])
         store.apply(SourceUpdate(agents: [screenAgent(status: .blocked)], state: .live, transitions: [screen]), from: "tmux")
-        #expect(store.lastTransitions.isEmpty)
+        // The screen's change is not the row's: nothing new is told.
+        #expect(store.lastTransitions == [started])
         store.apply(SourceUpdate(agents: [reportAgent()], state: .live, transitions: [report]), from: "report")
         let told = HerdTransition(agent: tmuxID, kind: "claude", project: "app", from: .working, to: .blocked, at: report.at)
         #expect(store.lastTransitions == [told])
-        // Events are buffered in order, so the first one is the first anything announced.
-        guard case .transitions(let announced)? = await events.next() else {
-            Issue.record("no transitions were announced")
-            return
+        // Events are buffered in order: the start, then the change, and nothing from the screen.
+        var announced: [HerdTransition] = []
+        for _ in 0..<2 {
+            guard case .transitions(let batch)? = await events.next() else { break }
+            announced += batch
         }
-        #expect(announced == [told])
+        #expect(announced == [started, told])
         // The report going away is not the row leaving: the pane is still there.
         let closed = HerdTransition(agent: reportAgent().id, from: .blocked, to: nil, at: Date())
         store.apply(SourceUpdate(agents: [], state: .live, transitions: [closed]), from: "report")
