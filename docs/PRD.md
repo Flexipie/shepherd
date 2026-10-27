@@ -99,7 +99,7 @@ As built:
   on the agent. One agent seen by two sources is one row (`HerdMerge`): a screen reading and a
   report with the same key (`tmux:<socket>:<pane>`), or two agents with the same session (a
   hook's report is keyed `session:<id>` and carries it, herdr's agent has it from
-  `agent_session`). The row is the one whose source has more capabilities, so reading,
+  `agent_session`), and never two of different kinds. The row is the one whose source has more capabilities, so reading,
   answering, jumping and new tasks keep working; a report's state, message and question replace
   a screen reading's, while herdr's own state stays and the report only fills its message and
   question. Its transitions are told once, under the row's id: the side that gives the state

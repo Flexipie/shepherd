@@ -82,6 +82,18 @@ import Testing
         #expect(store.projects.map(\.id.source) == ["tmux"])
     }
 
+    // tmux numbers panes from %0 again after a restart, so a report left behind must not take over another agent there.
+    @Test func aReportOfAnotherKindInThePaneIsNotMerged() {
+        let store = makeStore()
+        let codex = HerdAgent(id: AgentID(source: "tmux", local: Self.pane), kind: "codex", name: "codex",
+                              projectID: ProjectID(source: "tmux", local: folder), project: "app", status: .working,
+                              isInferred: true)
+        store.apply(SourceUpdate(agents: [codex], projects: [screenProject()], state: .live), from: "tmux")
+        store.apply(SourceUpdate(agents: [reportAgent()], projects: [reportProject()], state: .live), from: "report")
+        #expect(store.agents.map(\.id.source) == ["tmux", "report"])
+        #expect(store.agents.first?.status == .working)
+    }
+
     @Test func aMergedRowsChangesAreToldOnceUnderItsRow() async {
         let store = makeStore()
         var events = store.events().makeAsyncIterator()
@@ -95,7 +107,7 @@ import Testing
         store.apply(SourceUpdate(agents: [screenAgent(status: .blocked)], state: .live, transitions: [screen]), from: "tmux")
         #expect(store.lastTransitions.isEmpty)
         store.apply(SourceUpdate(agents: [reportAgent()], state: .live, transitions: [report]), from: "report")
-        let told = HerdTransition(agent: tmuxID, from: .working, to: .blocked, at: report.at)
+        let told = HerdTransition(agent: tmuxID, kind: "claude", project: "app", from: .working, to: .blocked, at: report.at)
         #expect(store.lastTransitions == [told])
         // Events are buffered in order, so the first one is the first anything announced.
         guard case .transitions(let announced)? = await events.next() else {
