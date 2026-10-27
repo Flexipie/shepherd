@@ -28,18 +28,17 @@ together or alone:
 | Source | What you need | What you get |
 | --- | --- | --- |
 | **tmux** | Your agents running in tmux panes | Every Claude Code or Codex pane, found by its process. Its state is read from the screen, and you can read its last lines, answer approvals, prompt it, jump to it and start new tasks. Teach it other agents in config. |
-| **Agent reports** | `shepherd-report install claude`, or any agent that runs `shepherd-report report` | Exact state from the agent itself, through its hooks. Status only: no reading, answering or jumping. |
+| **Agent reports** | `shepherd-report install claude`, or any agent that runs `shepherd-report report` | Exact state from the agent itself, through its hooks. On their own, status only: no reading, answering or jumping. |
 | **herdr** | [herdr](https://herdr.dev) 0.9.3 or later, running | Everything herdr knows: workspaces, agents and their state, your herdr plugins' tokens (a PR, a ticket), plus reading, answering, jumping and new tasks, and Claude Code's context size and final message. |
 
 **tmux is what the screen features need.** Without tmux (or herdr) Shepherd can only show what
 agents report; it cannot read a screen, type into it or press an approval button. Run your agents
 in tmux to get those.
 
-Agent reports are for agents that run outside tmux and herdr. For now, don't install the Claude
-Code hooks if your Claude sessions run in tmux or herdr: in tmux the report replaces the screen
-row, so you lose reading, answering, prompting and jumping for that agent (and new tasks for its
-project), and under herdr the agent shows twice. The same goes for any agent that reports from
-inside tmux.
+Reports and the other sources work together. A Claude Code session with the hooks installed that
+runs in a tmux pane or a herdr pane is one row: the pane's, so you can still read, answer, prompt
+and jump to it, with the exact state from its report instead of the screen's reading (under herdr,
+herdr's own state stays, and the report adds its message).
 
 With no config file, every source that is on your Mac runs. Until the first agent shows, the
 panel says which sources it found and what to do next.
@@ -60,8 +59,8 @@ cp -R build/Shepherd.app /Applications/
 open /Applications/Shepherd.app
 ```
 
-To have Claude Code report its own state (for sessions outside tmux and herdr), add Shepherd's
-hooks to its settings. It shows the change as a diff, asks first and keeps a backup;
+To have Claude Code report its own exact state (in any terminal, tmux and herdr included), add
+Shepherd's hooks to its settings. It shows the change as a diff, asks first and keeps a backup;
 `uninstall claude` removes exactly what it added:
 
 ```bash
@@ -112,9 +111,9 @@ Leave Demo in the same menu goes back.
   [OpenUsage](https://github.com/robinebers/openusage) if it is running) and **This Mac** (CPU and
   memory). A gadget reads only while its tab shows. With every gadget turned off there are no
   tabs.
-- **Context size and final message** (Claude Code under herdr). A row shows how full the agent's
-  context is ("184k"), and once it stops, its last message on one line; the stage and the
-  palette show the whole message.
+- **Context size and final message** (Claude Code under herdr, or reporting through its hooks
+  outside tmux). A row shows how full the agent's context is ("184k"), and once it stops, its
+  last message on one line; the stage and the palette show the whole message.
 - **Notifications** (off by default; the notch is the alert). When on, an agent you are not
   looking at that blocks posts a macOS notification (with Jump, and Reply where its source allows it).
   Screen readings never notify; reports and herdr do.

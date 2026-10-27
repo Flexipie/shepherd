@@ -23,8 +23,8 @@ enum SourceIntros {
         if sources.contains("report"), claude != .notFound {
             intros.append(SourceIntro(
                 id: "claude", name: "Claude Code", found: claude == .hooksInstalled,
-                on: .init("reports on", "Each session reports its own exact status, in any terminal."),
-                off: .init("found", "For exact status in any terminal, run shepherd-report install claude. It shows the change before writing it.")))
+                on: .init("reports on", "Each session reports its own exact status, in any terminal. In tmux or herdr it stays one row you can answer."),
+                off: .init("found", "For exact status in any terminal, tmux and herdr included, run shepherd-report install claude. It shows the change before writing it.")))
         }
         if sources.contains("herdr") {
             intros.append(SourceIntro(

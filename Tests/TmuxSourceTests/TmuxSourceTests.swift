@@ -107,10 +107,15 @@ struct TmuxSourceTests {
         #expect(store.agents.first?.status == .working)
     }
 
-    @Test func aReportFromTheSamePaneReplacesTheScreenRow() async throws {
+    // A hooked Claude Code in tmux (#84): one row, the pane's, with the report's state, still read and answered.
+    @Test func aReportFromTheSamePaneIsOneRowThatCanBeAnswered() async throws {
         let folder = try scratch()
         defer { try? FileManager.default.removeItem(at: folder) }
-        try fakeClaude(in: folder, screens: [Self.prompt])
+        // The fake waits for an answer and writes it down, so answering from the row can be seen.
+        let answer = folder.appending(path: "answer")
+        try "#!/bin/sh\ncat <<'SCREEN'\n\(Self.prompt)\nSCREEN\nread -r line\necho \"$line\" > \(answer.path)\nsleep 120\n"
+            .write(to: folder.appending(path: "claude"), atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: folder.appending(path: "claude").path)
         let tmux = try PrivateTmux(binary: binary, folder: folder, command: "\(folder.path)/claude")
         let spool = ReportSpool(directory: folder.appending(path: "reports"))
         try spool.write(ReportFile(agent: "tmux:\(tmux.socket):%0", status: .working, kind: "claude", cwd: folder.path,
@@ -123,9 +128,22 @@ struct TmuxSourceTests {
         await until { store.agents.first { !$0.isInferred } != nil && store.sourceStates[TmuxSource.sourceID] == .live }
         try await Task.sleep(for: .milliseconds(300))
         #expect(store.agents.count == 1)
-        #expect(store.agents.first?.id.source == "report")
-        #expect(store.agents.first?.status == .working)
-        #expect(store.projects.allSatisfy { !$0.isInferred })
+        let row = try #require(store.agents.first)
+        #expect(row.id.source == TmuxSource.sourceID)
+        #expect(row.status == .working)
+        #expect(row.isInferred == false)
+        #expect(store.capabilities(of: row.id).isSuperset(of: [.readOutput, .sendKeys, .sendText, .focus]))
+        // The row's state comes from the report, so nothing above waited for the fake to draw its screen.
+        var screen = ""
+        for _ in 0..<300 where !screen.contains("Do you want to proceed?") {
+            screen = try await store.read(row.id, lines: 20)
+            if !screen.contains("Do you want to proceed?") { try await Task.sleep(for: .milliseconds(10)) }
+        }
+        #expect(screen.contains("Do you want to proceed?"))
+        #expect(store.projects.map(\.id.source) == [TmuxSource.sourceID])
+        try await store.sendText(row.id, "1")
+        await until { (try? String(contentsOf: answer, encoding: .utf8)) == "1\n" }
+        #expect(try String(contentsOf: answer, encoding: .utf8) == "1\n")
     }
 
     @Test func focusingAnAgentSelectsItsPane() async throws {

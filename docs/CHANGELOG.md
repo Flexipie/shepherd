@@ -18,8 +18,9 @@ they run.
   column.
 - **Agents from any terminal.** Three sources: herdr, tmux and agent reports. tmux needs no setup:
   Claude Code and Codex panes are found by their process, and their state is read from the screen.
-  For Claude Code outside tmux and herdr, `shepherd-report install claude` (inside the app; the
-  README shows how) adds hooks so it reports its exact state, and any agent or script can report its
+  For Claude Code, `shepherd-report install claude` (inside the app; the README shows how) adds
+  hooks so it reports its exact state; in a tmux or herdr pane the report and the pane are one row
+  you can still read, answer and jump to. Any agent or script can report its
   own with `shepherd-report report`. With no agents yet, the panel says where agents come from and
   what each source needs.
 - **Try it before your own agents.** Try Demo in the menu bar icon's right-click menu (or
@@ -53,12 +54,10 @@ they run.
 - No signed download yet: build from source (macOS 26, Swift 6.2; see the README's Install). A
   notarised DMG and a Homebrew cask come next
   ([#56](https://github.com/Flexipie/shepherd/issues/56)).
-- Context size and the final message need herdr: Claude Code agents in tmux or reporting through
-  hooks don't get them yet, and neither does Codex.
+- Context size and the final message need Claude Code's session id: herdr's agents and hooked
+  sessions outside tmux have it; Claude Code in tmux doesn't get them yet, and neither does Codex.
 - An agent seen only through reports shows its state, but can't be read, answered, prompted or
   jumped to.
-- Don't install the Claude Code hooks for sessions in tmux or herdr yet: under tmux the report
-  replaces the screen row and its actions, and under herdr the agent shows twice.
 - Codex shows up under herdr and tmux; it has no hook install yet, so in other terminals it appears
   only when something runs `shepherd-report report` for it.
 
