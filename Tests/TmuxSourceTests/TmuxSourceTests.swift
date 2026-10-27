@@ -111,7 +111,11 @@ struct TmuxSourceTests {
     @Test func aReportFromTheSamePaneIsOneRowThatCanBeAnswered() async throws {
         let folder = try scratch()
         defer { try? FileManager.default.removeItem(at: folder) }
-        try fakeClaude(in: folder, screens: [Self.prompt])
+        // The fake waits for an answer and writes it down, so answering from the row can be seen.
+        let answer = folder.appending(path: "answer")
+        try "#!/bin/sh\ncat <<'SCREEN'\n\(Self.prompt)\nSCREEN\nread -r line\necho \"$line\" > \(answer.path)\nsleep 120\n"
+            .write(to: folder.appending(path: "claude"), atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: folder.appending(path: "claude").path)
         let tmux = try PrivateTmux(binary: binary, folder: folder, command: "\(folder.path)/claude")
         let spool = ReportSpool(directory: folder.appending(path: "reports"))
         try spool.write(ReportFile(agent: "tmux:\(tmux.socket):%0", status: .working, kind: "claude", cwd: folder.path,
@@ -131,6 +135,9 @@ struct TmuxSourceTests {
         #expect(store.capabilities(of: row.id).isSuperset(of: [.readOutput, .sendKeys, .sendText, .focus]))
         #expect(try await store.read(row.id, lines: 20).contains("Do you want to proceed?"))
         #expect(store.projects.map(\.id.source) == [TmuxSource.sourceID])
+        try await store.sendText(row.id, "1")
+        await until { (try? String(contentsOf: answer, encoding: .utf8)) == "1\n" }
+        #expect(try String(contentsOf: answer, encoding: .utf8) == "1\n")
     }
 
     @Test func focusingAnAgentSelectsItsPane() async throws {
