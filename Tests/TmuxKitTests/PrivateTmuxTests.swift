@@ -57,6 +57,10 @@ struct PrivateTmuxTests {
     @Test func theServersSocketIsListedInItsFolder() throws {
         let tmux = try PrivateTmux(binary: binary)
         #expect(TmuxSockets.sockets(in: tmux.folder) == [tmux.socket])
+        // Through /tmp, the socket is still named as tmux names it in `$TMUX`, so reports meet it (#84).
+        let viaTmp = URL(fileURLWithPath: "/tmp").appending(path: tmux.folder.lastPathComponent)
+        #expect(TmuxSockets.sockets(in: viaTmp) == [try PrivateTmux.run(binary, ["-S", tmux.socket, "display-message", "-p", "#{socket_path}"])
+            .trimmingCharacters(in: .whitespacesAndNewlines)])
     }
 
     @Test func controlModeReportsOutputOfAPane() async throws {

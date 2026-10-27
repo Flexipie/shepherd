@@ -200,10 +200,16 @@ public enum TmuxSockets {
         return URL(fileURLWithPath: base).appending(path: "tmux-\(getuid())")
     }
 
-    /// The socket files in `directory`, by full path, sorted. A missing folder has none.
+    /// The socket files in `directory`, by full path, sorted. A missing folder has none. Paths are
+    /// real ones (`/private/tmp`, not `/tmp`), as tmux's own `#{socket_path}` and `$TMUX` give them,
+    /// so a report from inside a pane names the same socket.
     public static func sockets(in directory: URL) -> [String] {
-        let names = (try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? []
-        return names.sorted().map { directory.appending(path: $0).path }.filter { path in
+        let real = realpath(directory.path, nil).map { pointer in
+            defer { free(pointer) }
+            return URL(fileURLWithPath: String(cString: pointer))
+        } ?? directory
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: real.path)) ?? []
+        return names.sorted().map { real.appending(path: $0).path }.filter { path in
             (try? FileManager.default.attributesOfItem(atPath: path))?[.type] as? FileAttributeType == .typeSocket
         }
     }
