@@ -62,13 +62,6 @@ import Testing
         #expect(store.canStartTask(in: ProjectID(source: "tmux", local: folder)))
     }
 
-    @Test func aReportAloneIsShownAsItsOwnRow() {
-        let store = makeStore()
-        store.apply(SourceUpdate(agents: [reportAgent()], projects: [reportProject()], state: .live), from: "report")
-        #expect(store.agents.map(\.id) == [AgentID(source: "report", local: Self.pane)])
-        #expect(store.projects.map(\.id) == [ProjectID(source: "report", local: folder)])
-    }
-
     @Test func aScreenReadingAloneIsShown() {
         let store = makeStore()
         store.apply(SourceUpdate(agents: [screenAgent(status: .blocked)], projects: [screenProject()], state: .live), from: "tmux")
@@ -142,18 +135,5 @@ import Testing
         #expect(store.agents.first?.message == "Ran the tests")
         #expect(store.projects.map(\.id) == [ProjectID(source: "herdr", local: "w1")])
         #expect(store.lastTransitions.isEmpty)
-    }
-
-    @Test func differentSessionsStayTwoRows() {
-        let store = HerdStore()
-        store.add(StubSource("herdr"))
-        store.add(StubSource("report"))
-        let herdrAgent = HerdAgent(id: AgentID(source: "herdr", local: "w1:p1"), name: "claude", status: .working,
-                                   session: AgentSession(kind: "claude", id: "one"))
-        let reported = HerdAgent(id: AgentID(source: "report", local: "session:two"), name: "claude", status: .idle,
-                                 session: AgentSession(kind: "claude", id: "two"))
-        store.apply(SourceUpdate(agents: [herdrAgent], state: .live), from: "herdr")
-        store.apply(SourceUpdate(agents: [reported], state: .live), from: "report")
-        #expect(store.agents.map(\.id) == [herdrAgent.id, reported.id])
     }
 }

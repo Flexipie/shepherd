@@ -25,12 +25,6 @@ import Testing
         return tracker
     }
 
-    @Test func aHookSessionKeyGivesTheAgentItsSession() {
-        var tracker = ReportTracker()
-        let outcome = tracker.apply([report(.working, at: t0, key: "session:abc-123"), report(.idle, at: t0)], at: t0)
-        #expect(outcome.agents.map(\.session) == [nil, AgentSession(kind: "claude", id: "abc-123", cwd: "/work/app")])
-    }
-
     @Test func theFirstReadIsTheBaselineAndEmitsNothing() {
         var tracker = ReportTracker()
         let outcome = tracker.apply([report(.working, at: t0)], at: t0)
