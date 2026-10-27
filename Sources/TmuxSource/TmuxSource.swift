@@ -5,8 +5,9 @@ import TmuxKit
 
 /// tmux as a Shepherd source: a pane whose process tree runs a known agent is an agent. Its state
 /// comes from the pane's screen, so it is labelled inferred, and a report from the same pane wins
-/// (`HerdStore`). Nothing polls: a control-mode client per session says when a pane printed, and
-/// the socket folder says when a server came or went.
+/// (`HerdStore`). Nothing polls: a control-mode client per server says when a pane printed (its own
+/// session's output, and a subscription for the rest, `TmuxFollow`), and the socket folder says
+/// when a server came or went.
 @MainActor
 public final class TmuxSource: AgentSource {
     public static let sourceID: SourceID = PaneTracker.source
@@ -16,6 +17,8 @@ public final class TmuxSource: AgentSource {
     static let listDelay: Duration = .milliseconds(300)
     /// Output from a pane that is not an agent yet waits longer: an agent may have just started there.
     static let newPaneDelay: Duration = .seconds(1)
+    /// One more read after a pane the subscription reported changed (`scheduleFollowUp`).
+    static let followUpDelay: Duration = .milliseconds(1100)
     /// Output from a pane a listing already saw without an agent: a log or a dev server in any
     /// session prints all the time, so it lists rarely. An agent started in that shell shows this late.
     static let shellPaneDelay: Duration = .seconds(5)
@@ -34,12 +37,14 @@ public final class TmuxSource: AgentSource {
     private var patterns: [String: ScreenPatterns]
     private var screens: ScreenStatus
     private var watcher: TmuxSocketWatcher?
-    /// Control clients, one per session of each server.
-    private var controls: [Followed: Control] = [:]
-    /// Sessions whose control client ended before it ever attached. Not restarted until the session
-    /// is gone, so a client that cannot attach does not restart on every listing. One that attached
-    /// and was then detached (`tmux attach -d` detaches every other client) attaches again.
-    private var detached: Set<Followed> = []
+    /// Control clients, one per server, by socket (`TmuxFollow`).
+    private var controls: [String: Control] = [:]
+    /// Sessions whose control client ended before it ever attached, by socket. Not chosen again
+    /// until the session is gone, so a client that cannot attach does not restart on every listing.
+    /// One that attached and was then detached (`tmux attach -d` detaches every other client) is.
+    private var failed: [String: Set<String>] = [:]
+    /// Each server's last subscription value: every pane's signature (`TmuxActivity`).
+    private var activity: [String: [String: String]] = [:]
     private var observations: [String: PaneObservation] = [:]
     /// Panes a task started that no scan has shown as an agent yet, by key, so the new agent's
     /// stage can read and jump to it at once. `listing` is the last listing requested when it
@@ -50,6 +55,7 @@ public final class TmuxSource: AgentSource {
     private var clients: [TmuxAttachedClient] = []
     private var serverCount = 0
     private var reads: [String: Task<Void, Never>] = [:]
+    private var followUps: [String: Task<Void, Never>] = [:]
     private var listing: Task<Void, Never>?
     /// When the waiting listing runs.
     private var listingAt: ContinuousClock.Instant?
@@ -60,17 +66,11 @@ public final class TmuxSource: AgentSource {
     private var lastRequested = 0
     private var lastApplied = 0
 
-    /// A session a control client follows: tmux sends a client output only from its own session.
-    private struct Followed: Hashable {
-        let socket: String
-        /// Such as `$1`.
-        let session: String
-    }
-
     private struct Control {
         let client: ControlClient
         /// Tells a client that ended apart from its replacement.
         let token: UUID
+        var choice: TmuxFollow.Choice
         /// tmux has sent it something, so it did attach.
         var attached = false
     }
@@ -116,6 +116,8 @@ public final class TmuxSource: AgentSource {
         deadline = nil
         for task in reads.values { task.cancel() }
         reads = [:]
+        for task in followUps.values { task.cancel() }
+        followUps = [:]
         let running = controls.values.map(\.client)
         controls = [:]
         for client in running { await client.stop() }
@@ -279,18 +281,26 @@ public final class TmuxSource: AgentSource {
 
     private func apply(_ scan: TmuxScan, at now: Date) {
         serverCount = scan.servers.count
-        // In each server's order, least recently used session first. A session tmux closes once
-        // unattached is followed only while a terminal is on it, so Shepherd's client never keeps it open.
-        let sessions = scan.servers.flatMap { server in
-            let viewed = Set(server.clients.filter { !$0.isControl }.map(\.session))
-            return server.sessions.filter { !$0.closesWhenUnattached || viewed.contains($0.name) }
-                .map { Followed(socket: server.socket, session: $0.id) }
+        let live = Set(scan.servers.map(\.socket))
+        for socket in controls.keys.filter({ !live.contains($0) }) { stopControl(socket) }
+        failed = failed.filter { live.contains($0.key) }
+        var attaching = false
+        for server in scan.servers {
+            let socket = server.socket
+            failed[socket]?.formIntersection(server.sessions.map(\.id))
+            let sessions = server.sessions.filter { !(failed[socket]?.contains($0.id) ?? false) }
+            let choice = TmuxFollow.choose(sessions: sessions, terminals: server.clients.filter { !$0.isControl },
+                                           current: controls[socket]?.choice)
+            if let choice, controls[socket]?.choice.session == choice.session {
+                controls[socket]?.choice = choice
+                continue
+            }
+            stopControl(socket)
+            if let choice {
+                startControl(socket, choice)
+                attaching = true
+            }
         }
-        let live = Set(sessions)
-        for session in controls.keys.filter({ !live.contains($0) }) { stopControl(session) }
-        detached.formIntersection(live)
-        let attaching = sessions.filter { controls[$0] == nil && !detached.contains($0) }
-        startControls(attaching)
 
         clients = scan.servers.flatMap(\.clients).filter { !$0.isControl }
         var current: [String: PaneObservation] = [:]
@@ -312,83 +322,106 @@ public final class TmuxSource: AgentSource {
         publish(at: now)
         // Output printed before a new control client attached is never sent to it. One more listing,
         // once it is attached, reads those screens.
-        if !attaching.isEmpty { scheduleList(after: Self.listDelay) }
+        if attaching { scheduleList(after: Self.listDelay) }
     }
 
     // MARK: Control clients
 
-    /// Attaches to each session one after another, in order, so the last one attached, the user's
-    /// latest, stays the session a plain `tmux attach` picks.
-    private func startControls(_ sessions: [Followed]) {
-        guard !sessions.isEmpty else { return }
-        let starting = sessions.map { followed in
-            let control = Control(client: ControlClient(binary: binary, socket: followed.socket, session: followed.session),
-                                  token: UUID())
-            controls[followed] = control
-            return (followed, control)
-        }
+    private func startControl(_ socket: String, _ choice: TmuxFollow.Choice) {
+        let client = ControlClient(binary: binary, socket: socket, session: choice.session)
+        let token = UUID()
+        controls[socket] = Control(client: client, token: token, choice: choice)
+        activity[socket] = nil
         Task {
-            for (followed, control) in starting {
-                let token = control.token
-                // Dropped while it waited its turn, or the source stopped.
-                guard controls[followed]?.token == token else { continue }
-                do {
-                    try await control.client.start(events: { [weak self] event in
-                        Task { @MainActor in self?.control(event, from: followed, token: token) }
-                    }, ended: { [weak self] in
-                        Task { @MainActor in self?.controlEnded(followed, token: token) }
-                    })
-                } catch {
-                    controlEnded(followed, token: token)
-                }
+            // Dropped or stopped before it started.
+            guard controls[socket]?.token == token else { return }
+            do {
+                try await client.start(events: { [weak self] event in
+                    Task { @MainActor in self?.control(event, socket: socket, token: token) }
+                }, ended: { [weak self] in
+                    Task { @MainActor in self?.controlEnded(socket, token: token) }
+                })
+                await client.subscribe(TmuxActivity.subscription, format: TmuxActivity.format)
+            } catch {
+                controlEnded(socket, token: token)
             }
         }
     }
 
-    private func stopControl(_ followed: Followed) {
-        guard let control = controls.removeValue(forKey: followed) else { return }
+    private func stopControl(_ socket: String) {
+        activity[socket] = nil
+        guard let control = controls.removeValue(forKey: socket) else { return }
         Task { await control.client.stop() }
     }
 
-    private func control(_ event: ControlEvent, from followed: Followed, token: UUID) {
+    private func control(_ event: ControlEvent, socket: String, token: UUID) {
+        guard controls[socket]?.token == token else { return }
         // tmux says `%session-changed` once attached; a failed attach sends only command replies and `%exit`.
-        if event != .exit, event != .other, controls[followed]?.token == token { controls[followed]?.attached = true }
+        if event != .exit, event != .other { controls[socket]?.attached = true }
         switch event {
         case .output(let pane):
-            let key = PaneObservation.key(socket: followed.socket, paneID: pane)
-            if observations[key] != nil {
-                scheduleRead(key)
-            } else {
-                scheduleList(after: listedPanes.contains(key) ? Self.shellPaneDelay : Self.newPaneDelay)
+            changed(PaneObservation.key(socket: socket, paneID: pane), subscribed: false)
+        case .subscription(let name, let value) where name == TmuxActivity.subscription:
+            let panes = TmuxActivity.parse(value)
+            let before = activity[socket]
+            activity[socket] = panes
+            // The first value is where the panes stand; the listing after attaching reads them.
+            guard let before else { return }
+            for pane in TmuxActivity.changed(from: before, to: panes) {
+                changed(PaneObservation.key(socket: socket, paneID: pane), subscribed: true)
             }
         case .layout:
             scheduleList(after: Self.listDelay)
         case .clients:
-            // A session tmux closes once unattached is held open by Shepherd's client until a
-            // listing drops it, and a plain `tmux attach` could land in it meanwhile: list now.
+            // The client may sit on a session a terminal just left, which is now the user's latest,
+            // or one tmux closes once unattached: list now so it moves.
             scheduleList(after: .zero)
-        case .exit, .other:
+        case .subscription, .exit, .other:
             break
         }
     }
 
-    private func controlEnded(_ followed: Followed, token: UUID) {
-        guard let control = controls[followed], control.token == token else { return }
-        controls[followed] = nil
-        if !control.attached { detached.insert(followed) }
+    /// A pane printed. An agent's screen is read; any other pane may have just started one.
+    /// The subscription already waited for its once-a-second check, so its reads do not wait more.
+    private func changed(_ key: String, subscribed: Bool) {
+        if observations[key] != nil {
+            scheduleRead(key, after: subscribed ? .zero : Self.readDelay)
+            if subscribed { scheduleFollowUp(key) }
+        } else {
+            scheduleList(after: listedPanes.contains(key) ? Self.shellPaneDelay : Self.newPaneDelay)
+        }
+    }
+
+    private func controlEnded(_ socket: String, token: UUID) {
+        guard let control = controls[socket], control.token == token else { return }
+        controls[socket] = nil
+        activity[socket] = nil
+        if !control.attached { failed[socket, default: []].insert(control.choice.session) }
         scheduleList(after: Self.listDelay)
     }
 
     // MARK: Screen reads
 
-    /// Reads one pane's screen after `readDelay`. A read already waiting covers the output too.
-    private func scheduleRead(_ key: String) {
+    /// Reads one pane's screen after `delay`. A read already waiting covers the output too.
+    private func scheduleRead(_ key: String, after delay: Duration = TmuxSource.readDelay) {
         guard reads[key] == nil else { return }
         reads[key] = Task { [weak self] in
-            try? await Task.sleep(for: Self.readDelay)
+            try? await Task.sleep(for: delay)
             guard !Task.isCancelled, let self else { return }
             self.reads[key] = nil
             await self.readScreen(key)
+        }
+    }
+
+    /// One more read a little after a subscription's: the format counts window activity in whole
+    /// seconds, so a change later in the same second, with the cursor where it was, shows no new value.
+    private func scheduleFollowUp(_ key: String) {
+        followUps[key]?.cancel()
+        followUps[key] = Task { [weak self] in
+            try? await Task.sleep(for: Self.followUpDelay)
+            guard !Task.isCancelled, let self else { return }
+            self.followUps[key] = nil
+            self.scheduleRead(key, after: .zero)
         }
     }
 

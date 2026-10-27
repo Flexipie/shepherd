@@ -119,21 +119,34 @@ struct TmuxSourceTests {
         return false
     }
 
+    /// Each session's attached count, by name, asked off the main actor.
+    func attached(_ tmux: PrivateTmux) async -> [String: Int] {
+        await Task.detached {
+            let lines = (try? PrivateTmux.run(tmux.binary, ["-S", tmux.socket, "list-sessions", "-F", "#{session_name} #{session_attached}"])) ?? ""
+            return Dictionary(lines.split(separator: "\n").compactMap { line -> (String, Int)? in
+                let words = line.split(separator: " ")
+                guard words.count == 2, let count = Int(words[1]) else { return nil }
+                return (String(words[0]), count)
+            }, uniquingKeysWith: { first, _ in first })
+        }.value
+    }
+
     @Test func anApprovalInASessionNoTerminalUsesIsSeen() async throws {
         let folder = try scratch()
         defer { try? FileManager.default.removeItem(at: folder) }
         try fakeClaude(in: folder, screens: [Self.idle, Self.prompt], pause: 3)
-        let tmux = try PrivateTmux(binary: binary, folder: folder, command: "\(folder.path)/claude")
-        // A newer, busier session: attaching with no target would join it and never hear from `w`.
+        let tmux = try PrivateTmux(binary: binary, folder: folder)
+        // The agent's session is the newer one: the one a plain `tmux attach` would pick.
         try await Task.sleep(for: .seconds(1))
-        try PrivateTmux.run(binary, ["-S", tmux.socket, "new-session", "-d", "-s", "b", "cat"])
-        try tmux.client.sendLiteral("b", "typing")
+        try PrivateTmux.run(binary, ["-S", tmux.socket, "new-session", "-d", "-s", "b", "\(folder.path)/claude"])
         let (store, source) = try running(folder)
         defer { Task { await source.stop() } }
-        await controlClients(tmux, 2)
+        #expect(await controlClients(tmux, 1))
         await until { store.agents.first?.status == .idle }
 
-        // The prompt arrives only as output, so only a control client on `w` can say it changed.
+        // Shepherd's one client sits on the older session, so `b` stays unattached, and the prompt
+        // in it is heard through the subscription.
+        #expect(await attached(tmux) == ["w": 1, "b": 0])
         await until { store.needsYou.count == 1 }
         #expect(store.agents.first?.status == .blocked)
     }
@@ -145,16 +158,12 @@ struct TmuxSourceTests {
         let tmux = try PrivateTmux(binary: binary, folder: folder)
         let (store, source) = try running(folder)
         defer { Task { await source.stop() } }
-        await controlClients(tmux, 1)
+        #expect(await controlClients(tmux, 1))
 
         try PrivateTmux.run(binary, ["-S", tmux.socket, "new-session", "-d", "-s", "b", "\(folder.path)/claude"])
-        await controlClients(tmux, 2)
         await until { store.needsYou.count == 1 }
         #expect(store.agents.first?.status == .blocked)
-
-        // A session that closes takes its control client with it.
-        try PrivateTmux.run(binary, ["-S", tmux.socket, "kill-session", "-t", "b"])
-        #expect(await controlClients(tmux, 1))
+        #expect(await attached(tmux) == ["w": 1, "b": 0])
     }
 
     @Test func aControlClientDetachedByTheUserAttachesAgain() async throws {

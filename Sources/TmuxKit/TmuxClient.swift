@@ -126,9 +126,7 @@ public struct TmuxClient: Sendable {
         }
     }
 
-    /// Every session, least recently used first. A session a client attaches to becomes the most
-    /// recently used, which is where a plain `tmux attach` goes, so attaching in this order keeps
-    /// the user's latest session the latest.
+    /// Every session, least recently used first.
     public func sessions() throws -> [TmuxSession] {
         try run(["list-sessions", "-F", TmuxSession.format]).split(separator: "\n")
             .compactMap { TmuxSession.parse(String($0)) }

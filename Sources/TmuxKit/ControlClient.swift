@@ -8,6 +8,8 @@ public enum ControlEvent: Sendable, Equatable {
     case layout
     /// A terminal left a session or moved to another, so which sessions are watched may have changed.
     case clients
+    /// A subscription's format has a new value (`ControlClient.subscribe`).
+    case subscription(name: String, value: String)
     /// The client was detached, usually because its server exited.
     case exit
     case other
@@ -31,6 +33,10 @@ public enum ControlEvent: Sendable, Equatable {
             return .exit
         case "%client-detached", "%client-session-changed":
             return .clients
+        case "%subscription-changed":
+            // `%subscription-changed name $1 @2 3 %4 : value`, with `-` for the ids that do not apply.
+            guard words.count > 1, let colon = line.range(of: " : ") else { return .other }
+            return .subscription(name: String(words[1]), value: String(line[colon.upperBound...]))
         case let word where layoutEvents.contains(String(word)):
             return .layout
         default:
@@ -41,8 +47,8 @@ public enum ControlEvent: Sendable, Equatable {
 
 /// A control-mode client on one session of a server: `tmux -C attach-session`, so tmux pushes
 /// output and layout events to Shepherd rather than Shepherd asking. tmux sends output only for
-/// panes in the session a client is attached to, so following a whole server takes one client per
-/// session. The client ignores window size, so attaching never resizes the user's windows. Its
+/// panes in the session a client is attached to; a subscription (`subscribe`) can watch the rest.
+/// The client ignores window size, so attaching never resizes the user's windows. Its
 /// output is read by a readability handler on the pipe's own queue, off the main actor: a read on
 /// `FileHandle.bytes` waited behind the other clients' reads, so a quiet session held up the rest.
 public actor ControlClient {
@@ -94,6 +100,12 @@ public actor ControlClient {
             }
             for line in lines.append(data) { events(ControlEvent.parse(line)) }
         }
+    }
+
+    /// Asks tmux to check `format` once a second and send `.subscription(name:value:)` when its value
+    /// changes, the first value at its first check. The format must not hold a single quote.
+    public func subscribe(_ name: String, format: String) {
+        try? input?.write(contentsOf: Data("refresh-client -B '\(name)::\(format)'\n".utf8))
     }
 
     /// Detaches: closing the input lets tmux exit cleanly, and the process is terminated if it has not.

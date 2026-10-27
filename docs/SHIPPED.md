@@ -252,9 +252,12 @@ Oldest first.
   the report's message where herdr has none). Changes are told once under the row's id. A hooked
   session outside tmux now also gets its context size and final message. The first-run card says
   the hooks work in tmux and herdr too, and the README and changelog warnings are gone.
-- tmux follows every session (#82): one control client per session of each server, attached and
-  dropped as sessions come and go, so an approval in a session no terminal is on, or one made after
-  Shepherd started, shows as blocked within a second. Clients attach least recently used session
-  first, so the user's latest session stays the one a plain `tmux attach` picks. The control
-  client now reads its pipe with a readability handler: `FileHandle.bytes` reads waited behind
-  each other, so a quiet session held back another's output by seconds.
+- tmux follows every session (#82): an approval in a session no terminal is on, or one made after
+  Shepherd started, shows as blocked within about a second. One control client per server hears
+  its own session's output and, for every other pane, a once-a-second subscription to the pane's
+  cursor, history size and window activity. Without changing how tmux behaves: the client sits
+  on a session a terminal is already on, or else the least recently used one, so detached
+  sessions stay detached for a plain `tmux attach`, and a `destroy-unattached` session is never
+  held open. It reattaches after `tmux attach -d`. The control client reads its pipe with a
+  readability handler (`FileHandle.bytes` delayed lines by seconds in the app), and output from a
+  pane known not to be an agent lists after 5 s, under the idle CPU budget.
