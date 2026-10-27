@@ -295,7 +295,9 @@ public final class TmuxSource: AgentSource {
         for socket in controls.keys.filter({ !live.contains($0) }) { stopControl(socket) }
         failed = failed.filter { live.contains($0.key) }
         activity = activity.filter { live.contains($0.key) }
-        retryAt = retryAt.filter { live.contains($0.key) && $0.value > .now }
+        // A wait outlives listings that could not read its server, so it always ends in a listing.
+        retryAt = retryAt.filter { $0.value > .now }
+        if let first = retryAt.values.min() { scheduleList(after: first - .now) }
         var attaching = false
         for server in scan.servers {
             let socket = server.socket
@@ -311,11 +313,8 @@ public final class TmuxSource: AgentSource {
                 continue
             }
             stopControl(socket)
-            // Waiting out a failed start: list again when the wait ends, whatever listings come first.
-            if let retry = retryAt[socket] {
-                scheduleList(after: retry - .now)
-                continue
-            }
+            // Waiting out a failed start; a listing comes when the wait ends (above).
+            if retryAt[socket] != nil { continue }
             if let choice {
                 startControl(socket, choice)
                 attaching = true
