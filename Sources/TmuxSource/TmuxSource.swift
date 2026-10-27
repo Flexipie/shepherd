@@ -311,7 +311,12 @@ public final class TmuxSource: AgentSource {
                 continue
             }
             stopControl(socket)
-            if let choice, retryAt[socket] == nil {
+            // Waiting out a failed start: list again when the wait ends, whatever listings come first.
+            if let retry = retryAt[socket] {
+                scheduleList(after: retry - .now)
+                continue
+            }
+            if let choice {
                 startControl(socket, choice)
                 attaching = true
             }
