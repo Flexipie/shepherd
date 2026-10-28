@@ -165,7 +165,9 @@ public struct PaletteView: View {
                 .textFieldStyle(.plain)
                 .font(.system(size: 18))
                 .focused($fieldFocused)
-                .onSubmit { choose(selected, in: results) }
+                // Read the selection when Return is pressed, as the arrows do: the field can keep an
+                // older onSubmit, whose captured selection would be the first row (#86).
+                .onSubmit { choose(self.selected(in: results), in: results) }
                 .onKeyPress(.downArrow) { move(1, in: results) }
                 .onKeyPress(.upArrow) { move(-1, in: results) }
                 .onKeyPress(.tab) { key(.tab, prompting: promptable) }
