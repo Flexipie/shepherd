@@ -99,9 +99,12 @@ config, history, plugins or notifications); Leave Demo in the same menu or the p
 - **Palette.** ⌥Space from any app opens a search box. Type part of an agent, a project, a state
   or any token (a PR number, a ticket) and press Return to jump. Tab (or →) on an agent turns the
   field into a prompt for it, with its last lines underneath; approval choices are ⌘1, ⌘2 and so
-  on. Your current app stays frontmost. Shepherd's own commands are there too: Open config file (its
-  folder while there is no file) and Open plugins folder, and, once you type them, Quit and Try
-  Demo or Leave Demo, so Return on an empty palette never quits or relaunches.
+  on. Your current app stays frontmost. Shepherd's own commands are there too: Status, Open config
+  file (its folder while there is no file) and Open plugins folder, and, once you type them, Quit
+  and Try Demo or Leave Demo, so Return on an empty palette never quits or relaunches. Status shows
+  config, plugin and hotkey problems, each source (found, connected or not, and how to connect) and
+  the status lines the menu bar panel shows; when there is a problem the palette's footer says so.
+  Before any agent shows, the palette shows the first-run guide until you type.
 - **"Next" hotkey.** ⌃⌥⌘N jumps to the next agent that needs you; press again to walk the queue.
 - **New task.** The "+" after the project columns, or "New task…" in the palette: pick a project,
   an agent and a prompt (a branch name is optional). Shepherd makes a git worktree from that
@@ -231,7 +234,7 @@ can be left out:
 - `modules`: which modules run, in order. Panel sections follow this order (unless `layout`
   lists that tab); in the notch bar the queue stays on the left and the others follow as columns.
   `demo` shows its card only in demo mode, and offers Try Demo or Leave Demo in the palette. `app`
-  gives the palette Quit and Open config file; a list written before it existed needs
+  gives the palette Status, Quit and Open config file; a list written before it existed needs
   `app` added for them. `usage` and `system`, the gadgets of earlier versions, are ignored here
   and in `layout`.
 - `sources`: where agents come from, in the order listed: `herdr`, `report` (`shepherd-report`)
@@ -263,7 +266,9 @@ can be left out:
 - `hotkeys.next` and `hotkeys.palette`: modifiers (`ctrl`, `option`, `cmd`, `shift`) and one key
   (a-z, 0-9, `space`, `return`, `tab`, `f1`-`f12`); `null` turns one off. macOS does not say when
   another app (Raycast and Alfred like ⌥Space too) already owns a combination, so if the palette
-  does not open, pick another (`ctrl+option+space`, for example).
+  does not open, pick another (`ctrl+option+space`, for example). A combination that cannot be
+  registered at all is named, with its config key, in the panel's footer and on the palette's
+  Status page.
 - `agents.<kind>.args`: extra arguments when a new task starts that agent, for example
   `"claude": { "args": ["--dangerously-skip-permissions"] }`. That flag lets Claude Code run every
   tool and command without asking you first, so nothing will block for approval; use it only
