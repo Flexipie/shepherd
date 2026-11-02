@@ -5,7 +5,6 @@ import Foundation
 public enum PanelTab: String, Sendable, Hashable, CaseIterable {
     /// The needs-you queue and the projects: what the surfaces are for.
     case agents
-    /// Gadget cards.
     case gadgets
 
     public var title: String {

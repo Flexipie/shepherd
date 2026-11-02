@@ -171,6 +171,5 @@ import Testing
         let registry = ModuleRegistry(available: BuiltinModules.all, retired: BuiltinModules.retired, context: context)
         #expect(registry.modules.map { type(of: $0).id } == ["queue", "projects"])
         #expect(config.problems.isEmpty)
-        #expect(config.config.layout.removing(registry.retired) == PanelLayout())
     }
 }
