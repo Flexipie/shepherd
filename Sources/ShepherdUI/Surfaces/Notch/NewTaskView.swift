@@ -105,22 +105,15 @@ struct NewTaskView: View {
     }
 }
 
-/// The "+" after the project columns, which opens the new task form.
+/// The New task button in the bar's top strip, which opens the new task form.
 struct NewTaskButton: View {
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 4) {
-                Image(systemName: "plus").font(.system(size: 14, weight: .semibold))
-                Text("New task").font(.system(size: 11))
-            }
-            .foregroundStyle(.secondary)
-            .frame(width: 76, height: 64)
-            .background(RoundedRectangle(cornerRadius: 10).strokeBorder(Color.secondary.opacity(0.35), style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
-            .contentShape(Rectangle())
+            Label("New task", systemImage: "plus")
         }
-        .buttonStyle(.plain)
+        .buttonStyle(StageButtonStyle())
         .help("Start an agent on a new branch")
     }
 }

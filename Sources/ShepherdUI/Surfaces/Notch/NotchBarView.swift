@@ -1,22 +1,24 @@
 import ShepherdCore
 import SwiftUI
 
-/// The notch's expanded state: a wide, short bar along the top of the screen. The Agents | Gadgets
-/// tabs sit on top when any gadget is on. On Agents the needs-you queue is pinned on the left,
-/// then one column per project card (or per other section), scrolling sideways when there are
-/// many; on Gadgets each gadget is a column. Each column scrolls on its own past `maxHeight`.
-/// Status lines and config problems share one quiet line along the bottom. Arrows move across
-/// the grid, Return chooses, hovering selects, ⌘1 and ⌘2 switch tabs.
+/// The notch's expanded state: a wide, short bar along the top of the screen. The band beside the
+/// notch holds the Agents | Gadgets tabs (when any gadget is on) on its left, and the status
+/// lines, config problems and New task button on its right. On Agents the needs-you queue is pinned on the left, then
+/// the project cards in two columns that share the rest of the width, then a column per other
+/// section; on Gadgets each gadget is a column. Columns past the width scroll sideways, and each
+/// scrolls on its own past `maxHeight`. Arrows move across the grid, Return chooses, hovering
+/// selects, ⌘1 and ⌘2 switch tabs.
 ///
 /// With `onStage`, choosing an agent's row opens its stage in place of the project columns
-/// instead of jumping, and `offersNewTask` adds a "+" after the columns for the new task form.
-/// Both are on the Agents tab only.
+/// instead of jumping, and `offersNewTask` shows the New task button, which opens the new task
+/// form there. Both are on the Agents tab only.
 /// Escape or Left goes back, a digit picks one of a stage's choices. The arrow on a hovered or
 /// selected row, ⌘-click and ⌘Return jump straight to the agent.
 public struct NotchBarView: View {
     let content: PanelContent
     let clock: PanelClock
     let width: CGFloat
+    let notch: CGSize
     let maxHeight: CGFloat?
     let stage: BarStage?
     let offersNewTask: Bool
@@ -36,15 +38,17 @@ public struct NotchBarView: View {
     public nonisolated static let columnWidth: CGFloat = 230
     static let spacing: CGFloat = 8
 
-    /// `maxHeight` makes each column scroll past that height; nil lets the columns grow (and,
-    /// for snapshots, cuts off the columns that do not fit instead of scrolling them).
-    public init(content: PanelContent, clock: PanelClock = .live, width: CGFloat, maxHeight: CGFloat? = nil,
+    /// `notch` is the camera's size, centred at the top: the bar's first row is the band beside it.
+    /// `maxHeight` makes each column scroll past that height; nil lets the columns grow (and, for
+    /// snapshots, cuts off the columns that do not fit instead of scrolling them).
+    public init(content: PanelContent, clock: PanelClock = .live, width: CGFloat, notch: CGSize, maxHeight: CGFloat? = nil,
                 stage: BarStage? = nil, offersNewTask: Bool = false, tab: PanelTab = .agents,
                 onTab: @escaping (PanelTab) -> Void = { _ in }, selection: PanelTarget.ID? = nil,
                 perform: @escaping (PanelAction) -> Void, onStage: ((StageAction) -> Void)? = nil) {
         self.content = content
         self.clock = clock
         self.width = width
+        self.notch = notch
         self.maxHeight = maxHeight
         self.offersNewTask = offersNewTask
         self.tab = tab
@@ -82,16 +86,12 @@ public struct NotchBarView: View {
         let pinned = columns.first.flatMap { $0.isQueue ? $0 : nil }
         let rest = pinned == nil ? columns : Array(columns.dropFirst())
         return VStack(alignment: .leading, spacing: 0) {
-            if content.hasTabs {
-                PanelTabBar(selected: content.shownTab(tab), onTab: onTab)
-                    .padding(.horizontal, 18)
-                    .padding(.top, 6)
-            }
+            strip
             HStack(alignment: .top, spacing: Self.spacing) {
                 if let pinned {
                     column(pinned, now: now)
                 }
-                if pinned != nil, stage != nil || !rest.isEmpty || newTaskButton {
+                if pinned != nil, stage != nil || !rest.isEmpty {
                     Divider()
                 }
                 switch (stage, onStage) {
@@ -102,31 +102,37 @@ public struct NotchBarView: View {
                 case (.newTask(let stage)?, let onStage?):
                     NewTaskView(stage: stage, onStage: onStage)
                 default:
-                    if !rest.isEmpty || newTaskButton { scrolling(rest, now: now) }
+                    if !rest.isEmpty { scrolling(rest, now: now, cardWidth: cardWidth(rest, pinned: pinned != nil)) }
                 }
             }
             .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
-            footer
         }
     }
 
+    /// Card columns share what the queue and the other columns leave, never narrower than a
+    /// section column.
+    private func cardWidth(_ columns: [BarColumn], pinned: Bool) -> CGFloat {
+        let cards = columns.count { $0.isCards }
+        guard cards > 0 else { return Self.columnWidth }
+        let others = CGFloat(columns.count - cards) * Self.columnWidth
+        let gaps = CGFloat(columns.count - 1) * Self.spacing + (pinned ? Self.queueWidth + 2 * Self.spacing + 1 : 0)
+        return max(Self.columnWidth, (width - 20 - others - gaps) / CGFloat(cards))
+    }
+
     @ViewBuilder
-    private func scrolling(_ columns: [BarColumn], now: Date) -> some View {
+    private func scrolling(_ columns: [BarColumn], now: Date, cardWidth: CGFloat) -> some View {
         let row = HStack(alignment: .top, spacing: Self.spacing) {
             ForEach(columns) { column in
-                self.column(column, now: now).id(column.id)
-            }
-            if newTaskButton {
-                NewTaskButton { onStage?(.newTask) }
+                self.column(column, now: now, cardWidth: cardWidth).id(column.id)
             }
         }
         if let maxHeight {
             ScrollViewReader { proxy in
                 ScrollView(.horizontal) { row }
                     .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
-                    .frame(height: min(max(columns.compactMap { heights[$0.id] }.max() ?? 0, newTaskButton ? 64 : 0), maxHeight))
+                    .frame(height: min(columns.compactMap { heights[$0.id] }.max() ?? 0, maxHeight))
                     .onChange(of: scrollTarget) { _, target in
                         guard let target, let column = columns.first(where: { contains($0, target) }) else { return }
                         withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { proxy.scrollTo(column.id) }
@@ -138,9 +144,9 @@ public struct NotchBarView: View {
     }
 
     @ViewBuilder
-    private func column(_ column: BarColumn, now: Date) -> some View {
-        let items = columnItems(column, now: now)
-            .frame(width: column.isQueue ? Self.queueWidth : Self.columnWidth, alignment: .topLeading)
+    private func column(_ column: BarColumn, now: Date, cardWidth: CGFloat = 0) -> some View {
+        let width = column.isQueue ? Self.queueWidth : column.isCards ? cardWidth : Self.columnWidth
+        let items = columnItems(column, now: now).frame(width: width, alignment: .topLeading)
         if let maxHeight {
             ScrollViewReader { proxy in
                 ScrollView(.vertical) {
@@ -163,8 +169,12 @@ public struct NotchBarView: View {
         let rows = RowContext(sectionID: column.section.id, selection: selection, jump: perform, perform: barPerform) {
             selection = $0
         }
-        if column.isCard, let item = column.items.first {
-            PanelItemView(item: item, now: now, rows: rows)
+        if column.isCards {
+            VStack(alignment: .leading, spacing: Self.spacing) {
+                ForEach(column.items.indices, id: \.self) { index in
+                    PanelItemView(item: column.items[index], now: now, rows: rows)
+                }
+            }
         } else {
             PanelSectionView(section: column.section, now: now, rows: rows)
         }
@@ -192,28 +202,43 @@ public struct NotchBarView: View {
         PanelTarget.all(in: [column]).contains { $0.id == target }
     }
 
-    @ViewBuilder
-    private var footer: some View {
-        if !content.statusLines.isEmpty || !content.problems.isEmpty {
-            HStack(spacing: 10) {
-                if !content.problems.isEmpty {
-                    Label {
-                        Text(content.problems.joined(separator: "; "))
-                    } icon: {
-                        Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
-                    }
-                    .layoutPriority(1)
+    /// The band beside the notch: tabs on its left; problems, status lines and New task on its
+    /// right. There whether a stage is open or not, so the bar does not jump.
+    private var strip: some View {
+        HStack(spacing: 0) {
+            Group {
+                if content.hasTabs {
+                    PanelTabBar(selected: content.shownTab(tab), onTab: onTab)
                 }
-                Text(content.statusLines.joined(separator: " · "))
-                    .foregroundStyle(.secondary)
             }
-            .font(.system(size: 11))
-            .lineLimit(1)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 18)
-            .padding(.bottom, 8)
-            .help((content.problems + content.statusLines).joined(separator: "\n"))
+            Color.clear.frame(width: notch.width + 2 * Self.spacing)
+            HStack(spacing: 10) {
+                if !content.problems.isEmpty || !content.statusLines.isEmpty {
+                    HStack(spacing: 10) {
+                        if !content.problems.isEmpty {
+                            Label {
+                                Text(content.problems.joined(separator: "; "))
+                            } icon: {
+                                Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                            }
+                            .layoutPriority(1)
+                        }
+                        Text(content.statusLines.joined(separator: " · "))
+                            .foregroundStyle(.secondary)
+                    }
+                    .font(.system(size: 11))
+                    .lineLimit(1)
+                    .help((content.problems + content.statusLines).joined(separator: "\n"))
+                }
+                if newTaskButton {
+                    NewTaskButton { onStage?(.newTask) }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .trailing)
         }
+        .padding(.horizontal, 18)
+        .frame(height: notch.height)
     }
 
     private func move(_ direction: PanelTarget.Direction) -> KeyPress.Result {

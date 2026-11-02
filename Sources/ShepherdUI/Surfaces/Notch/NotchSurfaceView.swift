@@ -139,11 +139,9 @@ public struct NotchSurfaceView: View {
     }
 
     private func expanded(_ content: PanelContent, stage: BarStage?, offersNewTask: Bool, width: CGFloat) -> some View {
-        VStack(spacing: 0) {
-            Color.clear.frame(height: metrics.notchHeight)
-            NotchBarView(content: content, clock: clock, width: width, maxHeight: barMaxHeight, stage: stage,
-                         offersNewTask: offersNewTask, tab: tab, onTab: onTab, perform: perform, onStage: onStage)
-        }
+        NotchBarView(content: content, clock: clock, width: width,
+                     notch: CGSize(width: metrics.notchWidth, height: metrics.notchHeight), maxHeight: barMaxHeight,
+                     stage: stage, offersNewTask: offersNewTask, tab: tab, onTab: onTab, perform: perform, onStage: onStage)
         // Its own height, not the shape's: the shape follows the content, not the other way.
         .fixedSize()
         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { onExpandedHeight($0) }
