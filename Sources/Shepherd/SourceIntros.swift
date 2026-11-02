@@ -37,7 +37,7 @@ enum SourceIntros {
         }
         if canTryDemo {
             intros.append(SourceIntro(id: "demo", name: "Demo", on: .init("", ""), off: .init(
-                "made-up agents", "To see Shepherd with a herd first, right-click the menu bar icon and choose Try Demo.")))
+                "made-up agents", "To see Shepherd with a herd first, right-click the menu bar icon and choose Try Demo."), isTip: true))
         }
         return intros
     }

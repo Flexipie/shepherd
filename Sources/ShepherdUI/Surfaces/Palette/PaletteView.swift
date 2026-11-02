@@ -4,19 +4,27 @@ import SwiftUI
 /// What the palette shows, computed by the app from the store, the modules and its stage.
 public struct PaletteContent: Sendable, Equatable {
     public var items: [PaletteItem]
-    /// Why the list may be short or empty, such as "Not connected: …"; nil while live.
+    /// Why the list may be short or empty, such as "Not connected: …", or that something is wrong
+    /// and where to read about it; nil while all is well.
     public var notice: String?
+    /// The notice is about problems, so it shows a warning.
+    public var noticeIsProblem: Bool
+    /// The first-run guide, shown in place of the list while nothing is typed; nil once agents show.
+    public var guide: PanelSection?
     public var page: PalettePage
 
-    public init(items: [PaletteItem], notice: String? = nil, page: PalettePage = .list) {
+    public init(items: [PaletteItem], notice: String? = nil, noticeIsProblem: Bool = false, guide: PanelSection? = nil,
+                page: PalettePage = .list) {
         self.items = items
         self.notice = notice
+        self.noticeIsProblem = noticeIsProblem
+        self.guide = guide
         self.page = page
     }
 }
 
 /// The palette's page: the list, a prompt for one agent, the new task form, an agent's or
-/// project's plugin actions, a plugin action's result, or the plugins' gadgets.
+/// project's plugin actions, a plugin action's result, the plugins' gadgets, or the status page.
 public enum PalettePage: Sendable, Equatable {
     case list
     case prompt(AgentStage)
@@ -24,6 +32,7 @@ public enum PalettePage: Sendable, Equatable {
     case actions(PluginActionsPage)
     case result(PluginResultPage)
     case gadgets([GadgetCard])
+    case status(PaletteStatusPage)
 
     public var mode: PaletteMode {
         switch self {
@@ -33,6 +42,7 @@ public enum PalettePage: Sendable, Equatable {
         case .actions: .actions
         case .result: .result
         case .gadgets: .gadgets
+        case .status: .status
         }
     }
 }
@@ -106,13 +116,20 @@ public struct PaletteView: View {
                 PaletteResultPageView(page: page, maxHeight: maxListHeight)
             case .gadgets(let cards):
                 PaletteGadgetsPageView(cards: cards, now: now, maxHeight: maxListHeight)
+            case .status(let page):
+                PaletteStatusPageView(page: page, now: now, maxHeight: maxListHeight)
             }
             footer
         }
     }
 
+    /// None while the first-run guide shows, so Return never picks a command it hides.
     private var results: [PaletteResult] {
-        PaletteSearch.results(content.items, query: query)
+        showsGuide ? [] : PaletteSearch.results(content.items, query: query)
+    }
+
+    private var showsGuide: Bool {
+        content.guide != nil && query.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
     /// The selection if it is still among the results, else the first result.
@@ -126,7 +143,9 @@ public struct PaletteView: View {
         return VStack(alignment: .leading, spacing: 0) {
             field(results, selected: selected)
             Divider().padding(.horizontal, 10)
-            if results.isEmpty {
+            if showsGuide, let guide = content.guide {
+                PaletteGuideView(guide: guide, now: now, maxHeight: maxListHeight)
+            } else if results.isEmpty {
                 Text(query.trimmingCharacters(in: .whitespaces).isEmpty ? "Nothing to show yet" : "No matches")
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
@@ -210,7 +229,12 @@ public struct PaletteView: View {
     private var footer: some View {
         HStack(spacing: 12) {
             if let notice = content.notice {
-                Text(notice).lineLimit(1).truncationMode(.tail)
+                HStack(spacing: 4) {
+                    if content.noticeIsProblem {
+                        Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                    }
+                    Text(notice).lineLimit(1).truncationMode(.tail)
+                }
             }
             Spacer(minLength: 8)
             Text(hint)
@@ -224,14 +248,14 @@ public struct PaletteView: View {
 
     private var hint: String {
         switch content.page {
-        case .list: "↩ jump · ⇥ prompt · ⌘K actions · esc close"
+        case .list: showsGuide ? "type to find a command · esc close" : "↩ jump · ⇥ prompt · ⌘K actions · esc close"
         case .prompt(let stage):
             [stage.canReply ? (stage.prompts ? "↩ prompt" : "↩ reply") : nil,
              stage.canSendKeys && !stage.choices.isEmpty ? "⌘digit choose" : nil, "esc back"]
                 .compactMap { $0 }.joined(separator: " · ")
         case .newTask: "esc back"
         case .actions: "↩ run · esc back"
-        case .result, .gadgets: "esc back"
+        case .result, .gadgets, .status: "esc back"
         }
     }
 

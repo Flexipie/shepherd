@@ -13,13 +13,17 @@ import SwiftUI
 /// showing Agents, so agents' context sizes and last messages are read, and as showing Gadgets
 /// only while its Gadgets page shows, so plugin gadgets run for it then. Each
 /// opening refreshes the plugins (their manifests and listed actions); ⌘K shows a selection's
-/// plugin actions, and an action's printed text stays on a result page.
+/// plugin actions, and an action's printed text stays on a result page. With no agents yet it shows
+/// the first-run guide; its Status page shows what the menu bar panel's footer does, and a card per
+/// source.
 @MainActor
 final class PaletteController: NSObject, NSWindowDelegate {
     private let context: ModuleContext
     private let registry: ModuleRegistry
     private let actions: AppActions
     private let switchDemo: () -> Void
+    /// Reads the sources again for the Status page's cards.
+    private let explainSources: () -> Void
     private let stage: StageModel
     private let plugin = PalettePluginState()
     private let host = FloatingPanelHost()
@@ -33,11 +37,13 @@ final class PaletteController: NSObject, NSWindowDelegate {
 
     var isOpen: Bool { panel != nil }
 
-    init(context: ModuleContext, registry: ModuleRegistry, actions: AppActions, switchDemo: @escaping () -> Void) {
+    init(context: ModuleContext, registry: ModuleRegistry, actions: AppActions, switchDemo: @escaping () -> Void,
+         explainSources: @escaping () -> Void) {
         self.context = context
         self.registry = registry
         self.actions = actions
         self.switchDemo = switchDemo
+        self.explainSources = explainSources
         stage = StageModel(store: context.store, actions: actions, config: context.config)
     }
 
@@ -89,15 +95,32 @@ final class PaletteController: NSObject, NSWindowDelegate {
     private func content() -> PaletteContent {
         let store = context.store
         let items = PaletteIndex.items(context: context, modules: registry.modules)
+        let summary = PanelContentSource(store: store, registry: registry, config: context.config).current()
+        let sources = registry.modules.lazy.compactMap { $0 as? SourcesModule }.first
         let page: PalettePage = switch (plugin.page, stage.stage(row: { agent in Self.row(for: agent, in: items) })) {
         case (.actions(let target)?, _): .actions(actionsPage(for: target))
         case (.result(let result)?, _): .result(result)
         case (.gadgets?, _): .gadgets(context.plugins.map(PluginsModule.cards) ?? [])
+        case (.status?, _): .status(PaletteStatusPage(problems: summary.problems, sources: sources?.cards(tips: false) ?? [],
+                                                      lines: summary.statusLines))
         case (nil, .agent(let agent)?): .prompt(agent)
         case (nil, .newTask(let form)?): .newTask(form)
         case (nil, nil): .list
         }
-        return PaletteContent(items: items, notice: store.overallState.isLive ? nil : HerdSummary.lines(store).first, page: page)
+        let notice = page.mode == .status ? nil : notice(summary, items: items)
+        return PaletteContent(items: items, notice: notice?.text, noticeIsProblem: notice?.isProblem == true, guide: sources?.panel,
+                              page: page)
+    }
+
+    /// The number of problems and where to read them, else why the herd is not live.
+    private func notice(_ summary: PanelContent, items: [PaletteItem]) -> (text: String, isProblem: Bool)? {
+        let problems = summary.problems
+        guard let first = problems.first else {
+            return context.store.overallState.isLive ? nil : summary.statusLines.first.map { ($0, false) }
+        }
+        // Without the Status command (a `modules` list leaving out `app`) the first problem is all it can show.
+        guard items.contains(where: { $0.id == "command/\(AppModule.statusCommand)" }) else { return (first, true) }
+        return ("\(problems.count) \(problems.count == 1 ? "problem" : "problems"), see Status", true)
     }
 
     /// The plugin actions for an agent or a project, titled with its name.
@@ -159,6 +182,10 @@ final class PaletteController: NSObject, NSWindowDelegate {
     private func perform(_ action: PaletteAction) {
         if case .newTask(let project) = action { return stage.openNewTask(in: project) }
         if case .plugin(let ref) = action { return run(ref) }
+        if action == .status {
+            plugin.page = .status
+            return explainSources()
+        }
         if action == .gadgets {
             plugin.page = .gadgets
             return context.presence.setPanel("palette", showing: .gadgets)
@@ -174,7 +201,7 @@ final class PaletteController: NSObject, NSWindowDelegate {
             if let url = context.config.url { open(url, else: url.deletingLastPathComponent()) }
         case .openPluginsFolder:
             if let folder = context.plugins?.directory { open(nil, else: folder) }
-        case .newTask, .plugin, .gadgets: break
+        case .newTask, .plugin, .gadgets, .status: break
         }
     }
 
@@ -224,6 +251,7 @@ final class PaletteController: NSObject, NSWindowDelegate {
         case (.actions?, _): .actions
         case (.result?, _): .result
         case (.gadgets?, _): .gadgets
+        case (.status?, _): .status
         case (nil, .agent?): .prompt
         case (nil, .newTask?): .newTask
         case (nil, nil): .list
@@ -256,7 +284,7 @@ final class PaletteController: NSObject, NSWindowDelegate {
     }
 }
 
-/// The palette's plugin pages, observed so the palette redraws when they change.
+/// The palette's plugin pages and its Status page, observed so the palette redraws when they change.
 @MainActor
 @Observable
 final class PalettePluginState {
@@ -264,6 +292,7 @@ final class PalettePluginState {
         case actions(PluginTarget)
         case result(PluginResultPage)
         case gadgets
+        case status
     }
 
     var page: Page?
