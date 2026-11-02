@@ -202,7 +202,8 @@ public final class HerdStore {
     }
 
     /// Every source's agents and projects. An agent two sources see is one row (`HerdMerge`): the
-    /// row of the source that can act on it, with a report's state over a screen reading. A project
+    /// row of the source that can act on it, with a report's state over a screen reading unless the
+    /// screen has moved on from it. A project
     /// is dropped when only a folded-in agent used it. A project read from a screen is dropped once
     /// no agent is left in it and a reported project is in its folder (a screen's project is a whole
     /// checkout, a report's the agent's own folder).
