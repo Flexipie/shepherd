@@ -20,9 +20,11 @@ public final class PluginsModule: ShepherdModule {
         watch()
     }
 
-    /// Turned off while Gadgets shows, its loops would otherwise run on.
+    /// Turned off while Gadgets shows, its loops would otherwise run on, and a failure would stay
+    /// in the footer.
     isolated deinit {
         loops.values.forEach { $0.task.cancel() }
+        context.plugins?.forgetGadgets()
     }
 
     public var panel: PanelSection? {

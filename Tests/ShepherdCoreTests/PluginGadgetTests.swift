@@ -15,6 +15,7 @@ import Testing
         // Missing title and every take defaults; a tiny interval is raised.
         #expect(try read(#"{"id": "a", "gadget": {"command": ["x"]}}"#).manifest.gadget == PluginGadget(command: ["x"], every: 60))
         #expect(try read(#"{"id": "a", "gadget": {"command": ["x"], "every": 0.1}}"#).manifest.gadget?.every == 2)
+        #expect(try read(#"{"id": "a", "gadget": {"command": ["x"], "every": 1e21}}"#).manifest.gadget?.every == 86_400)
     }
 
     @Test func aBadGadgetIsAProblemAndThePluginStillLoads() throws {

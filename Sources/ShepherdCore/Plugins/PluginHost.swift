@@ -227,6 +227,13 @@ public final class PluginHost {
 
     // MARK: Gadgets
 
+    /// Drops every gadget's card and failure, for when nothing will run them.
+    public func forgetGadgets() {
+        gadgetCards = [:]
+        gadgetFailures = [:]
+        report()
+    }
+
     /// The plugins with a gadget, in folder order.
     public var gadgetPlugins: [Plugin] { plugins.filter { $0.manifest.gadget != nil } }
 

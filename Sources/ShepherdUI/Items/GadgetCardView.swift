@@ -28,7 +28,8 @@ struct GadgetCardView: View {
             ForEach(card.meters) { meter in
                 meterView(meter)
             }
-            ForEach(card.lines, id: \.self) { line in
+            // By position: a plugin may print the same line twice.
+            ForEach(Array(card.lines.enumerated()), id: \.offset) { _, line in
                 Text(line)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)

@@ -489,7 +489,7 @@ plugin tokens (`PluginHost` in Core, `ProcessPluginRunner` in the `ShellPlugins`
   `SHEPHERD_AGENT_ID` set to the new agent, which may not be in the herd yet.
 - **Checks** add a line to a finished agent's ready to land card. They run when the card shows.
 - **Gadgets** print a card for the Gadgets tab and the palette's Gadgets page. They run only
-  while one of those shows: once on showing, then every `every` seconds (default 60, at least 2).
+  while one of those shows: once on showing, then every `every` seconds (default 60, at least 2, at most a day).
   A run still going when the next is due is not started twice, and hiding the tab lets it finish
   rather than killing it. A failure (an exit, a timeout, output that is not a card) shows as the
   card's last line, dimmed over the last good card, and under `plugins` in the footer. With no
@@ -588,7 +588,7 @@ changes; a module that stays enabled keeps its instance and state.
 2. Add it to `BuiltinModules.all`.
 3. Give it an `id`; users enable, disable and order it in config by that id.
 
-A gadget's section becomes a bar column (`BarColumn`), can be turned off in `modules`, and costs
+A gadget's section becomes a bar column (`BarColumn`; on Gadgets each card is one), can be turned off in `modules`, and costs
 nothing while the bar is closed: it reads or samples only while shown, and never polls in the
 background. Everything stays local.
 

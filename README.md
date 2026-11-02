@@ -154,9 +154,8 @@ check, no account.
   task, and Claude Code's `settings.json` through `shepherd-report install`, after showing the
   diff, with a backup.
 - **Plugins** are your own code and run with your permissions: when the palette opens (to list
-  their actions), when you pick an action, on the events they ask for, and every few seconds
-  while their gadget shows. Only add ones you have
-  read.
+  their actions), when you pick an action, on the events they ask for, and every `every`
+  seconds while their gadget shows. Only add ones you have read.
 
 ## Plugins
 

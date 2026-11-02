@@ -13,11 +13,13 @@ public struct PluginGadget: Sendable, Equatable {
     public static let defaultEvery: Double = 60
     /// Shorter intervals are raised to this, so a typo cannot spin a process.
     public static let minimumEvery: Double = 2
+    /// Longer ones are lowered to this, so a huge number cannot overflow a `Duration`.
+    public static let maximumEvery: Double = 86_400
 
     public init(title: String? = nil, command: [String], every: Double = PluginGadget.defaultEvery) {
         self.title = title
         self.command = command
-        self.every = max(every, Self.minimumEvery)
+        self.every = min(max(every, Self.minimumEvery), Self.maximumEvery)
     }
 
     /// Reads a manifest's `gadget`, or nil with a problem when it cannot be used.
