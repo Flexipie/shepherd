@@ -62,7 +62,7 @@ struct NewTaskView: View {
                             start()
                             return .handled
                         }
-                        .help("Return starts the task, Shift-Return adds a line")
+                        .help("Return starts the task; Shift- or Option-Return adds a line")
                     HStack(spacing: 8) {
                         Button(stage.isStarting ? "Starting…" : "Start", action: start)
                             .buttonStyle(StageButtonStyle(fill: Color.accentColor.opacity(0.35)))
