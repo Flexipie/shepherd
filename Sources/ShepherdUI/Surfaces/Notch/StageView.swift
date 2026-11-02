@@ -110,19 +110,20 @@ struct StageView: View {
         .disabled(stage.isSending)
     }
 
+    /// The palette's prompt box, smaller: Return sends.
     private var reply: some View {
-        HStack(spacing: 6) {
-            TextField(stage.prompts ? "Prompt \(stage.row.agent.name)" : "Reply", text: $draft)
+        HStack(spacing: 8) {
+            Image(systemName: stage.prompts ? "text.bubble" : "arrowshape.turn.up.left")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.secondary)
+            TextField(stage.prompts ? "Prompt \(stage.row.agent.name)…" : "Reply to \(stage.row.agent.name)…", text: $draft)
                 .textFieldStyle(.plain)
-                .font(.system(size: 12))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .background(RoundedRectangle(cornerRadius: 7).fill(Color.primary.opacity(0.08)))
+                .font(.system(size: 13))
                 .onSubmit(send)
-            Button(stage.prompts ? "Prompt" : "Send", action: send)
-                .buttonStyle(StageButtonStyle())
-                .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(RoundedRectangle(cornerRadius: 10).fill(Color.primary.opacity(0.07)))
     }
 
     private func send() {

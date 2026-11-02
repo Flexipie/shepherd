@@ -1,22 +1,25 @@
 import ShepherdCore
 import SwiftUI
 
-/// The notch's expanded state: a wide, short bar along the top of the screen. The Agents | Gadgets
-/// tabs sit on top when any gadget is on. On Agents the needs-you queue is pinned on the left,
-/// then one column per project card (or per other section), scrolling sideways when there are
-/// many; on Gadgets each gadget is a column. Each column scrolls on its own past `maxHeight`.
-/// Status lines and config problems share one quiet line along the bottom. Arrows move across
-/// the grid, Return chooses, hovering selects, ⌘1 and ⌘2 switch tabs.
+/// The notch's expanded state: a wide, short bar along the top of the screen. The band beside the
+/// notch holds the Agents | Gadgets tabs (when any gadget is on) and config problems on its left,
+/// and the status lines and New task button on its right. On Agents the needs-you queue is
+/// pinned on the left, then the project cards in two columns that share the rest of the width,
+/// then a column per other section; a project with one agent is one row titled with the
+/// project's name, not a card. On Gadgets each gadget is a column. Columns past the width scroll
+/// sideways, and each scrolls on its own past `maxHeight`. Arrows move across the grid, Return
+/// chooses, hovering selects, ⌘1 and ⌘2 switch tabs.
 ///
 /// With `onStage`, choosing an agent's row opens its stage in place of the project columns
-/// instead of jumping, and `offersNewTask` adds a "+" after the columns for the new task form.
-/// Both are on the Agents tab only.
+/// instead of jumping, and `offersNewTask` shows the New task button, which opens the new task
+/// form there. Both are on the Agents tab only.
 /// Escape or Left goes back, a digit picks one of a stage's choices. The arrow on a hovered or
 /// selected row, ⌘-click and ⌘Return jump straight to the agent.
 public struct NotchBarView: View {
     let content: PanelContent
     let clock: PanelClock
     let width: CGFloat
+    let notch: CGSize
     let maxHeight: CGFloat?
     let stage: BarStage?
     let offersNewTask: Bool
@@ -35,16 +38,20 @@ public struct NotchBarView: View {
     public nonisolated static let queueWidth: CGFloat = 300
     public nonisolated static let columnWidth: CGFloat = 230
     static let spacing: CGFloat = 8
+    /// The room between the bar's edges and its columns.
+    static let inset: CGFloat = 10
 
-    /// `maxHeight` makes each column scroll past that height; nil lets the columns grow (and,
-    /// for snapshots, cuts off the columns that do not fit instead of scrolling them).
-    public init(content: PanelContent, clock: PanelClock = .live, width: CGFloat, maxHeight: CGFloat? = nil,
+    /// `notch` is the camera's size, centred at the top: the bar's first row is the band beside it.
+    /// `maxHeight` makes each column scroll past that height; nil lets the columns grow (and, for
+    /// snapshots, cuts off the columns that do not fit instead of scrolling them).
+    public init(content: PanelContent, clock: PanelClock = .live, width: CGFloat, notch: CGSize, maxHeight: CGFloat? = nil,
                 stage: BarStage? = nil, offersNewTask: Bool = false, tab: PanelTab = .agents,
                 onTab: @escaping (PanelTab) -> Void = { _ in }, selection: PanelTarget.ID? = nil,
                 perform: @escaping (PanelAction) -> Void, onStage: ((StageAction) -> Void)? = nil) {
         self.content = content
         self.clock = clock
         self.width = width
+        self.notch = notch
         self.maxHeight = maxHeight
         self.offersNewTask = offersNewTask
         self.tab = tab
@@ -82,16 +89,12 @@ public struct NotchBarView: View {
         let pinned = columns.first.flatMap { $0.isQueue ? $0 : nil }
         let rest = pinned == nil ? columns : Array(columns.dropFirst())
         return VStack(alignment: .leading, spacing: 0) {
-            if content.hasTabs {
-                PanelTabBar(selected: content.shownTab(tab), onTab: onTab)
-                    .padding(.horizontal, 18)
-                    .padding(.top, 6)
-            }
+            strip
             HStack(alignment: .top, spacing: Self.spacing) {
                 if let pinned {
-                    column(pinned, now: now)
+                    column(pinned, now: now, cardWidth: Self.columnWidth)
                 }
-                if pinned != nil, stage != nil || !rest.isEmpty || newTaskButton {
+                if pinned != nil, stage != nil || !rest.isEmpty {
                     Divider()
                 }
                 switch (stage, onStage) {
@@ -102,31 +105,38 @@ public struct NotchBarView: View {
                 case (.newTask(let stage)?, let onStage?):
                     NewTaskView(stage: stage, onStage: onStage)
                 default:
-                    if !rest.isEmpty || newTaskButton { scrolling(rest, now: now) }
+                    if !rest.isEmpty { scrolling(rest, now: now, cardWidth: cardWidth(rest, pinned: pinned != nil)) }
                 }
             }
             .fixedSize(horizontal: false, vertical: true)
-            .padding(.horizontal, 10)
+            .padding(.horizontal, Self.inset)
             .padding(.vertical, 8)
-            footer
         }
     }
 
+    /// Card columns share what the queue and the other columns leave, never narrower than a
+    /// section column.
+    private func cardWidth(_ columns: [BarColumn], pinned: Bool) -> CGFloat {
+        let cards = columns.count { $0.kind == .projects }
+        guard cards > 0 else { return Self.columnWidth }
+        let others = CGFloat(columns.count - cards) * Self.columnWidth
+        // The divider after the queue is 1 pt wide.
+        let gaps = CGFloat(columns.count - 1) * Self.spacing + (pinned ? Self.queueWidth + 2 * Self.spacing + 1 : 0)
+        return max(Self.columnWidth, (width - 2 * Self.inset - others - gaps) / CGFloat(cards))
+    }
+
     @ViewBuilder
-    private func scrolling(_ columns: [BarColumn], now: Date) -> some View {
+    private func scrolling(_ columns: [BarColumn], now: Date, cardWidth: CGFloat) -> some View {
         let row = HStack(alignment: .top, spacing: Self.spacing) {
             ForEach(columns) { column in
-                self.column(column, now: now).id(column.id)
-            }
-            if newTaskButton {
-                NewTaskButton { onStage?(.newTask) }
+                self.column(column, now: now, cardWidth: cardWidth).id(column.id)
             }
         }
         if let maxHeight {
             ScrollViewReader { proxy in
                 ScrollView(.horizontal) { row }
                     .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
-                    .frame(height: min(max(columns.compactMap { heights[$0.id] }.max() ?? 0, newTaskButton ? 64 : 0), maxHeight))
+                    .frame(height: min(columns.compactMap { heights[$0.id] }.max() ?? 0, maxHeight))
                     .onChange(of: scrollTarget) { _, target in
                         guard let target, let column = columns.first(where: { contains($0, target) }) else { return }
                         withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { proxy.scrollTo(column.id) }
@@ -138,9 +148,9 @@ public struct NotchBarView: View {
     }
 
     @ViewBuilder
-    private func column(_ column: BarColumn, now: Date) -> some View {
-        let items = columnItems(column, now: now)
-            .frame(width: column.isQueue ? Self.queueWidth : Self.columnWidth, alignment: .topLeading)
+    private func column(_ column: BarColumn, now: Date, cardWidth: CGFloat) -> some View {
+        let width = column.isQueue ? Self.queueWidth : column.kind == .projects ? cardWidth : Self.columnWidth
+        let items = columnItems(column, now: now).frame(width: width, alignment: .topLeading)
         if let maxHeight {
             ScrollViewReader { proxy in
                 ScrollView(.vertical) {
@@ -163,15 +173,29 @@ public struct NotchBarView: View {
         let rows = RowContext(sectionID: column.section.id, selection: selection, jump: perform, perform: barPerform) {
             selection = $0
         }
-        if column.isCard, let item = column.items.first {
-            PanelItemView(item: item, now: now, rows: rows)
-        } else {
+        switch column.kind {
+        case .projects:
+            VStack(alignment: .leading, spacing: Self.spacing) {
+                ForEach(column.items.indices, id: \.self) { index in
+                    let item = column.items[index]
+                    if case .project(let card) = item, let agent = RepoCard.soleAgent(card) {
+                        // Inset like a card's rows, so the names line up.
+                        SoleAgentRow(project: card, agent: agent, now: now, rows: rows).padding(.horizontal, 4)
+                    } else {
+                        PanelItemView(item: item, now: now, rows: rows)
+                    }
+                }
+            }
+        case .card:
+            if let item = column.items.first { PanelItemView(item: item, now: now, rows: rows) }
+        case .section:
             PanelSectionView(section: column.section, now: now, rows: rows)
         }
     }
 
-    /// Room the stage needs around its lines: its header and an error line.
-    static let stageChrome: CGFloat = 58
+    /// Room the stage needs around its lines: its header (with a line of tokens) and a two-line
+    /// error.
+    static let stageChrome: CGFloat = 88
 
     private var newTaskButton: Bool { offersNewTask && onStage != nil && content.shownTab(tab) == .agents }
 
@@ -192,28 +216,43 @@ public struct NotchBarView: View {
         PanelTarget.all(in: [column]).contains { $0.id == target }
     }
 
-    @ViewBuilder
-    private var footer: some View {
-        if !content.statusLines.isEmpty || !content.problems.isEmpty {
+    /// The band beside the notch: tabs and config problems on its left, status lines and New task
+    /// on its right, so neither line crowds out the other. There whether a stage is open or not,
+    /// so the bar does not jump.
+    private var strip: some View {
+        HStack(spacing: 0) {
+            // An HStack, not a Group: its frame holds the left half even when it is empty.
             HStack(spacing: 10) {
+                if content.hasTabs {
+                    PanelTabBar(selected: content.shownTab(tab), onTab: onTab)
+                }
                 if !content.problems.isEmpty {
                     Label {
                         Text(content.problems.joined(separator: "; "))
                     } icon: {
                         Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
                     }
-                    .layoutPriority(1)
+                    .help(content.problems.joined(separator: "\n"))
                 }
-                Text(content.statusLines.joined(separator: " · "))
-                    .foregroundStyle(.secondary)
             }
-            .font(.system(size: 11))
-            .lineLimit(1)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 18)
-            .padding(.bottom, 8)
-            .help((content.problems + content.statusLines).joined(separator: "\n"))
+            Color.clear.frame(width: notch.width + 2 * Self.spacing)
+            HStack(spacing: 10) {
+                if !content.statusLines.isEmpty {
+                    Text(content.statusLines.joined(separator: " · "))
+                        .foregroundStyle(.secondary)
+                        .help(content.statusLines.joined(separator: "\n"))
+                }
+                if newTaskButton {
+                    NewTaskButton { onStage?(.newTask) }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .trailing)
         }
+        .font(.system(size: 11))
+        .lineLimit(1)
+        .padding(.horizontal, 18)
+        .frame(height: notch.height)
     }
 
     private func move(_ direction: PanelTarget.Direction) -> KeyPress.Result {

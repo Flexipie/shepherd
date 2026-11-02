@@ -5,7 +5,7 @@ import SwiftUI
 /// element: "codex, api, needs you, 4 minutes". With `onJump`, an arrow after the time jumps
 /// straight to the agent; it shows while the row is hovered or selected. A context size, when
 /// known, sits before the time ("184k", or "184k context" with `namesContext`). With `checkout`,
-/// the row stands for a repo card's checkout and its one agent: the checkout's label (a branch
+/// the row stands for a checkout or project and its one agent (`SoleAgentRow`): its label (a branch
 /// glyph for a worktree, a dot when focused) as the title, then the agent's status. Under the
 /// title, the agent's last message on one line once it stopped working, unless `showsPreview` is
 /// off because the surface below shows the whole message or the agent's lines.
@@ -25,7 +25,7 @@ struct AgentRow: View {
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
-            StateGlyph(status: row.agent.status, isLive: row.isLive, size: showsProject ? 14 : 12)
+            StateGlyph(status: row.agent.status, isLive: row.isLive, size: 14)
                 .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + 4 }
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
@@ -33,10 +33,10 @@ struct AgentRow: View {
                         checkoutTitle(checkout)
                     } else {
                         Highlighted.text(row.agent.name, nameHighlights)
-                            .font(.system(size: showsProject ? 13 : 12, weight: .semibold))
+                            .font(.system(size: 13, weight: .semibold))
                     }
                     Text(subtitle)
-                        .font(.system(size: showsProject ? 12 : 11))
+                        .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                     Spacer(minLength: 8)
                     if let tokens = row.contextTokens {
@@ -59,7 +59,7 @@ struct AgentRow: View {
                 .lineLimit(1)
                 if showsPreview, let preview = row.messagePreview {
                     Text(preview)
-                        .font(.system(size: showsProject ? 12 : 11))
+                        .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .truncationMode(.tail)
@@ -68,7 +68,7 @@ struct AgentRow: View {
             }
         }
         .opacity(row.isLive ? 1 : 0.6)
-        .rowChrome(isSelected: isSelected, vertical: showsProject ? 6 : 4)
+        .rowChrome(isSelected: isSelected, vertical: 6)
         .onHover { isHovered = $0 }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)
@@ -86,7 +86,7 @@ struct AgentRow: View {
                     .foregroundStyle(.secondary)
             }
             Text(checkout.name.isEmpty ? "Untitled" : checkout.name)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
             if checkout.isFocusedInSource {
                 Circle().fill(Color.accentColor).frame(width: 5, height: 5)
             }

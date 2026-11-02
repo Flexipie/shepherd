@@ -13,8 +13,8 @@ struct NotchGeometry: Equatable {
     let floatingFrame: NSRect
 
     static let floatingWidth: CGFloat = 340
-    /// Room the bar's status line needs below its scrolling columns.
-    static let footerAllowance: CGFloat = 44
+    /// Room the bar needs around its scrolling columns: their padding.
+    static let columnsPadding: CGFloat = 16
     /// The widest the bar gets, and the room it leaves at the screen's sides.
     static let barWidth: CGFloat = 1000
     static let barMargin: CGFloat = 80
@@ -53,6 +53,6 @@ struct NotchGeometry: Equatable {
 
     /// The expanded bar's columns scroll past this height.
     var barMaxHeight: CGFloat? {
-        metrics.map { $0.maxExpandedHeight - $0.notchHeight - Self.footerAllowance }
+        metrics.map { $0.maxExpandedHeight - $0.notchHeight - Self.columnsPadding }
     }
 }

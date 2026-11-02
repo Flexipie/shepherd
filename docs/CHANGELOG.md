@@ -15,8 +15,8 @@ they run.
   agents need you, orange while one is blocked. A pill under the notch (a small floating one on a
   Mac without one) shows for a few seconds when an agent blocks or finishes, and once more if it is
   still blocked five minutes later (`notch.escalateAfter`). Hover the notch for a wide bar with the
-  needs-you queue first (blocked, then finished, longest waiting first), then a column per project
-  with each agent's state and time in state. Worktrees of one repo share a column.
+  needs-you queue first (blocked, then finished, longest waiting first), then the projects in two
+  columns with each agent's state and time in state. Worktrees of one repo share a card.
 - **Agents from any terminal.** Three sources: herdr, tmux and agent reports. tmux needs no setup:
   Claude Code and Codex panes are found by their process, and their state is read from the screen.
   For Claude Code, `shepherd-report install claude` (inside the app; the first-run card shows its

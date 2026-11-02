@@ -46,7 +46,7 @@ final class StageModel {
         actions.capabilities(of: agent).contains(.readOutput)
     }
 
-    /// Projects a new task can start in; none hides the "+".
+    /// Projects a new task can start in; none hides the New task button.
     var taskProjects: [HerdProject] {
         store.projects.filter { store.canStartTask(in: $0.id) }
     }

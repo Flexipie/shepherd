@@ -176,10 +176,10 @@ import Testing
         targets.first { $0.column == column && $0.row == row }!.id
     }
 
-    @Test func queueIsPinnedFirstAndEachCardIsAColumn() {
-        #expect(columns.map(\.id) == ["queue", "projects/herdr:w1", "projects/herdr:w2", "projects/herdr:w3"])
+    @Test func queueIsPinnedFirstAndCardsFillTwoColumns() {
+        #expect(columns.map(\.id) == ["queue", "projects/0", "projects/1"])
         #expect(columns[0].isQueue)
-        #expect(columns.dropFirst().allSatisfy { $0.isCard })
+        #expect(columns.dropFirst().allSatisfy { $0.kind == .projects })
         // Config order does not move the queue off the left.
         let reordered = BarColumn.layout(SampleHerd.content.sections.reversed())
         #expect(reordered.first?.isQueue == true)
@@ -190,30 +190,36 @@ import Testing
         #expect(BarColumn.layout(SampleHerd.disconnected.sections).map(\.id) == ["queue", "projects"])
     }
 
-    @Test func aRepoCardIsOneColumn() {
-        let columns = BarColumn.layout(SampleHerd.contentWithRepo.sections)
-        #expect(columns.map(\.id) == ["queue", "projects/herdr:w1", "projects/repo/herdr/repo-shop", "projects/herdr:w2"])
-        let targets = PanelTarget.all(in: columns)
-        #expect(targets.filter { $0.column == 2 }.count == 5)
+    @Test func cardsGoToTheShorterColumn() {
+        // api and web (three rows each) take a column each; docs joins the first on the tie.
+        #expect(columns[1].items == [.project(SampleHerd.apiCard), .project(SampleHerd.docsCard)])
+        #expect(columns[2].items == [.project(SampleHerd.webCard)])
+        // One card makes one column, not an empty second.
+        let one = PanelSection(id: "projects", title: "Projects", items: [.project(SampleHerd.apiCard)], emptyText: "")
+        #expect(BarColumn.layout([one]).map(\.id) == ["projects/0"])
     }
 
     @Test func targetsAreLaidOutByColumn() {
-        // Queue: three agents. Cards: header plus agents (2, 2, 1).
-        #expect(targets.map(\.column) == [0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3])
-        #expect(targets.map(\.row) == [0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1])
-        #expect(Set(targets.map(\.id)) == Set(PanelTarget.all(in: SampleHerd.content.sections).map(\.id)))
+        // Queue: three agents. api's header and two agents, then docs' one agent as a single row;
+        // web's header and two agents.
+        #expect(targets.map(\.column) == [0, 0, 0, 1, 1, 1, 1, 2, 2, 2])
+        #expect(targets.map(\.row) == [0, 1, 2, 0, 1, 2, 3, 0, 1, 2])
+        let docsHeader = PanelTarget.id(section: "projects", action: .focusProject(SampleHerd.docs.id))
+        let panel = Set(PanelTarget.all(in: SampleHerd.content.sections).map(\.id))
+        #expect(panel.contains(docsHeader))
+        #expect(Set(targets.map(\.id)) == panel.subtracting([docsHeader]))
     }
 
     @Test func upAndDownStayInTheColumn() {
-        #expect(PanelTarget.move(from: target(1, 0), .down, in: targets) == target(1, 1))
-        #expect(PanelTarget.move(from: target(1, 2), .down, in: targets) == target(1, 2))
-        #expect(PanelTarget.move(from: target(1, 0), .up, in: targets) == target(1, 0))
+        #expect(PanelTarget.move(from: target(1, 2), .down, in: targets) == target(1, 3))
+        #expect(PanelTarget.move(from: target(2, 2), .down, in: targets) == target(2, 2))
+        #expect(PanelTarget.move(from: target(2, 0), .up, in: targets) == target(2, 0))
     }
 
     @Test func leftAndRightGoToTheNearestRow() {
         #expect(PanelTarget.move(from: target(0, 2), .right, in: targets) == target(1, 2))
-        #expect(PanelTarget.move(from: target(2, 2), .right, in: targets) == target(3, 1))
-        #expect(PanelTarget.move(from: target(3, 1), .right, in: targets) == target(3, 1))
+        #expect(PanelTarget.move(from: target(1, 3), .right, in: targets) == target(2, 2))
+        #expect(PanelTarget.move(from: target(2, 2), .right, in: targets) == target(2, 2))
         #expect(PanelTarget.move(from: target(1, 1), .left, in: targets) == target(0, 1))
         #expect(PanelTarget.move(from: target(0, 0), .left, in: targets) == target(0, 0))
     }

@@ -5,8 +5,8 @@ import UserNotifications
 
 /// System notifications through `UNUserNotificationCenter`. Asks for permission the first time
 /// it has something to post, and checks it again before every post, so turning notifications on
-/// in System Settings later works without a restart. While they are off there, the bar's footer
-/// says so. A notification is identified by its agent, so a new one for the
+/// in System Settings later works without a restart. While they are off there, the bar says so
+/// beside the notch. A notification is identified by its agent, so a new one for the
 /// same agent replaces the old. Clicking it or Jump shows the agent; Reply sends the typed text
 /// (a reply while the agent is blocked, a prompt otherwise), the same as the notch stage does.
 @MainActor
