@@ -619,7 +619,7 @@ Every key is optional and a missing file means defaults. As built:
   off. `HotKeyCenter` registers each by name, re-registers on change and reports problems as
   `hotkeys.<name>`, including two hotkeys set to the same combination.
 - `notch.escalateAfter`: seconds a blocked agent waits before the pill shows it once more
-  (default 300, `0` turns that off).
+  (default 300, `0` turns that off, at most 86400).
 
 Reading is lenient per key: a key that cannot be used is reported in the panel footer and falls
 back to its default while the rest applies; a file that is not valid JSON keeps the last good

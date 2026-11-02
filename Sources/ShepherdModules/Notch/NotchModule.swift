@@ -70,7 +70,7 @@ public final class NotchModule: ShepherdModule {
         shown.insert(agent)
         timers[agent] = Task { [weak self] in
             // A sleep that ended just before a cancel still returns, so check after each one.
-            func wait(_ duration: Duration) async throws {
+            @MainActor func wait(_ duration: Duration) async throws {
                 try await Task.sleep(for: duration)
                 try Task.checkCancellation()
             }
