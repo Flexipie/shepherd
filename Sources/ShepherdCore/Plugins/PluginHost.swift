@@ -30,7 +30,7 @@ public final class PluginHost {
     @ObservationIgnored private var running: Set<EventKey> = []
     @ObservationIgnored private var queued: [EventKey: PluginEventOccurrence] = [:]
     @ObservationIgnored private var eventProblems: [String: String] = [:]
-    /// Plugins whose gadget is running; a run is never cancelled, so the next waits for it.
+    /// Plugins whose gadget is running; a run is never cancelled, and one due meanwhile is skipped.
     @ObservationIgnored private var gadgetRuns: Set<String> = []
 
     public static let actionTimeout: Duration = .seconds(30)

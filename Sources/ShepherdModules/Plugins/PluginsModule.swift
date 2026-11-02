@@ -66,7 +66,7 @@ public final class PluginsModule: ShepherdModule {
             loops[id] = nil
         }
         for plugin in wanted where loops[plugin.id] == nil {
-            let every = plugin.manifest.gadget?.every ?? PluginGadget.defaultEvery
+            guard let every = plugin.manifest.gadget?.every else { continue }
             loops[plugin.id] = (plugin, Task { @MainActor in
                 // Presence too: a hide may not have reached `watch` yet.
                 while !Task.isCancelled, presence.isShowing(.gadgets) {

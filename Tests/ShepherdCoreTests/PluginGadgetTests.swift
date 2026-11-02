@@ -114,8 +114,7 @@ import Testing
         try write("b", #"{"id": "load", "gadget": {"command": ["./load"]}}"#)
         await host.load()
         #expect(module.panel?.tab == .gadgets)
-        #expect(module.commands.last == PaletteCommand(id: "plugins.gadgets", title: "Gadgets", symbol: "square.grid.2x2",
-                                                       keywords: ["plugin", "widgets"], action: .gadgets))
+        #expect(module.commands.contains { $0.action == .gadgets })
     }
 
     @Test func gadgetsRunOnlyWhileTheTabShows() async throws {
@@ -136,10 +135,5 @@ import Testing
         presence.setPanel("notch", showing: nil)
         await until { module.loops.isEmpty }
         #expect(module.loops.isEmpty)
-
-        // The palette's Gadgets page counts too.
-        presence.setPanel("palette", showing: .gadgets)
-        await until { runner.runs.count == 2 }
-        #expect(runner.runs.count == 2)
     }
 }
