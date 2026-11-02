@@ -12,7 +12,7 @@ they run.
 ### Added
 
 - **See your herd at a glance.** A paw in the menu bar and around the notch (a small floating pill
-  on a Mac without one). It turns orange with a count when agents need you; hover the notch for a
+  on a Mac without one). It shows a count when agents need you, orange while one is blocked; hover the notch for a
   wide bar with the needs-you queue first (blocked, then finished, longest waiting first), then a
   column per project with each agent's state and time in state. Worktrees of one repo share a
   column.

@@ -10,8 +10,9 @@ without switching to the terminal.
   <img alt="The notch bar: a needs-you queue on the left (codex waiting on an approval, claude waiting, claude finished), then one column per project with each agent's state and time in state" src="Tests/ShepherdUITests/__Snapshots__/notch-bar.dark.png">
 </picture>
 
-- **Glanceable.** A paw by the notch turns orange with a count when an agent is blocked or
-  finished. Hover it for the whole herd: who needs you first, then every project.
+- **Glanceable.** A paw by the notch counts the agents that are blocked or finished, and turns
+  orange while one is blocked. Hover it for the whole herd: who needs you first, then every
+  project.
 - **Act where you are.** Approval prompts become buttons. Reply, prompt or jump to the agent's
   terminal from any app.
 - **Calm and light.** Nothing leaves your Mac, no telemetry, no CPU when idle (0.00% CPU and
@@ -82,12 +83,12 @@ Leave Demo in the same menu goes back.
 
 ## What it does
 
-- **The notch.** A paw to the left of the notch turns orange with a count when agents need you.
-  Hover it and a bar grows along the top of the screen: the needs-you queue (blocked first, then
-  finished, longest waiting first), then one column per project. Hovering does not take your
-  typing; click inside for the arrow keys, Return and Escape. Macs without a notch get a small
-  floating pill instead: a blocked agent stays until handled, a finished one shows for a few
-  seconds, and nothing shows for the pane you are already looking at.
+- **The notch.** A paw to the left of the notch shows a count when agents need you, orange while
+  one is blocked. Hover it and a bar grows along the top of the screen: the needs-you queue
+  (blocked first, then finished, longest waiting first), then one column per project. Hovering
+  does not take your typing; click inside for the arrow keys, Return and Escape. Macs without a
+  notch get a small floating pill instead: a blocked agent stays until handled, a finished one
+  shows for a few seconds, and nothing shows for the pane you are already looking at.
 - **Answer and prompt.** Click an agent in the bar to see its last lines. An approval prompt's
   choices are buttons (click one or press its digit); otherwise type a reply. An idle or finished
   agent gets a prompt field. ⌘-click, the row's arrow or ⌘Return jumps to its terminal instead.

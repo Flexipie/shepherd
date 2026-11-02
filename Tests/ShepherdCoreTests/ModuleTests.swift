@@ -58,12 +58,25 @@ final class RecordingActions: AgentActions {
         show([agent("a", .working), agent("b", .blocked), agent("c", .done)])
         #expect(module.status?.count == 2)
         #expect(module.status?.emphasis == .attention)
+        #expect(module.status?.symbol == "pawprint.fill")
+        #expect(module.status?.accessibilityLabel == "Shepherd: 1 blocked, 1 finished")
         show([agent("a", .working)])
         #expect(module.status?.count == nil)
         #expect(module.status?.emphasis == .normal)
         show([agent("b", .blocked)], state: .disconnected("herdr is not running"))
         #expect(module.status?.emphasis == .dimmed)
         #expect(module.status?.accessibilityLabel == "Shepherd: herdr is not running")
+    }
+
+    @Test func statusCountsFinishedAgentsWithoutOrange() {
+        let module = StatusModule(context: context)
+        show([agent("a", .done), agent("b", .done)])
+        #expect(module.status?.count == 2)
+        #expect(module.status?.emphasis == .normal)
+        #expect(module.status?.symbol == "pawprint")
+        #expect(module.status?.accessibilityLabel == "Shepherd: 2 finished")
+        show([agent("a", .done), agent("b", .blocked)])
+        #expect(module.status?.emphasis == .attention)
     }
 
     @Test func notchShowsBlockedUntilHandled() {

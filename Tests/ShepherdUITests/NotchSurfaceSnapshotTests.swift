@@ -31,6 +31,12 @@ import Testing
         try check("notch-ear-attention", .ear(status), height: 44)
     }
 
+    /// Finished agents only: a count, but not orange.
+    @Test func finishedEar() throws {
+        let status = StatusContribution(symbol: "pawprint", count: 2, accessibilityLabel: "2 finished")
+        try check("notch-ear-finished", .ear(status), height: 44)
+    }
+
     @Test func notLiveEar() throws {
         let status = StatusContribution(symbol: "pawprint", emphasis: .dimmed, accessibilityLabel: "connecting")
         try check("notch-ear-dimmed", .ear(status), height: 44)

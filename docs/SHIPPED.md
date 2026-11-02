@@ -273,3 +273,7 @@ Oldest first.
   terminal on a session tmux closes once unattached is not moved. When nothing can show the agent,
   the pane is still selected and the jump says why in an alert, instead of doing nothing. A jump
   failure a source words for the user (`AgentSourceError.failed`) shows the same way.
+- Only blocked agents turn the paw orange (#93): the ear and the menu bar used to stay orange
+  (a filled paw) after an agent finished, until it changed state. Now the filled orange paw means
+  an agent is blocked; finished agents still count, as a plain white outline paw with the number.
+  The accessibility label says which ("1 blocked, 2 finished").
