@@ -57,7 +57,7 @@ public final class Presence {
     /// Sources whose host app is frontmost, so the agent each has focused is on screen.
     public var frontmostSources: Set<SourceID> = []
     /// The surfaces showing the panel's content right now (the menu bar panel, the notch bar, the
-    /// palette as the Agents tab), and the tab each shows.
+    /// palette as the Agents tab, or Gadgets on its Gadgets page), and the tab each shows.
     public private(set) var visiblePanels: [String: PanelTab] = [:]
 
     public init() {}

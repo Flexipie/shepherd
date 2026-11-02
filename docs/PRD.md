@@ -320,7 +320,7 @@ tabs. Each surface reports its tab to `Presence`, so a module reads only while i
     `min(1000, screen width - 160)` wide and as tall as its content, up to 30% of the screen,
     so it never covers the middle. It reads the same `PanelContentSource` as the menu bar panel
     but lays it out in columns (`BarColumn`): the `queue` section pinned on the left, then one
-    column per project or repo card, and any other section as one column, so a new module's section
+    column per project or repo card (and per gadget card on Gadgets), and any other section as one column, so a new module's section
     just appears as another column. Past the left column the columns scroll sideways; each
     column scrolls on its own past the height cap. Status lines and config problems share one
     line along the bottom. Up and down move within a column, left and right to the nearest row
