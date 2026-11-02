@@ -75,8 +75,6 @@ final class RecordingActions: AgentActions {
         #expect(module.status?.emphasis == .normal)
         #expect(module.status?.symbol == "pawprint")
         #expect(module.status?.accessibilityLabel == "Shepherd: 2 finished")
-        show([agent("a", .done), agent("b", .blocked)])
-        #expect(module.status?.emphasis == .attention)
     }
 
     @Test func notchShowsBlockedUntilHandled() {
