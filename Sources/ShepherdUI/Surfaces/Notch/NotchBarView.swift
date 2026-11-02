@@ -5,7 +5,7 @@ import SwiftUI
 /// notch holds the Agents | Gadgets tabs (when any gadget is on) and config problems on its left,
 /// and the status lines and New task button on its right. On Agents the needs-you queue is
 /// pinned on the left, then the project cards in two columns that share the rest of the width,
-/// then a column per other section; a project with one agent is that agent's row under the
+/// then a column per other section; a project with one agent is one row titled with the
 /// project's name, not a card. On Gadgets each gadget is a column. Columns past the width scroll
 /// sideways, and each scrolls on its own past `maxHeight`. Arrows move across the grid, Return
 /// chooses, hovering selects, ⌘1 and ⌘2 switch tabs.
@@ -38,6 +38,8 @@ public struct NotchBarView: View {
     public nonisolated static let queueWidth: CGFloat = 300
     public nonisolated static let columnWidth: CGFloat = 230
     static let spacing: CGFloat = 8
+    /// The room between the bar's edges and its columns.
+    static let inset: CGFloat = 10
 
     /// `notch` is the camera's size, centred at the top: the bar's first row is the band beside it.
     /// `maxHeight` makes each column scroll past that height; nil lets the columns grow (and, for
@@ -78,7 +80,6 @@ public struct NotchBarView: View {
         }
         .onKeyPress(.return, phases: .down) { press in choose(command: press.modifiers.contains(.command)) }
         .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: content)
-        .environment(\.fullSizeRows, true)
     }
 
     private var columns: [BarColumn] { BarColumn.layout(content.sections(on: tab)) }
@@ -108,7 +109,7 @@ public struct NotchBarView: View {
                 }
             }
             .fixedSize(horizontal: false, vertical: true)
-            .padding(.horizontal, 10)
+            .padding(.horizontal, Self.inset)
             .padding(.vertical, 8)
         }
     }
@@ -119,8 +120,9 @@ public struct NotchBarView: View {
         let cards = columns.count { $0.kind == .projects }
         guard cards > 0 else { return Self.columnWidth }
         let others = CGFloat(columns.count - cards) * Self.columnWidth
+        // The divider after the queue is 1 pt wide.
         let gaps = CGFloat(columns.count - 1) * Self.spacing + (pinned ? Self.queueWidth + 2 * Self.spacing + 1 : 0)
-        return max(Self.columnWidth, (width - 20 - others - gaps) / CGFloat(cards))
+        return max(Self.columnWidth, (width - 2 * Self.inset - others - gaps) / CGFloat(cards))
     }
 
     @ViewBuilder

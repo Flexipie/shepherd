@@ -22,14 +22,10 @@ struct AgentRow: View {
     var onJump: (() -> Void)?
 
     @State private var isHovered = false
-    @Environment(\.fullSizeRows) private var fullSizeRows
-
-    /// The queue's sizes: with the project shown, or wherever a surface asks for them.
-    private var large: Bool { showsProject || fullSizeRows }
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
-            StateGlyph(status: row.agent.status, isLive: row.isLive, size: large ? 14 : 12)
+            StateGlyph(status: row.agent.status, isLive: row.isLive, size: 14)
                 .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + 4 }
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
@@ -37,10 +33,10 @@ struct AgentRow: View {
                         checkoutTitle(checkout)
                     } else {
                         Highlighted.text(row.agent.name, nameHighlights)
-                            .font(.system(size: large ? 13 : 12, weight: .semibold))
+                            .font(.system(size: 13, weight: .semibold))
                     }
                     Text(subtitle)
-                        .font(.system(size: large ? 12 : 11))
+                        .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                     Spacer(minLength: 8)
                     if let tokens = row.contextTokens {
@@ -63,7 +59,7 @@ struct AgentRow: View {
                 .lineLimit(1)
                 if showsPreview, let preview = row.messagePreview {
                     Text(preview)
-                        .font(.system(size: large ? 12 : 11))
+                        .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .truncationMode(.tail)
@@ -72,7 +68,7 @@ struct AgentRow: View {
             }
         }
         .opacity(row.isLive ? 1 : 0.6)
-        .rowChrome(isSelected: isSelected, vertical: large ? 6 : 4)
+        .rowChrome(isSelected: isSelected, vertical: 6)
         .onHover { isHovered = $0 }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)
@@ -90,7 +86,7 @@ struct AgentRow: View {
                     .foregroundStyle(.secondary)
             }
             Text(checkout.name.isEmpty ? "Untitled" : checkout.name)
-                .font(.system(size: large ? 13 : 12, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
             if checkout.isFocusedInSource {
                 Circle().fill(Color.accentColor).frame(width: 5, height: 5)
             }
@@ -135,9 +131,4 @@ struct AgentRow: View {
         parts += row.tokens.flatMap { $0.map(\.text) }
         return parts.joined(separator: ", ")
     }
-}
-
-extension EnvironmentValues {
-    /// Agent rows in cards at the queue's sizes, so a surface uses one set of sizes throughout.
-    @Entry var fullSizeRows = false
 }
