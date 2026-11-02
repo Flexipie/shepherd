@@ -46,7 +46,7 @@ the other variables keep your history, plugins and report folder out of it:
 
 ```bash
 make app
-mkdir -p /tmp/shepherd-dev/plugins /tmp/shepherd-dev/spool
+mkdir -p /tmp/shepherd-dev/plugins /tmp/shepherd-dev/spool /tmp/shepherd-dev/tmux
 echo '{ "sources": ["herdr"], "hotkeys": { "next": null, "palette": null } }' \
   >/tmp/shepherd-dev/config.json
 HERDR_SOCKET_PATH=/tmp/shepherd-fake.sock \
@@ -59,7 +59,8 @@ HERDR_SOCKET_PATH=/tmp/shepherd-fake.sock \
 
 To work on the tmux source, give tmux and Shepherd their own socket folder, so Shepherd sees only
 the tmux you start for it: run tmux with `TMUX_TMPDIR=/tmp/shepherd-dev/tmux`, and Shepherd with
-the same variable and `"tmux"` in its `sources`.
+the same variable and `"sources": ["herdr", "tmux"]` in its config. The folder must exist first:
+without it, tmux quietly uses its usual one.
 `Sources/FakeHerdr/main.swift` lists every fake herdr command.
 
 ## Rules
@@ -110,9 +111,10 @@ SHEPHERD_RECORD_SNAPSHOTS=1 swift test --filter ShepherdUITests
 
 Look at every image that changed before committing it, and say in the PR which changed and why.
 On any other build, do not record: run the tests, look at your view in `.build/snapshot-renders/`,
-and say in the PR that the snapshots need recording. The maintainer records them on that build. A failure in a snapshot with a text field is sometimes a few points off under load
-([#54](https://github.com/Flexipie/shepherd/issues/54)); run it again on its own before chasing
-it.
+and say in the PR that the snapshots need recording. The maintainer records them on that build.
+
+A failure in a snapshot with a text field is sometimes a few points off under load
+([#54](https://github.com/Flexipie/shepherd/issues/54)); run it again on its own before chasing it.
 
 ## Pull requests
 
@@ -122,8 +124,8 @@ it.
   ran to check it (and what you could not try).
 - Update the README and [PRD.md](PRD.md) where behaviour or config changed. Config changes are
   additive.
-- CI runs `make build` and `make test` on macOS 26 for every PR. On a first PR from a fork it
-  starts once the maintainer approves it.
+- CI runs `make build` and `make test` on macOS 26 for every PR. On a PR from a fork it starts
+  once the maintainer approves it.
 
 Commit messages are short and plain: say what changed.
 
