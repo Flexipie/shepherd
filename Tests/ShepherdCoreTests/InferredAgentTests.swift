@@ -146,13 +146,17 @@ import Testing
         let gaveWay = HerdTransition(agent: tmuxID, kind: "claude", project: "app", from: .blocked, to: .idle,
                                      at: Date(timeIntervalSince1970: 110))
         #expect(store.lastTransitions == [gaveWay])
+        // A screen that then reads unknown (a long draft, a menu) does not hand the row back to the old report.
+        store.apply(SourceUpdate(agents: [screenAgent(status: .unknown, at: 115)], state: .live), from: "tmux")
+        #expect(store.agents.map(\.status) == [.unknown])
+        #expect(store.needsYou.isEmpty)
 
         // The next prompt's report is newer than the screen: the row is the report's again, and plugins hear it.
         let prompted = HerdTransition(agent: reportAgent().id, from: .blocked, to: .working, at: Date(timeIntervalSince1970: 120))
         store.apply(SourceUpdate(agents: [reportAgent(status: .working, at: 120)], state: .live, transitions: [prompted]),
                     from: "report")
         #expect(store.agents.map(\.status) == [.working])
-        let back = HerdTransition(agent: tmuxID, kind: "claude", project: "app", from: .idle, to: .working,
+        let back = HerdTransition(agent: tmuxID, kind: "claude", project: "app", from: .unknown, to: .working,
                                   at: Date(timeIntervalSince1970: 120))
         #expect(store.lastTransitions == [back])
         guard case .transitions(let batch)? = await events.next() else { Issue.record("nothing announced"); return }

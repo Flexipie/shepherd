@@ -9,8 +9,11 @@ struct HerdMerge: Equatable {
     /// The agent folded into the host's row.
     let guest: AgentID
     /// The row's state comes from the guest: the host only read it from a screen and the guest did
-    /// not, and the screen has not moved on since (`isStale`).
+    /// not, and the screen has not moved on since (`stale`).
     let stateFromGuest: Bool
+    /// The guest's state the screen has moved on from (`isStale`), kept until the guest's state
+    /// changes, so a screen that then reads unknown (a long draft, a menu) does not hand the row back.
+    var stale: Stale? = nil
     /// The host's kind and project name, so the guest's changes are told as the row's.
     var hostKind: String? = nil
     var hostProject = ""
@@ -19,7 +22,8 @@ struct HerdMerge: Equatable {
     /// with the same key (`tmux:<socket>:<pane>`, which both give a pane), or two agents with the
     /// same session (a report from a hook and herdr's agent for that session). Other local ids are
     /// each source's own and say nothing. Each agent is in at most one pair.
-    static func find(in agents: [HerdAgent], capabilities: (SourceID) -> SourceCapabilities) -> [HerdMerge] {
+    static func find(in agents: [HerdAgent], previous: [HerdMerge] = [],
+                     capabilities: (SourceID) -> SourceCapabilities) -> [HerdMerge] {
         var merges: [HerdMerge] = []
         var paired = Set<AgentID>()
         for (index, first) in agents.enumerated() where !paired.contains(first.id) {
@@ -29,11 +33,20 @@ struct HerdMerge: Equatable {
             let firstCount = capabilities(first.id.source).rawValue.nonzeroBitCount
             let secondCount = capabilities(second.id.source).rawValue.nonzeroBitCount
             let (host, guest) = secondCount > firstCount ? (second, first) : (first, second)
-            merges.append(HerdMerge(host: host.id, guest: guest.id, stateFromGuest: host.isInferred && !guest.isInferred && !isStale(guest, against: host),
+            let readsBetter = host.isInferred && !guest.isInferred
+            let was = previous.first { $0.host == host.id && $0.guest == guest.id }?.stale
+            let state = Stale(status: guest.status, since: guest.since?.date)
+            let stale = readsBetter && (was == state || isStale(guest, against: host)) ? state : nil
+            merges.append(HerdMerge(host: host.id, guest: guest.id, stateFromGuest: readsBetter && stale == nil, stale: stale,
                                     hostKind: host.kind ?? guest.kind, hostProject: host.project))
             paired.formUnion([first.id, second.id])
         }
         return merges
+    }
+
+    struct Stale: Equatable {
+        let status: HerdStatus
+        let since: Date?
     }
 
     /// A report the screen has moved on from. Claude Code runs no hook on an interrupt (Esc in a

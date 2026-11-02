@@ -191,7 +191,8 @@ public final class TmuxSource: AgentSource {
 
     /// Only to an agent that shows as idle: a prompt typed into a running turn would go to the wrong place.
     /// A screen that turned idle a moment ago has not settled yet, so it is read again now: a report of
-    /// the same agent can say done before the screen settles.
+    /// the same agent can say done before the screen settles. One read is enough here: a redraw caught
+    /// halfway lacks the idle footer, so it reads unknown rather than idle.
     public func prompt(_ agent: AgentID, _ text: String) async throws {
         if tracker.shown(agent.local) != .idle {
             guard let observation = observations[agent.local], await screenStatus(observation) == .idle else {

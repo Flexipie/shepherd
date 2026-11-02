@@ -209,7 +209,7 @@ public final class HerdStore {
     private func mergedHerd() -> (agents: [HerdAgent], projects: [HerdProject]) {
         let all = sources.flatMap { bySource[$0.id]?.agents ?? [] }
         let byID = Dictionary(all.map { ($0.id, $0) }) { first, _ in first }
-        merges = HerdMerge.find(in: all) { source($0)?.capabilities ?? [] }
+        merges = HerdMerge.find(in: all, previous: merges) { source($0)?.capabilities ?? [] }
         let byHost = Dictionary(merges.map { ($0.host, $0) }) { first, _ in first }
         let guests = Set(merges.map(\.guest))
         let kept: [HerdAgent] = all.compactMap { agent in
