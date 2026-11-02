@@ -41,8 +41,7 @@ Ideas we take: the notch panel technique (borderless non-activating `NSPanel` ju
 menu window level, on all Spaces, mouse-transparent until hovered; notch detected via
 `NSScreen.safeAreaInsets.top`, with a top-bar fallback on Macs without one), toggleable "pills",
 and a character with personality. What we avoid: a closed enum of pills, very large files, and
-hook handling spread through the app. How Shepherd positions itself against Coucou is in
-[STRATEGY.md](STRATEGY.md).
+hook handling spread through the app.
 
 ## Sources
 
