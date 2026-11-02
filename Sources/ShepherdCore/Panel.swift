@@ -1,6 +1,6 @@
 import Foundation
 
-/// The tabs at the top of the menu bar panel and the notch bar. Each section says which one it
+/// The tabs at the top of the notch bar. Each section says which one it
 /// sits on, so a new gadget needs no list here.
 public enum PanelTab: String, Sendable, Hashable, CaseIterable {
     /// The needs-you queue and the projects: what the surfaces are for.

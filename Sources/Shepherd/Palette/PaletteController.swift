@@ -14,8 +14,8 @@ import SwiftUI
 /// only while its Gadgets page shows, so plugin gadgets run for it then. Each
 /// opening refreshes the plugins (their manifests and listed actions); ⌘K shows a selection's
 /// plugin actions, and an action's printed text stays on a result page. With no agents yet it shows
-/// the first-run guide; its Status page shows what the menu bar panel's footer does, and a card per
-/// source.
+/// the first-run guide; its Status page shows the herd's status lines and config problems, and a
+/// card per source. The menu bar icon opens it too.
 @MainActor
 final class PaletteController: NSObject, NSWindowDelegate {
     private let context: ModuleContext
@@ -34,6 +34,7 @@ final class PaletteController: NSObject, NSWindowDelegate {
     private var top: CGFloat = 0
     /// Bumps on every open, so a stale observation callback from an earlier opening is ignored.
     private var generation = 0
+    private(set) var closedAt = Date.distantPast
 
     var isOpen: Bool { panel != nil }
 
@@ -88,6 +89,7 @@ final class PaletteController: NSObject, NSWindowDelegate {
         panel.contentView = nil
         self.panel = nil
         hosting = nil
+        closedAt = Date()
     }
 
     // MARK: Content
@@ -114,11 +116,13 @@ final class PaletteController: NSObject, NSWindowDelegate {
                               guide: onlyCommands ? sources?.panel : nil, page: page)
     }
 
-    /// The number of problems and where to read them, else why the herd is not live.
+    /// The number of problems and where to read them, else why the herd is not live, else that the
+    /// herd is demo mode's made-up one.
     private func notice(_ summary: PanelContent, items: [PaletteItem]) -> (text: String, isProblem: Bool)? {
         let problems = summary.problems
         guard let first = problems.first else {
-            return context.store.overallState.isLive ? nil : summary.statusLines.first.map { ($0, false) }
+            guard context.store.overallState.isLive else { return summary.statusLines.first.map { ($0, false) } }
+            return context.isDemo ? ("Demo: these agents are made up. Type Leave Demo to go back.", false) : nil
         }
         // Without the Status command (a `modules` list leaving out `app`) the first problem is all it can show.
         guard items.contains(where: { $0.action == .status }) else { return (first, true) }
@@ -208,8 +212,8 @@ final class PaletteController: NSObject, NSWindowDelegate {
     }
 
     /// Opens `file` when it exists, else `folder`, made first if missing. Folders may be made, files
-    /// never. The file system work runs off the main actor; a failure shows in the panel's footer,
-    /// since the palette has closed.
+    /// never. The file system work runs off the main actor; a failure is a config problem, counted
+    /// in the palette's footer and on its Status page, since the palette has closed.
     private func open(_ file: URL?, else folder: URL) {
         Task {
             let target = await Task.detached(priority: .userInitiated) { () -> Result<URL, any Error> in

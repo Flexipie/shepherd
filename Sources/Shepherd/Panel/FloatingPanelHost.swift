@@ -1,8 +1,7 @@
 import AppKit
 
-/// What the menu bar panel and the palette share: the glass around their content, and the
-/// triggers that close them (a click outside, a Space change). Each controller closes on resign
-/// key and Escape itself.
+/// The palette's glass around its content, and the triggers that close it (a click outside, a
+/// Space change). The controller closes on resign key and Escape itself.
 @MainActor
 final class FloatingPanelHost {
     private var monitors: [Any] = []

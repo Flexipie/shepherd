@@ -1,7 +1,7 @@
 import ShepherdCore
 import SwiftUI
 
-/// The Status command's page: what the menu bar panel's footer says, and a card per source.
+/// The Status command's page: config problems and the herd's status lines, and a card per source.
 public struct PaletteStatusPage: Sendable, Equatable {
     /// Config, plugin and hotkey problems.
     public let problems: [String]

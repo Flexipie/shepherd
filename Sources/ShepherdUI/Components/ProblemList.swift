@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Problems, each behind an orange triangle, then quiet status lines: the panel's footer and the
-/// palette's Status page.
+/// Problems, each behind an orange triangle, then quiet status lines, on the palette's Status
+/// page.
 struct ProblemList: View {
     let problems: [String]
     let lines: [String]

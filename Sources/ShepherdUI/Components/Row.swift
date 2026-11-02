@@ -3,8 +3,8 @@ import ShepherdCore
 import SwiftUI
 
 extension View {
-    /// The padding and selection highlight every row shares, in the panel, the notch bar and the
-    /// palette. The whole row takes clicks.
+    /// The padding and selection highlight every row shares, in the notch bar and the palette. The
+    /// whole row takes clicks.
     func rowChrome(isSelected: Bool, vertical: CGFloat) -> some View {
         padding(.horizontal, 8)
             .padding(.vertical, vertical)

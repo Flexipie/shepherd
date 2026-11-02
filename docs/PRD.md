@@ -130,8 +130,8 @@ As built:
   `ModuleContext.sourceGuide`: whether it was found, what it gives and the next step. The
   `sources` module shows them until the first agent appears. Nothing is remembered and no file is
   written; with no config file every source runs with defaults. A source left out of `sources` has no
-  card, and the guide is read again when a panel opens while it shows (so installed hooks show).
-  Its last card offers demo mode.
+  card, and the guide is read again when the palette or the notch bar opens while it shows (so
+  installed hooks show). Its last card offers demo mode.
 - Demo mode (`Shepherd --demo`, or Try Demo in the status item's right-click menu or the palette,
   which opens a new Shepherd with `--demo` and quits this one; Leave Demo goes back) replaces every
   source with `DemoHerd`'s made-up herd: `HerdrFake`'s `FakeHerd.demo` on `/tmp/shepherd-demo.sock`
@@ -189,8 +189,8 @@ than". `SHEPHERD_TRANSITION_LOG` points it elsewhere for development runs.
 | `TmuxSource` | tmux as a source: panes whose process tree runs a known agent, read from their screens and labelled inferred. A pane's project is its git checkout (or its folder outside git), with the checkout's repo. Watches the socket folder and one control client per server: its own session's output, and a once-a-second subscription to every pane's cursor, history and activity for the rest. The client sits on a session a terminal is on, or else the least recently used one, so tmux behaves as without it (`TmuxFollow`); no polling. A jump shows the pane in a client already on its session, or else switches the most recently active terminal on this Mac to it (`TmuxJump`: never Shepherd's own control client, one with no app on this Mac, such as over ssh, or the last terminal on a session that would close), and brings that terminal forward; when none can show it, the jump fails with the reason, which the app shows in an alert. Starts tasks: a git worktree and a new window. |
 | `DemoHerd` | Demo mode's made-up herd: the fake herdr, a report spool and screen-read agents, at fixed temporary paths. |
 | `ShepherdModules` | Built-in features, one folder each, listed in `BuiltinModules.all`. |
-| `ShepherdUI` | SwiftUI views, values in, no windows, no glass, so every view can be snapshot tested. Three layers: `Components` (shared pieces: row chrome and the choosable row, the card fill, glyphs, tokens), `Items` (one view per `PanelItem` kind, drawn the same on every surface, with `PanelItemView` the one place a kind meets its view) and `Surfaces` (the panel, the notch, the palette: layout, keyboard and the clock, never their own item views). |
-| `Shepherd` | The app: status item, panel window, notch surface window, hotkey, later notifications and the palette. Thin. |
+| `ShepherdUI` | SwiftUI views, values in, no windows, no glass, so every view can be snapshot tested. Three layers: `Components` (shared pieces: row chrome and the choosable row, the card fill, glyphs, tokens), `Items` (one view per `PanelItem` kind, drawn the same on every surface, with `PanelItemView` the one place a kind meets its view) and `Surfaces` (the notch, the palette: layout, keyboard and the clock, never their own item views). |
+| `Shepherd` | The app: status item, notch surface window, hotkeys, notifications and the palette window. Thin. |
 
 ## What herdr gives us
 
@@ -294,7 +294,7 @@ This is the herdr source. herdr speaks newline-delimited JSON over a Unix socket
 
 Every surface is optional and degrades on its own.
 
-The menu bar panel and the notch bar have two tabs at the top (`PanelTab`): **Agents**, the
+The notch bar has two tabs at the top (`PanelTab`): **Agents**, the
 needs-you queue and the project cards, and **Gadgets**, for gadget cards (Shepherd ships none of its
 own; plugin gadgets fill it, see "Plugins", each card its own bar column). Each section says its tab
 (`PanelSection.tab`, Agents by default), so a new gadget needs no list. A surface draws the tab bar,
@@ -305,8 +305,11 @@ bar. The stage and the "+" live on Agents; switching away closes a stage. The fo
 tabs. Each surface reports its tab to `Presence`, so a module reads only while its tab shows
 (`Presence.isShowing(_:)`).
 
-- **Menu bar.** Counts (working, needs you) and a disconnected state. On a MacBook a crowded menu
-  bar can hide the item behind the notch, which is one more reason the notch surface exists.
+- **Menu bar.** Counts (working, needs you) and a disconnected state. A click opens the palette
+  (a click that just closed it does not reopen it); a right or control click shows a small menu:
+  the demo line in demo mode, `HerdSummary`'s lines, Try Demo or Leave Demo, and Quit. On a
+  MacBook a crowded menu bar can hide the item behind the notch, which is one more reason the
+  notch surface exists.
 - **Notch surface.** One black shape around the notch, flush with the top of the screen, with
   concave top corners like the hardware notch, so it reads as part of it in either appearance. It
   has three states and morphs between them with a spring (Reduce Motion: the shape changes at once
@@ -322,7 +325,7 @@ tabs. Each surface reports its tab to `Presence`, so a module reads only while i
     palette does not. Each window is a one-shot timer.
   - **Expanded**, while hovered: the bar. A wide, short shape centred on the notch,
     `min(1000, screen width - 160)` wide and as tall as its content, up to 30% of the screen,
-    so it never covers the middle. It reads the same `PanelContentSource` as the menu bar panel
+    so it never covers the middle. It reads the same `PanelContentSource` as the palette's Status page
     but lays it out in columns (`BarColumn`): the `queue` section pinned on the left, then one
     column per project or repo card (and per gadget card on Gadgets), and any other section as one column, so a new module's section
     just appears as another column. Past the left column the columns scroll sideways; each
@@ -398,15 +401,9 @@ tabs. Each surface reports its tab to `Presence`, so a module reads only while i
   the window is only as large as the current shape. Before a morph the window grows to cover both
   shapes, and once the animation ends it shrinks to the new one. So nothing relies on clicks
   passing through transparent pixels: at rest the only transparent parts are the flared corners.
-  On a display without a notch there is no ear and no hover panel; the alert is a small floating
-  capsule under the menu bar.
-- **Panel.** Click the status item: an `NSPanel` under it with the needs-you queue, then one card
-  per project (name, project tokens, each agent with state, time in state and agent tokens), then
-  status lines and config problems. It is non-activating but takes key focus, so arrows and
-  Return work while the user's terminal stays frontmost. It closes on Escape, an outside click, a
-  Space change or after a jump. The window supplies the glass (`NSGlassEffectView`); the SwiftUI
-  views carry none. Times tick once a minute only while it is open; closed, it does not exist.
-  A right click keeps a small menu (state lines, Quit).
+  On a display without a notch there is no ear and no hover bar; the alert is a small floating
+  capsule under the menu bar, and the palette is where the herd, its status and the gadgets
+  show. `layout` has no effect there.
 - **"Next" hotkey.** A global hotkey (default ⌃⌥⌘N, configurable, Carbon `RegisterEventHotKey`, no
   permission prompt) jumps to the first waiting agent from a live source that the user is not
   already looking at; repeated presses walk the queue. macOS accepts a combination a system
@@ -416,7 +413,7 @@ tabs. Each surface reports its tab to `Presence`, so a module reads only while i
   app should alert, rather than firing both.
 - **Palette.** A global hotkey (default ⌥Space, `hotkeys.palette`) opens a search field centred
   in the upper third of the screen under the mouse: a non-activating, key-capable `ShepherdPanel`
-  with the glass, like the menu bar panel (`FloatingPanelHost` holds what the two share). It lists
+  with the glass (`FloatingPanelHost` holds the glass and the outside-click and Space-change closing). It lists
   live agents (as queue rows, with their project), projects and every module's commands, built
   by `PaletteIndex` and ranked by `PaletteSearch` with `FuzzyMatch`: a case- and
   diacritic-insensitive subsequence match that favours word starts, runs and prefixes. Every word
@@ -440,10 +437,11 @@ Shepherd's own commands come from modules too: `app` (Quit, and Open config file
   folder instead; a missing folder is made first, a file never. A failure shows in the footer. Quit
   and the demo switch are `onlyWhenTyped`: left out of the list with no query, so Return on an
   empty palette never picks one; they show once the query matches. `app` also offers Status, a
-  page with what the menu bar panel's footer shows (`PanelContentSource`: config problems, which
+  page with the herd's status and config problems (`PanelContentSource`: config problems, which
   include plugin and hotkey reports, layout problems and `HerdSummary`) and the `sources` module's
   cards without the Try Demo tip, read again on opening it so a hooks install shows. With problems
-  the footer notice counts them and points to Status (only while the command is offered). While no
+  the footer notice counts them and points to Status (only while the command is offered); with
+  none and a live herd in demo mode it says the agents are made up and to type Leave Demo. While no
   agents or projects show, the `sources` module's first-run guide sits above the command rows
   until something is typed, with no row selected until an arrow picks one, so Return never runs a
   command the guide pushed out of view.
@@ -456,8 +454,8 @@ Shepherd's own commands come from modules too: `app` (Quit, and Open config file
 Plugin actions (see "Plugins") are the first kind of user-defined action. One action model feeds every surface. An action has an id, a title, a context (global, workspace,
 agent) and a target: a herdr request, a herdr plugin action, or a shell command, with placeholders
 such as `{workspace_id}`, `{pane_id}`, `{cwd}`, `{token.pr}`. Modules and config both contribute
-actions, and herdr plugin actions are listed automatically through `plugin.action.list`. The panel
-cards, the notch, notification buttons, the palette and (later) App Intents all render the same
+actions, and herdr plugin actions are listed automatically through `plugin.action.list`. The notch
+bar's cards, notification buttons, the palette and (later) App Intents all render the same
 list, so a new action shows up everywhere without extra code.
 
 ## Plugins
@@ -494,8 +492,8 @@ plugin tokens (`PluginHost` in Core, `ProcessPluginRunner` in the `ShellPlugins`
   ready to land card. `listActions` prints more actions (`{"actions": [...]}`, same shape) at
   runtime, for plugins whose actions are not known in advance; a manifest action with the same
   id wins. A failed listing keeps the last good actions.
-- **When plugins run.** Manifests are read at launch and whenever a panel opens (while the
-  `plugins` module is on), and
+- **When plugins run.** Manifests are read at launch and whenever the palette or the notch bar
+  opens (while the `plugins` module is on), and
   `listActions` run each time the palette opens (off the main actor; a refresh already on its
   way is shared), not watched, so nothing runs at idle. Removing a plugin drops its actions,
   tokens and gadget on the next read.
@@ -527,8 +525,8 @@ passes the target as environment variables:
   row shows: the source's tokens with the plugins' over them);
 - `SHEPHERD_EVENT` (the event's name) for events.
 
-Problems loading or listing go to the panel footer under `plugins`; an action's failure shows on
-the palette's result page. Never silent.
+Problems loading or listing are config problems under `plugins` (the palette's Status page); an
+action's failure shows on the palette's result page. Never silent.
 
 **Output.** Plain text is the result: the palette shows an action's text on a result page (no
 text closes the palette), a check's first line is its line on the card. A JSON object is applied instead: `{"text": ...}` for the result,
@@ -629,7 +627,7 @@ Every key is optional and a missing file means defaults. As built:
 
 - `modules`: enabled module ids, in order. A list written before a module existed leaves it off
   (such as `app`, with Status, Quit and Open config file in the palette).
-- `layout`: what the menu bar panel and the notch bar show, without turning modules off.
+- `layout`: what the notch bar shows, without turning modules off.
   `agents` and `gadgets` list section (module) ids for that tab, in order; a section of that tab
   left out is hidden, and a tab with no list shows all of its sections in `modules` order. A list
   orders only its own tab's sections: an id of a section on the other tab is not moved and is
@@ -650,7 +648,7 @@ Every key is optional and a missing file means defaults. As built:
 - `notch.escalateAfter`: seconds a blocked agent waits before the pill shows it once more
   (default 300, `0` turns that off, at most 86400).
 
-Reading is lenient per key: a key that cannot be used is reported in the panel footer and falls
+Reading is lenient per key: a key that cannot be used is reported as a config problem and falls
 back to its default while the rest applies; a file that is not valid JSON keeps the last good
 config. `FileWatcher` watches the directory (atomic saves) and the file (in-place writes), waits
 for a missing directory to appear, debounces 200 ms, and delivers only when the bytes changed.
@@ -685,7 +683,7 @@ source's own (for herdr, `ui.sidebar.spaces.rows` for projects and `ui.sidebar.a
 agents, read from `HERDR_CONFIG_PATH` or `~/.config/herdr/config.toml` by a small TOML reader and
 re-read on change), else every token on one line, sorted, unstyled. A layout replaces, it does
 not merge. herdr's colours are picked for dark terminals, so in light mode a colour below 4.5:1
-against the panel is darkened until it reads. `rows_by_agent` is not read yet.
+against the bar or the palette is darkened until it reads. `rows_by_agent` is not read yet.
 
 ## Testing
 
@@ -705,7 +703,7 @@ against the panel is darkened until it reads. `rows_by_agent` is not read yet.
   `PERF_CPU_LIMIT` and `PERF_MEMORY_LIMIT_MB` override them. The footprint after opening the bar
   and the palette is still measured by hand. While it runs, a second Shepherd shows its status
   item and notch for about 35 s, with no hotkeys; a running Shepherd is not touched. Leave the
-  notch alone while it runs: opening the panel costs CPU and fails the check.
+  notch alone while it runs: opening the bar costs CPU and fails the check.
 - The UI is still checked by hand against a real herdr before a feature ships (see VISION).
 
 ## Performance budget
@@ -713,8 +711,8 @@ against the panel is darkened until it reads. `rows_by_agent` is not read yet.
 - Idle: no timers firing faster than once a minute, no polling, and under 0.5% CPU averaged over
   30 s (`make perf`).
 - Event bursts coalesced into one snapshot read.
-- Only visible surfaces render; the panel tears down its views when closed, and the notch
-  surface renders the panel only while expanded (the ear redraws only when the status changes).
+- Only visible surfaces render; the palette tears down its views when closed, and the notch
+  surface renders the bar only while expanded (the ear redraws only when the status changes).
 - Model calls, output reads and sounds happen on transitions, never on a timer.
 - Memory: under 60 MB of physical footprint, what Activity Monitor's Memory column shows, measured
   with `footprint <pid>` on the app after the same steps (idle, then the bar and the palette each

@@ -2,7 +2,7 @@ import ShepherdCore
 import SwiftUI
 
 /// A module's section: its title (with a count for the needs-you queue), its empty text, then its
-/// items. Shared by the menu bar panel and the notch bar's columns.
+/// items. One per notch bar column.
 struct PanelSectionView: View {
     let section: PanelSection
     let now: Date

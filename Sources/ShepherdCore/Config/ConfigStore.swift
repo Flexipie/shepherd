@@ -3,13 +3,13 @@ import Observation
 
 /// The current config, reloaded when the file changes. A file that cannot be read at all keeps
 /// the last good config and says why; smaller problems are listed while the rest applies. Other
-/// parts of the app (the hotkey) report their own config problems here too, so the panel shows
-/// them in one place.
+/// parts of the app (the hotkey) report their own config problems here too, so the palette's Status
+/// page shows them in one place.
 @MainActor
 @Observable
 public final class ConfigStore {
     public private(set) var config: ShepherdConfig
-    /// Problems from reading the file, then any reported by the app, for the panel footer.
+    /// Problems from reading the file, then any reported by the app, for the palette and the notch bar.
     public var problems: [String] { fileProblems + reported.keys.sorted().compactMap { reported[$0] } }
 
     /// nil for a fixed config that is not read from a file.

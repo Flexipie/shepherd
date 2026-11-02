@@ -3,24 +3,24 @@ import Observation
 import ShepherdCore
 
 /// The menu bar item. The button redraws only when a module's status contribution changes. A
-/// left click toggles the panel; a right or control click shows a small menu, built when it
+/// left click toggles the palette; a right or control click shows a small menu, built when it
 /// opens, so nothing renders while it is closed.
 @MainActor
 final class StatusItemController: NSObject {
     private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let store: HerdStore
     private let registry: ModuleRegistry
-    private let panel: PanelController
+    private let palette: PaletteController
     private let isDemo: Bool
     /// The title of the menu's demo item, read when the menu opens; nil for none.
     private let demoItem: () -> String?
     private let switchDemo: () -> Void
 
-    init(store: HerdStore, registry: ModuleRegistry, panel: PanelController, isDemo: Bool, demoItem: @escaping () -> String?,
+    init(store: HerdStore, registry: ModuleRegistry, palette: PaletteController, isDemo: Bool, demoItem: @escaping () -> String?,
          switchDemo: @escaping () -> Void) {
         self.store = store
         self.registry = registry
-        self.panel = panel
+        self.palette = palette
         self.isDemo = isDemo
         self.demoItem = demoItem
         self.switchDemo = switchDemo
@@ -29,10 +29,6 @@ final class StatusItemController: NSObject {
         item.button?.target = self
         item.button?.action = #selector(clicked(_:))
         item.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
-        panel.onVisibilityChange = { [weak self] open in
-            // After the click's own highlight handling, so it sticks.
-            Task { @MainActor in self?.item.button?.highlight(open) }
-        }
         render()
     }
 
@@ -65,23 +61,22 @@ final class StatusItemController: NSObject {
     @objc private func clicked(_ sender: NSStatusBarButton) {
         let event = NSApp.currentEvent
         if event?.type == .rightMouseUp || event?.modifierFlags.contains(.control) == true {
-            panel.close()
+            palette.close()
             showMenu()
         } else {
-            togglePanel()
+            togglePalette()
         }
     }
 
-    func togglePanel() {
-        if panel.isOpen {
-            panel.close()
+    private func togglePalette() {
+        if palette.isOpen {
+            palette.close()
             return
         }
-        // A click on the button first takes key from the panel, which closes it; that click must
+        // A click on the button first takes key from the palette, which closes it; that click must
         // not reopen it.
-        guard Date().timeIntervalSince(panel.closedAt) > 0.3 else { return }
-        guard let button = item.button, let window = button.window, let screen = window.screen ?? NSScreen.main else { return }
-        panel.open(under: window.convertToScreen(button.convert(button.bounds, to: nil)), on: screen)
+        guard Date().timeIntervalSince(palette.closedAt) > 0.3 else { return }
+        palette.open()
     }
 
     // MARK: Menu
