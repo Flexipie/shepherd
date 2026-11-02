@@ -43,7 +43,8 @@ herdr's own state stays, and the report adds its message). When the screen has m
 report, such as after you interrupt a turn or answer No to an approval, the screen's state shows.
 
 With no config file, every source that is on your Mac runs. Until the first agent shows, the
-palette and the notch bar say which sources it found and what to do next.
+notch bar says which sources it found and what to do next; so does the palette until an agent or
+project shows, and its Status page always lists every source.
 
 ## Install
 
