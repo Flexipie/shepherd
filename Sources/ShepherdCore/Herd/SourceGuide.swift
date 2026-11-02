@@ -21,12 +21,15 @@ public struct SourceIntro: Sendable, Equatable, Identifiable {
     public let found: Bool
     public let on: Text
     public let off: Text
+    /// Advice rather than a place agents come from (Try Demo), left off the Status page.
+    public let isTip: Bool
 
-    public init(id: String, name: String, source: SourceID? = nil, found: Bool = false, on: Text, off: Text) {
+    public init(id: String, name: String, source: SourceID? = nil, found: Bool = false, on: Text, off: Text, isTip: Bool = false) {
         self.id = id
         self.name = name
         self.source = source
         self.found = found
+        self.isTip = isTip
         self.on = on
         self.off = off
     }

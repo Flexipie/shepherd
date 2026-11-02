@@ -10,6 +10,8 @@ public enum PaletteAction: Sendable, Hashable {
     case plugin(PluginActionRef)
     /// Shows the plugins' gadget cards.
     case gadgets
+    /// Shows the status page: each source, problems and the herd's status lines.
+    case status
     case quit
     /// Opens a new Shepherd in or out of demo mode and quits this one, like the menu's demo item.
     case switchDemo

@@ -13,16 +13,21 @@ public final class SourcesModule: ShepherdModule {
     }
 
     public var panel: PanelSection? {
+        guard context.store.agents.isEmpty, !context.sourceGuide.intros.isEmpty else { return nil }
+        return PanelSection(id: Self.id, title: "Where agents come from", items: cards(tips: true).map(PanelItem.gadget), emptyText: "")
+    }
+
+    /// A card per place agents can come from, whether or not agents show. Without `tips`, cards
+    /// that are not a source (Try Demo) are left out, for the palette's Status page.
+    public func cards(tips: Bool) -> [GadgetCard] {
         let guide = context.sourceGuide
-        guard context.store.agents.isEmpty, !guide.intros.isEmpty else { return nil }
-        let cards = guide.intros.map { intro in
+        return guide.intros.filter { tips || !$0.isTip }.map { intro in
             let on = guide.isOn(intro, in: context.store)
             let text = on ? intro.on : intro.off
             // Not `isStale`: a source that is off is not out of date, and VoiceOver would say so.
             // One line per `\n`, so a command sits on a line of its own and copies without the prose.
-            return PanelItem.gadget(GadgetCard(id: intro.id, title: intro.name, detail: text.detail,
-                                               lines: text.line.components(separatedBy: "\n")))
+            return GadgetCard(id: intro.id, title: intro.name, detail: text.detail,
+                              lines: text.line.components(separatedBy: "\n"))
         }
-        return PanelSection(id: Self.id, title: "Where agents come from", items: cards, emptyText: "")
     }
 }

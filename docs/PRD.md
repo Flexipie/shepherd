@@ -439,7 +439,14 @@ Shepherd's own commands come from modules too: `app` (Quit, and Open config file
   `ModuleContext.demoTitle`) and `plugins` (Open plugins folder). A missing config file opens its
   folder instead; a missing folder is made first, a file never. A failure shows in the footer. Quit
   and the demo switch are `onlyWhenTyped`: left out of the list with no query, so Return on an
-  empty palette never picks one; they show once the query matches.
+  empty palette never picks one; they show once the query matches. `app` also offers Status, a
+  page with what the menu bar panel's footer shows (`PanelContentSource`: config problems, which
+  include plugin and hotkey reports, layout problems and `HerdSummary`) and the `sources` module's
+  cards without the Try Demo tip, read again on opening it so a hooks install shows. With problems
+  the footer notice counts them and points to Status (only while the command is offered). While no
+  agents or projects show, the `sources` module's first-run guide sits above the command rows
+  until something is typed, with no row selected until an arrow picks one, so Return never runs a
+  command the guide pushed out of view.
 - **Mac integration** (planned): a Services menu entry to send selected text to an agent, drag and
   drop onto the notch, and App Intents so Spotlight, Shortcuts and Focus filters can drive
   Shepherd.
@@ -621,7 +628,7 @@ handling.
 Every key is optional and a missing file means defaults. As built:
 
 - `modules`: enabled module ids, in order. A list written before a module existed leaves it off
-  (such as `app`, with Quit and Open config file in the palette).
+  (such as `app`, with Status, Quit and Open config file in the palette).
 - `layout`: what the menu bar panel and the notch bar show, without turning modules off.
   `agents` and `gadgets` list section (module) ids for that tab, in order; a section of that tab
   left out is hidden, and a tab with no list shows all of its sections in `modules` order. A list

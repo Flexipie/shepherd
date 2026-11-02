@@ -320,3 +320,9 @@ Oldest first.
   open command, since it reads no config and runs no plugins. A failure to open shows in the
   panel's footer. Quit and the demo switch show only once the query matches them, never in the
   empty list, so Return on an empty palette never quits or relaunches.
+- Palette: status and first-run page (#100): a Status command (from `app`) opens a page with
+  config, plugin and hotkey problems, a card per source (found, connected or not, how to connect)
+  and the herd's status lines, the same lists the menu bar panel's footer shows (now one shared
+  `ProblemList` view). The source cards are read again when the page opens. With no agents or
+  projects the first-run guide sits above the commands until something is typed, none selected.
+  Problems put a warning in the footer: "N problems, see Status".

@@ -62,7 +62,8 @@ final class AppController {
                                           demoItem: context.demoTitle, switchDemo: { [weak self] in self?.relaunch() })
         notch = NotchSurfaceController(registry: registry, content: content, actions: actions, presence: presence)
         palette = PaletteController(context: context, registry: registry, actions: actions,
-                                    switchDemo: { [weak self] in self?.relaunch() })
+                                    switchDemo: { [weak self] in self?.relaunch() },
+                                    readSources: { [weak self] in self?.fillGuide() })
         hotKeys = HotKeyCenter(config: config, bindings: [
             .init(name: "next", combo: \.nextHotkey) { [weak self] in
                 self?.closeSurfaces()
@@ -161,8 +162,7 @@ final class AppController {
     }
 
     /// Fills the first-run guide, then again each time a panel opens while it shows, so installing
-    /// Claude Code's hooks is seen without a restart. Reading Claude Code's settings is file I/O, so
-    /// it runs off the main actor.
+    /// Claude Code's hooks is seen without a restart.
     private func explainSources() {
         let visible = withObservationTracking {
             presence.isPanelVisible
@@ -171,6 +171,13 @@ final class AppController {
         }
         guard !guideFilled || (visible && store.agents.isEmpty) else { return }
         guideFilled = true
+        fillGuide()
+    }
+
+    /// Reads what each source needs, for the guide and the palette's Status page. Reading Claude
+    /// Code's settings is file I/O, so it runs off the main actor. Demo mode has no guide.
+    private func fillGuide() {
+        guard !isDemo else { return }
         let sources = startedOrder, tmuxInstalled = tmux != nil
         Task {
             let environment = ProcessInfo.processInfo.environment

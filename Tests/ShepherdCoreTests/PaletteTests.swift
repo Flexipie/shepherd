@@ -177,22 +177,23 @@ import Testing
                                     demoTitle: { "Try Demo" })
         let modules: [any ShepherdModule] = [DemoModule(context: context), PluginsModule(context: context), AppModule(context: context)]
         let items = PaletteIndex.items(context: context, modules: modules)
-        #expect(items.map(\.id) == ["command/demo.switch", "command/plugins.folder", "command/app.config", "command/app.quit"])
-        let found = ["quit": PaletteAction.quit, "try demo": .switchDemo, "config": .openConfig, "plugins folder": .openPluginsFolder]
+        #expect(items.map(\.id) == ["command/demo.switch", "command/plugins.folder", "command/app.status", "command/app.config",
+                                    "command/app.quit"])
+        let found = ["quit": PaletteAction.quit, "status": .status, "problems": .status, "try demo": .switchDemo, "config": .openConfig, "plugins folder": .openPluginsFolder]
         for (query, action) in found {
             #expect(PaletteSearch.results(items, query: query).first?.item.action == action, "\(query)")
         }
         // Typing "shepherd" to find a repo never puts Quit first.
         #expect(PaletteSearch.results(items, query: "shepherd").isEmpty)
         // Commands that change what the app is doing are never a default row.
-        #expect(ids(PaletteSearch.results(items, query: "")) == ["command/plugins.folder", "command/app.config"])
+        #expect(ids(PaletteSearch.results(items, query: "")) == ["command/plugins.folder", "command/app.status", "command/app.config"])
     }
 
-    @Test func demoModeOffersLeaveDemoAndQuitOnly() {
+    @Test func demoModeOffersLeaveDemoStatusAndQuitOnly() {
         // Demo mode reads no config and runs no plugins, so neither has a command.
         let demo = ModuleContext(store: store, presence: Presence(), actions: RecordingActions(), isDemo: true, demoTitle: { "Leave Demo" })
-        #expect(commandIDs(demo) == ["command/demo.switch", "command/app.quit"])
+        #expect(commandIDs(demo) == ["command/demo.switch", "command/app.status", "command/app.quit"])
         // No demo switch while it is not offered (another Shepherd runs, or not run as an app).
-        #expect(commandIDs(context) == ["command/app.quit"])
+        #expect(commandIDs(context) == ["command/app.status", "command/app.quit"])
     }
 }

@@ -98,22 +98,7 @@ public struct PanelView: View {
     @ViewBuilder
     private var footer: some View {
         if !content.statusLines.isEmpty || !content.problems.isEmpty {
-            VStack(alignment: .leading, spacing: 3) {
-                ForEach(content.problems, id: \.self) { problem in
-                    Label {
-                        Text(problem).fixedSize(horizontal: false, vertical: true)
-                    } icon: {
-                        Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
-                    }
-                    .font(.system(size: 11))
-                }
-                ForEach(content.statusLines, id: \.self) { line in
-                    Text(line)
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                }
-            }
+            ProblemList(problems: content.problems, lines: content.statusLines)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 18)
             .padding(.vertical, 9)
