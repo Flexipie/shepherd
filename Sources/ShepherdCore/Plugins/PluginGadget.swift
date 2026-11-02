@@ -37,7 +37,7 @@ public struct PluginGadget: Sendable, Equatable {
 
     /// The card a run printed: `{"title": ..., "detail": ..., "meters": [...], "lines": [...]}`,
     /// each meter `{"label": ..., "fraction": 0...1, "text": ...}` (text defaults to the percent).
-    /// Throws a message when the output is not such an object.
+    /// Throws a message when the output is not such an object or a meter lacks its label or fraction.
     public static func card(from stdout: String, id: String, title fallback: String) throws(ConfigProblem) -> GadgetCard {
         let trimmed = stdout.trimmingCharacters(in: .whitespacesAndNewlines)
         guard case .table(let table)? = try? JSONDecoder().decode(ConfigValue.self, from: Data(trimmed.utf8)) else {
@@ -49,7 +49,9 @@ public struct PluginGadget: Sendable, Equatable {
         if case .array(let items)? = table["meters"] {
             for (index, item) in items.enumerated() {
                 guard case .table(let meter) = item, case .string(let label)? = meter["label"],
-                      case .number(let fraction)? = meter["fraction"] else { continue }
+                      case .number(let fraction)? = meter["fraction"] else {
+                    throw ConfigProblem("meters[\(index)] needs a label and a fraction (a number from 0 to 1)")
+                }
                 let text = if case .string(let text)? = meter["text"] { text } else { "\(Int((min(max(fraction, 0), 1) * 100).rounded()))%" }
                 meters.append(GadgetMeter(id: "\(index)", label: label, fraction: fraction, valueText: text))
             }

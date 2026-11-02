@@ -527,8 +527,9 @@ events a plugin asked for.
 
 **Plugins we ship** in `examples/plugins/`: `herdr-actions` (herdr's plugin actions through
 `listActions`; workspace actions become project actions and focus the workspace before
-`herdr plugin action invoke`, since herdr acts on its focused workspace), and `diff-stat` (git's
-diff stat as the result and `diff_*` tokens).
+`herdr plugin action invoke`, since herdr acts on its focused workspace), `diff-stat` (git's
+diff stat as the result and `diff_*` tokens), and `load-average` (a gadget: the load average as
+meters, full at one process per core).
 
 ## Intelligence
 

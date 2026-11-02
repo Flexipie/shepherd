@@ -79,8 +79,9 @@ public final class PluginHost {
         let ids = Set(enabled.map(\.id))
         listed = listed.filter { ids.contains($0.key) }
         eventProblems = eventProblems.filter { ids.contains($0.key) }
-        gadgetCards = gadgetCards.filter { ids.contains($0.key) }
-        gadgetFailures = gadgetFailures.filter { ids.contains($0.key) }
+        let gadgetIDs = Set(gadgetPlugins.map(\.id))
+        gadgetCards = gadgetCards.filter { gadgetIDs.contains($0.key) }
+        gadgetFailures = gadgetFailures.filter { gadgetIDs.contains($0.key) }
         tokens = tokens.compactMapValues { byPlugin in
             let kept = byPlugin.filter { ids.contains($0.key) }
             return kept.isEmpty ? nil : kept

@@ -30,7 +30,7 @@ import Testing
     @Test func outputIsACard() throws {
         let card = try PluginGadget.card(from: #"""
         {"title": "Load", "detail": "8 cores", "lines": ["up 3 days", 4],
-         "meters": [{"label": "1 min", "fraction": 0.25, "text": "2.0"}, {"label": "5 min", "fraction": 1.4}, {"fraction": 0.1}],
+         "meters": [{"label": "1 min", "fraction": 0.25, "text": "2.0"}, {"label": "5 min", "fraction": 1.4}],
          "later": true}
         """#, id: "load", title: "Fallback")
         #expect(card == GadgetCard(id: "load", title: "Load", detail: "8 cores", meters: [
@@ -40,6 +40,9 @@ import Testing
         #expect(try PluginGadget.card(from: "{}", id: "a", title: "Fallback") == GadgetCard(id: "a", title: "Fallback"))
         #expect(throws: ConfigProblem("must print a JSON object with a title, meters and lines")) {
             try PluginGadget.card(from: "load 2.0", id: "a", title: "A")
+        }
+        #expect(throws: ConfigProblem("meters[0] needs a label and a fraction (a number from 0 to 1)")) {
+            try PluginGadget.card(from: #"{"meters": [{"label": "CPU", "fraction": "0.3"}]}"#, id: "a", title: "A")
         }
     }
 }
