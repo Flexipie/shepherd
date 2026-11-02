@@ -604,7 +604,8 @@ Every key is optional and a missing file means defaults. As built:
   project's and its repo's names (a repo card also to each checkout's), so a project keeps its
   place when a second checkout makes it a repo card. The rest follow in source order, and a name
   with no project is not an error (projects come and go). An id that names no module is reported
-  under `layout`. A hidden gadget's module still runs while its tab shows; leave it out of
+  under `layout`, except a retired one (`usage`, `system`), which is dropped as if never listed; a
+  list left empty by that counts as no list. A hidden gadget's module still runs while its tab shows; leave it out of
   `modules` to stop it.
 - `tokens`: `projects` and `agents`, each a list of lines in herdr's sidebar syntax (see "Tokens").
 - `hotkeys.next`: the "next" hotkey, `null` to turn it off.

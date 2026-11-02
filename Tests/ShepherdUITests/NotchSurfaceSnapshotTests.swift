@@ -130,9 +130,9 @@ import Testing
         try checkExpanded("notch-expanded", SampleHerd.content)
     }
 
-    /// The Agents tab, with the tab bar on top and the "+".
+    /// The bar with the "+". The README's picture.
     @Test func expandedOnAgents() throws {
-        try checkExpanded("notch-bar", SampleHerd.contentWithGadgets, offersNewTask: true)
+        try checkExpanded("notch-bar", SampleHerd.content, offersNewTask: true)
     }
 
     /// Worktrees of one repo share a column.
