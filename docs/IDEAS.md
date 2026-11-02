@@ -64,7 +64,7 @@ know it.
   parallelism, which a single-session recap cannot.
 
 - **Per-agent CPU and memory.** herdr's `pane.process_info` could give each agent's process
-  tree; a small figure on the row or stage, sampled only while shown, like the system gadget.
+  tree; a small figure on the row or stage, sampled only while shown.
 - **Codex context size.** Codex writes its sessions under `~/.codex/sessions`; a reader there
   would give Codex agents the same context size Claude Code agents have.
 

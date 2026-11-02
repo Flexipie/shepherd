@@ -292,8 +292,8 @@ Every surface is optional and degrades on its own.
 
 The menu bar panel and the notch bar have two tabs at the top (`PanelTab`): **Agents**, the
 needs-you queue and the project cards, and **Gadgets**, for gadget cards (Shepherd ships none of
-its own; plugin gadgets, planned in "Plugins", will fill it). Each section says its tab (`PanelSection.tab`, Agents by default), so a new gadget needs no list. A
-surface draws the tab bar, then only the current tab's sections, and its keyboard navigation
+its own; plugin gadgets, planned in "Plugins", will fill it). Each section says its tab
+(`PanelSection.tab`, Agents by default), so a new gadget needs no list. A surface draws the tab bar, then only the current tab's sections, and its keyboard navigation
 covers only those. Each opening starts on Agents; the tab is not saved. ⌘1 and ⌘2 switch tabs
 while the surface has the keyboard. With no section off Agents (every gadget turned off, or
 hidden by `layout.gadgets`) there is no tab bar. The stage and the "+" live on Agents; switching
@@ -563,8 +563,8 @@ state, which jumps to the agent).
 
 `ModuleRegistry` builds the enabled modules from `config.modules` (all, in default order, when
 absent), reports unknown ids (but not `BuiltinModules.retired`, the ids of removed modules such
-as `usage` and `system`, which an old config may still name), and rebuilds when the list changes; a module that stays enabled
-keeps its instance and state.
+as `usage` and `system`, which an old config may still name), and rebuilds when the list
+changes; a module that stays enabled keeps its instance and state.
 
 ### Adding a module
 
@@ -605,8 +605,8 @@ Every key is optional and a missing file means defaults. As built:
   place when a second checkout makes it a repo card. The rest follow in source order, and a name
   with no project is not an error (projects come and go). An id that names no module is reported
   under `layout`, except a retired one (`usage`, `system`), which is dropped as if never listed; a
-  list left empty by that counts as no list. A hidden gadget's module still runs while its tab shows; leave it out of
-  `modules` to stop it.
+  list left empty by that counts as no list. A hidden gadget's module still runs while its tab
+  shows; leave it out of `modules` to stop it.
 - `tokens`: `projects` and `agents`, each a list of lines in herdr's sidebar syntax (see "Tokens").
 - `hotkeys.next`: the "next" hotkey, `null` to turn it off.
 - `hotkeys.palette`: the palette's hotkey (default `option+space`), `null` to turn it
