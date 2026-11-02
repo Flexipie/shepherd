@@ -1,3 +1,4 @@
+import AppKit
 import ShepherdCore
 import SwiftUI
 
@@ -57,7 +58,9 @@ struct NewTaskView: View {
                         .padding(.vertical, 6)
                         .background(RoundedRectangle(cornerRadius: 7).fill(Color.primary.opacity(0.08)))
                         .onKeyPress(.return, phases: .down) { press in
-                            guard press.modifiers.isDisjoint(with: [.shift, .option]) else { return .ignored }
+                            // While an input method is composing, Return confirms its candidate.
+                            let composing = (NSApp.keyWindow?.firstResponder as? NSTextView)?.hasMarkedText() ?? false
+                            guard !composing, press.modifiers.isDisjoint(with: [.shift, .option]) else { return .ignored }
                             start()
                             return .handled
                         }
