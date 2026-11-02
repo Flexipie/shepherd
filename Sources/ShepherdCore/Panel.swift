@@ -1,9 +1,11 @@
+import Foundation
+
 /// The tabs at the top of the menu bar panel and the notch bar. Each section says which one it
 /// sits on, so a new gadget needs no list here.
 public enum PanelTab: String, Sendable, Hashable, CaseIterable {
     /// The needs-you queue and the projects: what the surfaces are for.
     case agents
-    /// Usage, This Mac and other gadgets.
+    /// Gadget cards.
     case gadgets
 
     public var title: String {
@@ -52,13 +54,13 @@ public struct GadgetCard: Sendable, Equatable, Identifiable {
     public let title: String
     /// Beside the title, quieter: a plan, a host.
     public let detail: String?
-    public let meters: [UsageMeter]
+    public let meters: [GadgetMeter]
     /// Short lines under the meters: balances, errors.
     public let lines: [String]
     /// The data is old, such as after a failed refresh: the card is dimmed.
     public let isStale: Bool
 
-    public init(id: String, title: String, detail: String? = nil, meters: [UsageMeter] = [], lines: [String] = [],
+    public init(id: String, title: String, detail: String? = nil, meters: [GadgetMeter] = [], lines: [String] = [],
                 isStale: Bool = false) {
         self.id = id
         self.title = title
@@ -69,11 +71,22 @@ public struct GadgetCard: Sendable, Equatable, Identifiable {
     }
 }
 
-extension GadgetCard {
-    /// One account's plan usage: its name and plan, its limits, then its notes.
-    public init(_ provider: UsageProvider) {
-        self.init(id: provider.id, title: provider.name, detail: provider.plan, meters: provider.meters, lines: provider.notes,
-                  isStale: provider.isStale)
+/// One limit, as a bar: "Session, 42%, resets at 14:00".
+public struct GadgetMeter: Sendable, Equatable, Identifiable {
+    public let id: String
+    public let label: String
+    /// How much of the limit is used, 0...1.
+    public let fraction: Double
+    /// "42%", "$12 of $50".
+    public let valueText: String
+    public let resetsAt: Date?
+
+    public init(id: String, label: String, fraction: Double, valueText: String, resetsAt: Date? = nil) {
+        self.id = id
+        self.label = label
+        self.fraction = min(max(fraction, 0), 1)
+        self.valueText = valueText
+        self.resetsAt = resetsAt
     }
 }
 

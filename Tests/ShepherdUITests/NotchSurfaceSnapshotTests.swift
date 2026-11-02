@@ -135,17 +135,6 @@ import Testing
         try checkExpanded("notch-bar", SampleHerd.contentWithGadgets, offersNewTask: true)
     }
 
-    /// Usage and This Mac side by side. No "+" off Agents.
-    @Test func expandedOnGadgets() throws {
-        try checkExpanded("notch-bar-gadgets", SampleHerd.contentWithGadgets, offersNewTask: true, tab: .gadgets)
-    }
-
-    @Test func expandedWithUsageNotRunning() throws {
-        let content = PanelContent(sections: [SampleHerd.queue, SampleHerd.usageNotRunning, SampleHerd.system, SampleHerd.projects],
-                                   statusLines: SampleHerd.content.statusLines)
-        try checkExpanded("notch-bar-usage-not-running", content, tab: .gadgets)
-    }
-
     /// Worktrees of one repo share a column.
     @Test func expandedWithARepo() throws {
         try checkExpanded("notch-bar-repo", SampleHerd.contentWithRepo)

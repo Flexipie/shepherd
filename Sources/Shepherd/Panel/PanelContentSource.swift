@@ -11,7 +11,7 @@ struct PanelContentSource {
     let config: ConfigStore
 
     func current() -> PanelContent {
-        let layout = config.config.layout
+        let layout = config.config.layout.removing(registry.retired)
         let sections = registry.modules.compactMap(\.panel)
         return PanelContent(sections: layout.arrange(sections), statusLines: HerdSummary.lines(store),
                             problems: config.problems + layout.problems(sections))

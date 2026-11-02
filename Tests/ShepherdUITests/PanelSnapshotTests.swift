@@ -95,12 +95,6 @@ import Testing
         }
     }
 
-    @Test func panelOnGadgets() throws {
-        try Snapshot.check("panel-gadgets", width: PanelView.width) {
-            PanelView(content: SampleHerd.contentWithGadgets, clock: .fixed(SampleHerd.now), tab: .gadgets) { _ in }
-        }
-    }
-
     /// With every gadget turned off there is no tab bar.
     @Test func panelWithoutGadgets() throws {
         try Snapshot.check("panel-no-gadgets", width: PanelView.width) {
@@ -128,7 +122,7 @@ import Testing
     @Test func eachTabShowsItsSections() {
         #expect(content.hasTabs)
         #expect(content.sections(on: .agents).map(\.id) == ["queue", "projects"])
-        #expect(content.sections(on: .gadgets).map(\.id) == ["usage", "system"])
+        #expect(content.sections(on: .gadgets).map(\.id) == ["deploys"])
     }
 
     @Test func withoutGadgetsThereAreNoTabs() {
@@ -140,9 +134,9 @@ import Testing
     @Test func navigationTargetsTheVisibleTabOnly() {
         let agents = PanelTarget.all(in: content.sections(on: .agents))
         #expect(agents == PanelTarget.all(in: SampleHerd.content.sections))
-        // Usage and This Mac cards are not selectable, so Gadgets has nothing to move through.
+        // Gadget cards are not selectable, so Gadgets has nothing to move through.
         #expect(PanelTarget.all(in: content.sections(on: .gadgets)).isEmpty)
-        #expect(BarColumn.layout(content.sections(on: .gadgets)).map(\.id) == ["usage", "system"])
+        #expect(BarColumn.layout(content.sections(on: .gadgets)).map(\.id) == ["deploys"])
     }
 
     @Test func commandDigitsPickTabs() {

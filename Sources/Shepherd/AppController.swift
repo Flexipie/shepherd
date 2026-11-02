@@ -50,7 +50,7 @@ final class AppController {
         let plugins = demo ? nil : PluginHost(runner: ProcessPluginRunner(), store: store, config: config)
         context = ModuleContext(store: store, presence: presence, actions: actions, config: config, notifier: notifier,
                                     contextReader: demo ? nil : ClaudeContextReader(), plugins: plugins, isDemo: demo)
-        registry = ModuleRegistry(available: BuiltinModules.all, context: context)
+        registry = ModuleRegistry(available: BuiltinModules.all, retired: BuiltinModules.retired, context: context)
     }
 
     func start() {

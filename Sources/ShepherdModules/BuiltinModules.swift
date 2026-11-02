@@ -14,4 +14,7 @@ public enum BuiltinModules {
         ContextModule.self,
         PluginsModule.self,
     ]
+
+    /// Ids of modules that were removed, so an old config naming them still loads quietly.
+    public static let retired: Set<String> = ["usage", "system"]
 }

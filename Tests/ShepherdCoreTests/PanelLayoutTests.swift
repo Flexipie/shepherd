@@ -46,4 +46,11 @@ import Testing
         ])
         #expect(try read(#"{"layout": []}"#).problems == ["config: layout must be an object with agents, gadgets and projects"])
     }
+
+    @Test func removedIdsDropAndAListTheyEmptyCountsAsNone() {
+        let layout = PanelLayout(tabs: [.agents: ["queue", "old"], .gadgets: ["old"]], projects: ["api"])
+        #expect(layout.removing(["old"]) == PanelLayout(tabs: [.agents: ["queue"]], projects: ["api"]))
+        let hidden = PanelLayout(tabs: [.gadgets: []])
+        #expect(hidden.removing(["old"]) == hidden, "an empty list the user wrote still hides the tab's sections")
+    }
 }
