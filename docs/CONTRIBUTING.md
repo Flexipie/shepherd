@@ -58,9 +58,19 @@ HERDR_SOCKET_PATH=/tmp/shepherd-fake.sock \
 ```
 
 To work on the tmux source, give tmux and Shepherd their own socket folder, so Shepherd sees only
-the tmux you start for it: run tmux with `TMUX_TMPDIR=/tmp/shepherd-dev/tmux`, and Shepherd with
-the same variable and `"sources": ["herdr", "tmux"]` in its config. The folder must exist first:
-without it, tmux quietly uses its usual one.
+the tmux you start for it. Start that tmux like this, even from inside another tmux (`$TMUX` would
+otherwise send it to your own server), with the dev report folder so hooked agents in it report to
+the dev build and not to your own Shepherd:
+
+```bash
+env -u TMUX TMUX_TMPDIR=/tmp/shepherd-dev/tmux SHEPHERD_SPOOL_DIR=/tmp/shepherd-dev/spool \
+  tmux new -s dev
+```
+
+Then run Shepherd as above with `TMUX_TMPDIR=/tmp/shepherd-dev/tmux` added and
+`"sources": ["herdr", "tmux"]` in its config. The folder must exist first: without it, tmux
+quietly uses its usual one.
+
 `Sources/FakeHerdr/main.swift` lists every fake herdr command.
 
 ## Rules
@@ -77,7 +87,8 @@ These keep the app small, fast and easy to change. A PR that breaks one will be 
 - A feature is a module under `Sources/ShepherdModules/<Name>/`, registered in
   `BuiltinModules.all`. See "Adding a module" in [PRD.md](PRD.md).
 - Decode herdr and agent JSON leniently: ignore unknown fields, tolerate missing optional ones.
-- No polling. Subscribe to events and re-read state when told it changed. Idle CPU must stay
+- No polling where events exist: subscribe and re-read state when told it changed. A gadget
+  samples only while it shows. Idle CPU must stay
   under the budget in [PRD.md](PRD.md), "Performance budget".
 - Never commit real data. Test fixtures are sanitised (no real paths, titles or ids); record
   them with `make fixture NAME=<name> SECONDS=10` and read them before committing.

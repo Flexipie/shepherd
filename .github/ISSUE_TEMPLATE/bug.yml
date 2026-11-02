@@ -26,8 +26,8 @@ body:
   - type: input
     id: version
     attributes:
-      label: Shepherd version or commit
-      description: The release, or `git rev-parse --short HEAD` if you built from source.
+      label: Shepherd commit
+      description: The commit you built (`git rev-parse --short HEAD`).
     validations:
       required: true
   - type: input
