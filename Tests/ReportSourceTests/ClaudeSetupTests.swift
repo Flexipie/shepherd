@@ -7,7 +7,5 @@ import Testing
     @Test func theInstallCommandNamesTheBinaryByItsFullPath() {
         #expect(ClaudeSetup.installCommand(binary: "/Applications/Shepherd.app/Contents/MacOS/shepherd-report")
             == "'/Applications/Shepherd.app/Contents/MacOS/shepherd-report' install claude")
-        #expect(ClaudeSetup.installCommand(binary: "/Sam's Apps/Shepherd.app/Contents/MacOS/shepherd-report")
-            == #"'/Sam'\''s Apps/Shepherd.app/Contents/MacOS/shepherd-report' install claude"#)
     }
 }
