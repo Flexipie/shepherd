@@ -295,15 +295,8 @@ make demo   # the app on a made-up herd, beside any Shepherd already running
 make perf   # idle CPU and memory budget check against a fake herdr
 ```
 
-To drive a fake herdr yourself, run it and point the app at it:
-
-```bash
-swift run FakeHerdr /tmp/shepherd-fake.sock
-# then type: block w1:p1, done w2:p2, add w3:p1 codex, label w3 docs,
-#            token w1 pr=#12 draft, token w2:p1 summary=tests pass, stop, start
-HERDR_SOCKET_PATH=/tmp/shepherd-fake.sock SHEPHERD_TRANSITION_LOG=/tmp/fake-log.jsonl \
-  SHEPHERD_CONFIG_PATH=/tmp/shepherd-config.json build/Shepherd.app/Contents/MacOS/Shepherd
-```
+[docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) says how to build, test and send a change, and how to
+try one against a fake herdr, away from your real agents, config and history.
 
 Shepherd has no third-party dependencies.
 [docs/README.md](docs/README.md) indexes everything else, including the architecture and how to

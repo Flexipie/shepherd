@@ -70,12 +70,20 @@ Point a dev run at the fake and away from your real files with environment varia
 - `HERDR_SOCKET_PATH=/tmp/shepherd-fake.sock`: the herdr socket.
 - `SHEPHERD_TRANSITION_LOG=<path>`: the transition log, so fake runs do not mix into real history.
 - `SHEPHERD_CONFIG_PATH=<path>`: Shepherd's config (default `~/.config/shepherd/config.json`).
+  Point it at a file with `{ "sources": ["herdr"], "hotkeys": { "next": null, "palette": null } }`:
+  with no file every source runs, so tmux and reports show the real agents, and the hotkeys clash
+  with a running Shepherd.
 - `HERDR_CONFIG_PATH=<path>`: herdr's config, read for sidebar token styling.
 - `SHEPHERD_PLUGINS_PATH=<path>`: the plugins folder (default `~/.config/shepherd/plugins`).
+- `SHEPHERD_SPOOL_DIR=<path>`: the agent report folder (default
+  `~/Library/Application Support/Shepherd/reports`).
+- `TMUX_TMPDIR=<path>`: tmux's socket folder, for the tmux source; give the same existing folder
+  to a tmux started with `env -u TMUX`. `docs/CONTRIBUTING.md` has the whole recipe.
 
 Snapshot references are compared strictly only on the OS build in
-`Tests/ShepherdUITests/__Snapshots__/RECORDED_ON`; after an OS update, re-record and look at the
-images before committing them.
+`Tests/ShepherdUITests/__Snapshots__/RECORDED_ON`. Re-record only on that build (the
+maintainer's, after an OS update) and look at the images before committing them; recording
+anywhere else rewrites every reference and `RECORDED_ON` (`docs/CONTRIBUTING.md`, "View snapshots").
 
 Check the UI against the fake before your own herdr: it lets you block, finish, add and remove
 agents and stop herdr without touching real work. Review a recorded fixture before committing it.

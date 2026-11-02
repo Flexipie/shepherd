@@ -9,6 +9,9 @@
 | [ROADMAP.md](ROADMAP.md) | Milestone order and what each must achieve; open work is in GitHub issues | Current |
 | [SHIPPED.md](SHIPPED.md) | What is built, oldest first | Current |
 | [CHANGELOG.md](CHANGELOG.md) | What each release gives users, newest first | Current |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to build, test and send a change; the rules for contributors | Current |
+| [SECURITY.md](SECURITY.md) | How to report a security problem privately, and what Shepherd trusts | Current |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | How we treat each other here, and how to report a problem | Current |
 
 ## Releasing
 

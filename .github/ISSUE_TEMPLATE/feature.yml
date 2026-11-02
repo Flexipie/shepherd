@@ -1,0 +1,33 @@
+name: Feature
+description: An idea for Shepherd
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Shepherd helps you start, unblock and decide on your agents' work without living in their
+        terminals. docs/VISION.md says what makes a feature a good fit.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What you are trying to do with your agents, and what gets in the way today.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What you would like
+      description: How it would work for you. A sketch or a screenshot helps.
+    validations:
+      required: true
+  - type: textarea
+    id: others
+    attributes:
+      label: Who else it helps
+      description: Would it make sense for someone with a different setup (other agents, no herdr, no notch)?
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Other ways you have tried or thought of, a plugin included.

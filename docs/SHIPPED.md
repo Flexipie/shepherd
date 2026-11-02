@@ -326,3 +326,7 @@ Oldest first.
   `ProblemList` view). The source cards are read again when the page opens. With no agents or
   projects the first-run guide sits above the commands until something is typed, none selected.
   Problems put a warning in the footer: "N problems, see Status".
+- Community files (#106): `docs/CONTRIBUTING.md` (build, tests, the fake herdr, the rules that
+  apply to contributors, re-recording snapshots and the `RECORDED_ON` caveat), `docs/SECURITY.md`
+  (private reports through GitHub, and what Shepherd trusts by design, plugins first) and
+  `docs/CODE_OF_CONDUCT.md`, plus bug and feature issue templates and a PR template in `.github/`.
