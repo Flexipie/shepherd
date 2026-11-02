@@ -86,9 +86,12 @@ Leave Demo in the same menu goes back.
 - **The notch.** A paw to the left of the notch shows a count when agents need you, orange while
   one is blocked. Hover it and a bar grows along the top of the screen: the needs-you queue
   (blocked first, then finished, longest waiting first), then one column per project. Hovering
-  does not take your typing; click inside for the arrow keys, Return and Escape. Macs without a
-  notch get a small floating pill instead: a blocked agent stays until handled, a finished one
-  shows for a few seconds, and nothing shows for the pane you are already looking at.
+  does not take your typing; click inside for the arrow keys, Return and Escape. A pill under the
+  notch (a small floating one on Macs without a notch) is for news: an agent that becomes blocked
+  or finishes shows for a few seconds, then folds away while the paw keeps the count (the menu
+  bar's, on a Mac without a notch); one still blocked after five minutes shows once more. A state
+  read off a terminal screen never raises it, and nothing shows for the pane you are already
+  looking at.
 - **Answer and prompt.** Click an agent in the bar to see its last lines. An approval prompt's
   choices are buttons (click one or press its digit); otherwise type a reply. An idle or finished
   agent gets a prompt field. ⌘-click, the row's arrow or ⌘Return jumps to its terminal instead.
@@ -191,6 +194,7 @@ can be left out:
   "hotkeys": { "next": "ctrl+option+cmd+n", "palette": "option+space" },
   "agents": { "claude": { "args": [] } },
   "notifications": "off",
+  "notch": { "escalateAfter": 300 },
   "plugins": { "disabled": [] },
   "sources": ["herdr", "report", "tmux"],
   "layout": { "agents": ["sources", "queue", "projects"], "projects": ["api"] }
@@ -238,6 +242,8 @@ can be left out:
 - `notifications`: `"off"` (the default), `"on"`, or `"auto"` (on unless herdr already posts
   system notifications itself, `ui.toast.delivery` "system" or "terminal"). macOS asks for
   permission the first time; if it is off in System Settings, the bar's footer says so.
+- `notch.escalateAfter`: seconds an agent stays blocked before the notch pill shows it once more
+  (default 300); `0` shows it only when it blocks.
 - `plugins.disabled`: plugin ids to leave off. Every plugin in the plugins folder is on otherwise.
 
 A mistake never breaks the app: the panel footer says what is wrong, and a file that is not valid
