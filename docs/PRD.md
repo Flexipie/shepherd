@@ -436,8 +436,8 @@ on both tabs. Each surface reports its tab to `Presence`, so a module reads only
   arrowing through the list reads only where it stops. Tab (or →) on an agent whose source can
   take text opens its prompt page, and the "New task" commands (from `projects`) open the new task
   form; both are a second `StageModel` (whose reader has no delay), so the palette reads an
-  agent's last lines only while its prompt shows (on entering and on a status change) and a started task
-  turns into the new agent's prompt. Return sends a reply while the agent is blocked and a
+  agent's last lines only while its prompt shows (on entering and on a status change) and a
+  started task turns into the new agent's prompt. Return sends a reply while the agent is blocked and a
   prompt otherwise; a success closes the palette, a failure stays on screen with the text kept.
   Choices are buttons with ⌘ digits, since plain digits are typing. Which keys move between
   pages is a pure `PaletteMode` in Core; Escape goes back to the list, and closes from there.
