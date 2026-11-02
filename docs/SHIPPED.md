@@ -288,3 +288,10 @@ Oldest first.
   claude`, but that binary is inside the app and not on PATH, so pasting it gave "command not
   found". The card now shows the full path of the `shepherd-report` beside the running app, shell
   quoted, on a line of its own, and gadget card lines can be selected and copied.
+- Notch pill on a new block (#92): the pill used to stay out for as long as any agent was
+  blocked. Now an agent that becomes blocked or finishes shows for 4 s, then the notch folds back
+  to the paw (still orange with its count). One still blocked after `notch.escalateAfter`
+  (default 300 s, `0` off) shows once more, then nothing until it unblocks and blocks again.
+  Screen readings never raise the pill. The module reads the store's event stream, which drops
+  nothing, rather than the last transitions, and each agent has one timer, so a repeat block
+  starts its ladder over.

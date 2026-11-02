@@ -42,6 +42,17 @@ import Testing
         #expect(try read(#"{"agents": []}"#).problems == ["config: agents must be an object of agent kinds"])
     }
 
+    @Test func notchEscalateAfter() throws {
+        #expect(try read("{}").config.notchEscalateAfter == 300)
+        #expect(try read(#"{"notch": {"escalateAfter": 0}}"#).config.notchEscalateAfter == 0)
+        let (config, problems) = try read(#"{"notch": {"escalateAfter": -5, "size": 2}}"#)
+        #expect(config.notchEscalateAfter == 300)
+        #expect(problems == ["config: unknown key \"notch.size\"",
+                             "config: notch.escalateAfter must be a number of seconds from 0 to 86400"])
+        #expect(try read(#"{"notch": {"escalateAfter": 1e25}}"#).config.notchEscalateAfter == 300)
+        #expect(try read(#"{"notch": 60}"#).problems == ["config: notch must be an object"])
+    }
+
     @Test func notificationsMode() throws {
         #expect(try read("{}").config.notifications == .off)
         #expect(try read(#"{"notifications": "auto"}"#).config.notifications == .auto)

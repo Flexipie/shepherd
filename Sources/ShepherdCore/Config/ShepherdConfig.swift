@@ -26,6 +26,9 @@ public struct ShepherdConfig: Sendable, Equatable {
     public var sources: SourcesConfig
     /// Which sections each tab shows and in what order, and which project columns come first.
     public var layout: PanelLayout
+    /// Seconds an agent stays blocked before the notch pill shows it once more; 0 turns that off.
+    /// At most a day, so the timer's `Duration` cannot overflow.
+    public var notchEscalateAfter: Double = 300
 
     public enum Notifications: String, Sendable, Equatable, CaseIterable {
         /// Unless a source already posts its own (herdr with `ui.toast.delivery` "system" or
@@ -82,7 +85,7 @@ public struct ShepherdConfig: Sendable, Equatable {
         var config = ShepherdConfig()
         var problems: [String] = []
         for key in table.keys.sorted() where !["modules", "tokens", "hotkeys", "agents", "notifications", "plugins",
-                                                    "sources", "layout"].contains(key) {
+                                                    "sources", "layout", "notch"].contains(key) {
             problems.append("config: unknown key \"\(key)\"")
         }
         if let modules = table["modules"] {
@@ -185,6 +188,20 @@ public struct ShepherdConfig: Sendable, Equatable {
         }
         if let layout = table["layout"] {
             config.layout = PanelLayout.read(layout, problems: &problems)
+        }
+        if let notch = table["notch"] {
+            if case .table(let keys) = notch {
+                for key in keys.keys.sorted() where key != "escalateAfter" {
+                    problems.append("config: unknown key \"notch.\(key)\"")
+                }
+                switch keys["escalateAfter"] {
+                case nil: break
+                case .number(let seconds)? where (0...86_400).contains(seconds): config.notchEscalateAfter = seconds
+                case _?: problems.append("config: notch.escalateAfter must be a number of seconds from 0 to 86400")
+                }
+            } else {
+                problems.append("config: notch must be an object")
+            }
         }
         return (config, problems)
     }

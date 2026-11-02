@@ -310,7 +310,12 @@ tabs. Each surface reports its tab to `Presence`, so a module reads only while i
   - **Ear**, when nothing is in the pill: a paw sticking out 40 pt to the left of the notch,
     a count when agents need you, orange while one is blocked, dimmed when the state is not live.
   - **Alert**, while a module offers a notch item: the pill below the notch with which agent, why,
-    and how many others wait. Click jumps there.
+    and how many others wait. Click jumps there. The `notch` module offers news, not a state: an
+    agent that becomes blocked or finishes (a change seen happening, from a live source, not a
+    screen reading) shows for 4 s, then the shape folds back to the ear. An agent still blocked
+    `notch.escalateAfter` seconds after it blocked shows once more, then nothing until it
+    unblocks and blocks again. Only the agent's own changes restart this; opening the bar or the
+    palette does not. Each window is a one-shot timer.
   - **Expanded**, while hovered: the bar. A wide, short shape centred on the notch,
     `min(1000, screen width - 160)` wide and as tall as its content, up to 30% of the screen,
     so it never covers the middle. It reads the same `PanelContentSource` as the menu bar panel
@@ -613,6 +618,8 @@ Every key is optional and a missing file means defaults. As built:
 - `hotkeys.palette`: the palette's hotkey (default `option+space`), `null` to turn it
   off. `HotKeyCenter` registers each by name, re-registers on change and reports problems as
   `hotkeys.<name>`, including two hotkeys set to the same combination.
+- `notch.escalateAfter`: seconds a blocked agent waits before the pill shows it once more
+  (default 300, `0` turns that off, at most 86400).
 
 Reading is lenient per key: a key that cannot be used is reported in the panel footer and falls
 back to its default while the rest applies; a file that is not valid JSON keeps the last good

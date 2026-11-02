@@ -11,11 +11,12 @@ they run.
 
 ### Added
 
-- **See your herd at a glance.** A paw in the menu bar and around the notch (a small floating pill
-  on a Mac without one). It shows a count when agents need you, orange while one is blocked; hover
-  the notch for a wide bar with the needs-you queue first (blocked, then finished, longest waiting
-  first), then a column per project with each agent's state and time in state. Worktrees of one
-  repo share a column.
+- **See your herd at a glance.** A paw in the menu bar and around the notch shows a count when
+  agents need you, orange while one is blocked. A pill under the notch (a small floating one on a
+  Mac without one) shows for a few seconds when an agent blocks or finishes, and once more if it is
+  still blocked five minutes later (`notch.escalateAfter`). Hover the notch for a wide bar with the
+  needs-you queue first (blocked, then finished, longest waiting first), then a column per project
+  with each agent's state and time in state. Worktrees of one repo share a column.
 - **Agents from any terminal.** Three sources: herdr, tmux and agent reports. tmux needs no setup:
   Claude Code and Codex panes are found by their process, and their state is read from the screen.
   For Claude Code, `shepherd-report install claude` (inside the app; the first-run card shows its
@@ -35,9 +36,9 @@ they run.
 - **Judge finished work from the row.** Claude Code agents under herdr show their context size and,
   once they stop, their final message, in full on the stage and in the palette.
 - **Yours to shape.** `~/.config/shepherd/config.json`, applied on save: the columns each tab
-  shows and their order, tmux screen patterns for new agent kinds, hotkeys, token styling
-  (yours, or herdr's own), and opt-in notifications with Jump and Reply. Which sources run applies
-  at the next launch.
+  shows and their order, tmux screen patterns for new agent kinds, hotkeys, when the notch pill
+  shows a blocked agent again, token styling (yours, or herdr's own), and opt-in notifications
+  with Jump and Reply. Which sources run applies at the next launch.
 - **Plugins.** A folder with a small manifest adds palette actions for the herd, a project or an
   agent, sets tokens on rows, and runs on events (agent started, blocked, finished, task started).
 - **Private.** Nothing leaves your Mac: no telemetry, no account and no network requests at all.
