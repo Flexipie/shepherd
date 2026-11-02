@@ -292,7 +292,7 @@ Every surface is optional and degrades on its own.
 
 The menu bar panel and the notch bar have two tabs at the top (`PanelTab`): **Agents**, the
 needs-you queue and the project cards, and **Gadgets**, for gadget cards (Shepherd ships none of its
-own; plugin gadgets, planned in "Plugins", will fill it). Each section says its tab
+own; plugin gadgets fill it, see "Plugins", each card its own bar column). Each section says its tab
 (`PanelSection.tab`, Agents by default), so a new gadget needs no list. A surface draws the tab bar,
 then only the current tab's sections, and its keyboard navigation covers only those. Each opening
 starts on Agents; the tab is not saved. ⌘1 and ⌘2 switch tabs while the surface has the keyboard.
@@ -420,8 +420,9 @@ tabs. Each surface reports its tab to `Presence`, so a module reads only while i
   token values); a name counts most, and its matched characters are bold. With no query, agents
   that need the user come first in queue order. It closes on Escape, an outside click, a Space
   change, losing key or after an action, and is built fresh on every opening. While open it counts
-  as a panel showing Agents (so `context` reads), never Gadgets, so gadgets do not start reading
-  for it. Tab (or →) on an agent whose
+  as a panel showing Agents (so `context` reads), and as showing Gadgets only while its Gadgets
+  page shows (the "Gadgets" command, offered while a plugin has a gadget), so plugin gadgets run
+  for it then and not on opening. Escape goes back to the list. Tab (or →) on an agent whose
   source can take text opens its prompt page, and the "New task" commands (from `projects`)
   open the new task form; both are a second `StageModel`, so the palette reads an agent's last
   lines only while its prompt shows (on entering and on a status change) and a started task
@@ -453,8 +454,8 @@ A plugin is a folder in `~/.config/shepherd/plugins/` (or `SHEPHERD_PLUGINS_PATH
 links a local one) with a `shepherd-plugin.json`, decoded leniently like the config. Every plugin
 there is on unless its id is in `plugins.disabled`. As built so far: actions, `listActions` and
 plugin tokens (`PluginHost` in Core, `ProcessPluginRunner` in the `ShellPlugins` target, the
-`plugins` module) and events (`PluginHost` runs them from `HerdStore.events()`); checks and gadgets
-are planned (ROADMAP "ready to land").
+`plugins` module), events (`PluginHost` runs them from `HerdStore.events()`) and gadgets (the
+`plugins` module's section); checks are planned (ROADMAP "ready to land").
 
 ```json
 {
@@ -476,17 +477,22 @@ are planned (ROADMAP "ready to land").
   ready to land card. `listActions` prints more actions (`{"actions": [...]}`, same shape) at
   runtime, for plugins whose actions are not known in advance; a manifest action with the same
   id wins. A failed listing keeps the last good actions.
-- **When plugins run.** Manifests are read and `listActions` run each time the palette opens
-  (off the main actor; a refresh already on its way is shared), not watched, so nothing runs at
-  idle. Removing a plugin drops its actions and tokens on the next refresh.
+- **When plugins run.** Manifests are read at launch and whenever a panel opens, and
+  `listActions` run each time the palette opens (off the main actor; a refresh already on its
+  way is shared), not watched, so nothing runs at idle. Removing a plugin drops its actions,
+  tokens and gadget on the next read.
 - **Events**: `agent.blocked`, `agent.finished`, `agent.started`, `task.started`. A plugin runs
   only for the events it lists, debounced per plugin, agent and event: a repeat within 5 s is
   dropped, and one that arrives during a run runs once more after it. Output is ignored; a failure
   shows under `plugins` in the footer. `task.started` runs in the project's environment with
   `SHEPHERD_AGENT_ID` set to the new agent, which may not be in the herd yet.
 - **Checks** add a line to a finished agent's ready to land card. They run when the card shows.
-- **Gadgets** print a card for the Gadgets tab. They run only while that tab shows, every `every`
-  seconds.
+- **Gadgets** print a card for the Gadgets tab and the palette's Gadgets page. They run only
+  while one of those shows: once on showing, then every `every` seconds (default 60, at least 2).
+  A run still going when the next is due is not started twice, and hiding the tab lets it finish
+  rather than killing it. A failure (an exit, a timeout, output that is not a card) shows as the
+  card's last line, dimmed over the last good card, and under `plugins` in the footer. With no
+  gadget plugin there is no section, so no Gadgets tab and no Gadgets command.
 
 **Running.** A command runs through `/usr/bin/env` (so a bare name is found on `PATH`, with
 Homebrew's directories added) from the plugin's folder, off the main actor, with a timeout (30 s
@@ -509,7 +515,9 @@ the palette's result page. Never silent.
 **Output.** Plain text is the result: the palette shows an action's text on a result page (no
 text closes the palette), a check's first line is its line on the card. A JSON object is applied instead: `{"text": ...}` for the result,
 `{"tokens": {"pr": "#12"}}` to set tokens on the target (an empty value removes one), and for a
-gadget `{"title": ..., "meters": [...], "lines": [...]}`. Plugin tokens render like a source's
+gadget `{"title": ..., "detail": ..., "meters": [...], "lines": [...]}` (required: a JSON object;
+the title defaults to the manifest's), each meter `{"label": ..., "fraction": 0...1, "text": ...}`
+with the text defaulting to the percent. Plugin tokens render like a source's
 tokens, so they work for every source, not only herdr. They live in memory and go when the plugin
 is removed.
 
