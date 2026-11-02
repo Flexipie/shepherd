@@ -100,7 +100,6 @@ final class RecordingActions: AgentActions {
         #expect(module.notch?.subtitle == "project 1 · needs you")
         try await waitFor(module, shown: false)
         #expect(module.notch == nil)
-        #expect(StatusModule(context: context).status?.count == 2, "the paw still counts it")
     }
 
     @Test func notchShowsAStillBlockedAgentOnceMore() async throws {

@@ -16,7 +16,7 @@ public final class NotchModule: ShepherdModule {
     @ObservationIgnored private let context: ModuleContext
     /// Agents currently inside a brief window.
     private(set) var shown: Set<AgentID> = []
-    /// Each agent's windows still to come. Replacing or cancelling one leaves `shown` to the caller.
+    /// Each agent's windows still to come.
     @ObservationIgnored private var timers: [AgentID: Task<Void, Never>] = [:]
 
     public init(context: ModuleContext) {
