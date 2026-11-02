@@ -10,12 +10,21 @@ import Testing
 @Suite struct NotchSurfaceSnapshotTests {
     let metrics = NotchMetrics(notchWidth: 200, notchHeight: 32, maxExpandedHeight: 300, maxExpandedWidth: 1000)
 
+    /// `showsNotch` draws the camera's place in grey, so content running under it shows.
     func check(_ name: String, _ mode: NotchSurfaceMode, height: CGFloat, expandedHeight: CGFloat = 0,
-               tab: PanelTab = .agents, sourceLocation: SourceLocation = #_sourceLocation) throws {
+               tab: PanelTab = .agents, showsNotch: Bool = false, sourceLocation: SourceLocation = #_sourceLocation) throws {
         let canvas = metrics.canvas
         try Snapshot.check(name, width: canvas.width, sourceLocation: sourceLocation) {
             NotchSurfaceView(mode: mode, metrics: metrics, expandedHeight: expandedHeight, clock: .fixed(SampleHerd.now),
                              tab: tab, onStage: { _ in })
+                .overlay(alignment: .topLeading) {
+                    if showsNotch {
+                        UnevenRoundedRectangle(bottomLeadingRadius: 8, bottomTrailingRadius: 8)
+                            .fill(Color.gray.opacity(0.35))
+                            .frame(width: metrics.notchWidth, height: metrics.notchHeight)
+                            .offset(x: -canvas.minX)
+                    }
+                }
                 // Only the top of the canvas, where the shape is.
                 .frame(width: canvas.width, height: height, alignment: .top)
                 .clipped()
@@ -58,7 +67,7 @@ import Testing
         // fields, whose fitting height came out a few points off under load (#54).
         let height = Snapshot.height(of: bar, width: width)
         try check(name, .expanded(content, stage: stage, offersNewTask: offersNewTask), height: height + 8,
-                  expandedHeight: height, tab: tab, sourceLocation: sourceLocation)
+                  expandedHeight: height, tab: tab, showsNotch: true, sourceLocation: sourceLocation)
     }
 
     // ImageRenderer cannot draw the reply field (an AppKit text field): it shows as a yellow

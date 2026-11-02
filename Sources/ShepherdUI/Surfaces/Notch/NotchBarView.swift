@@ -2,8 +2,8 @@ import ShepherdCore
 import SwiftUI
 
 /// The notch's expanded state: a wide, short bar along the top of the screen. The band beside the
-/// notch holds the Agents | Gadgets tabs (when any gadget is on) on its left, and the status
-/// lines, config problems and New task button on its right. On Agents the needs-you queue is
+/// notch holds the Agents | Gadgets tabs (when any gadget is on) and config problems on its left,
+/// and the status lines and New task button on its right. On Agents the needs-you queue is
 /// pinned on the left, then the project cards in two columns that share the rest of the width,
 /// then a column per other section; a project with one agent is that agent's row under the
 /// project's name, not a card. On Gadgets each gadget is a column. Columns past the width scroll
@@ -214,34 +214,32 @@ public struct NotchBarView: View {
         PanelTarget.all(in: [column]).contains { $0.id == target }
     }
 
-    /// The band beside the notch: tabs on its left; problems, status lines and New task on its
-    /// right. There whether a stage is open or not, so the bar does not jump.
+    /// The band beside the notch: tabs and config problems on its left, status lines and New task
+    /// on its right, so neither line crowds out the other. There whether a stage is open or not,
+    /// so the bar does not jump.
     private var strip: some View {
         HStack(spacing: 0) {
-            Group {
+            // An HStack, not a Group: its frame holds the left half even when it is empty.
+            HStack(spacing: 10) {
                 if content.hasTabs {
                     PanelTabBar(selected: content.shownTab(tab), onTab: onTab)
+                }
+                if !content.problems.isEmpty {
+                    Label {
+                        Text(content.problems.joined(separator: "; "))
+                    } icon: {
+                        Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                    }
+                    .help(content.problems.joined(separator: "\n"))
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             Color.clear.frame(width: notch.width + 2 * Self.spacing)
             HStack(spacing: 10) {
-                if !content.problems.isEmpty || !content.statusLines.isEmpty {
-                    HStack(spacing: 10) {
-                        if !content.problems.isEmpty {
-                            Label {
-                                Text(content.problems.joined(separator: "; "))
-                            } icon: {
-                                Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
-                            }
-                            .layoutPriority(1)
-                        }
-                        Text(content.statusLines.joined(separator: " · "))
-                            .foregroundStyle(.secondary)
-                    }
-                    .font(.system(size: 11))
-                    .lineLimit(1)
-                    .help((content.problems + content.statusLines).joined(separator: "\n"))
+                if !content.statusLines.isEmpty {
+                    Text(content.statusLines.joined(separator: " · "))
+                        .foregroundStyle(.secondary)
+                        .help(content.statusLines.joined(separator: "\n"))
                 }
                 if newTaskButton {
                     NewTaskButton { onStage?(.newTask) }
@@ -249,6 +247,8 @@ public struct NotchBarView: View {
             }
             .frame(maxWidth: .infinity, alignment: .trailing)
         }
+        .font(.system(size: 11))
+        .lineLimit(1)
         .padding(.horizontal, 18)
         .frame(height: notch.height)
     }

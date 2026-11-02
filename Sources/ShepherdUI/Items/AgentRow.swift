@@ -5,7 +5,7 @@ import SwiftUI
 /// element: "codex, api, needs you, 4 minutes". With `onJump`, an arrow after the time jumps
 /// straight to the agent; it shows while the row is hovered or selected. A context size, when
 /// known, sits before the time ("184k", or "184k context" with `namesContext`). With `checkout`,
-/// the row stands for a repo card's checkout and its one agent: the checkout's label (a branch
+/// the row stands for a checkout or project and its one agent (`SoleAgentRow`): its label (a branch
 /// glyph for a worktree, a dot when focused) as the title, then the agent's status. Under the
 /// title, the agent's last message on one line once it stopped working, unless `showsPreview` is
 /// off because the surface below shows the whole message or the agent's lines.
