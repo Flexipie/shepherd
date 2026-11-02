@@ -130,8 +130,8 @@ As built:
   `ModuleContext.sourceGuide`: whether it was found, what it gives and the next step. The
   `sources` module shows them until the first agent appears. Nothing is remembered and no file is
   written; with no config file every source runs with defaults. A source left out of `sources` has no
-  card, and the guide is read again when the palette or the notch bar opens while it shows (so installed hooks show).
-  Its last card offers demo mode.
+  card, and the guide is read again when the palette or the notch bar opens while it shows (so
+  installed hooks show). Its last card offers demo mode.
 - Demo mode (`Shepherd --demo`, or Try Demo in the status item's right-click menu or the palette,
   which opens a new Shepherd with `--demo` and quits this one; Leave Demo goes back) replaces every
   source with `DemoHerd`'s made-up herd: `HerdrFake`'s `FakeHerd.demo` on `/tmp/shepherd-demo.sock`
@@ -440,7 +440,8 @@ Shepherd's own commands come from modules too: `app` (Quit, and Open config file
   page with the herd's status and config problems (`PanelContentSource`: config problems, which
   include plugin and hotkey reports, layout problems and `HerdSummary`) and the `sources` module's
   cards without the Try Demo tip, read again on opening it so a hooks install shows. With problems
-  the footer notice counts them and points to Status (only while the command is offered). While no
+  the footer notice counts them and points to Status (only while the command is offered); with
+  none and a live herd in demo mode it says the agents are made up and to type Leave Demo. While no
   agents or projects show, the `sources` module's first-run guide sits above the command rows
   until something is typed, with no row selected until an arrow picks one, so Return never runs a
   command the guide pushed out of view.
@@ -491,8 +492,8 @@ plugin tokens (`PluginHost` in Core, `ProcessPluginRunner` in the `ShellPlugins`
   ready to land card. `listActions` prints more actions (`{"actions": [...]}`, same shape) at
   runtime, for plugins whose actions are not known in advance; a manifest action with the same
   id wins. A failed listing keeps the last good actions.
-- **When plugins run.** Manifests are read at launch and whenever the palette or the notch bar opens (while the
-  `plugins` module is on), and
+- **When plugins run.** Manifests are read at launch and whenever the palette or the notch bar
+  opens (while the `plugins` module is on), and
   `listActions` run each time the palette opens (off the main actor; a refresh already on its
   way is shared), not watched, so nothing runs at idle. Removing a plugin drops its actions,
   tokens and gadget on the next read.
@@ -524,8 +525,8 @@ passes the target as environment variables:
   row shows: the source's tokens with the plugins' over them);
 - `SHEPHERD_EVENT` (the event's name) for events.
 
-Problems loading or listing are config problems under `plugins` (the palette's Status page); an action's failure shows on
-the palette's result page. Never silent.
+Problems loading or listing are config problems under `plugins` (the palette's Status page); an
+action's failure shows on the palette's result page. Never silent.
 
 **Output.** Plain text is the result: the palette shows an action's text on a result page (no
 text closes the palette), a check's first line is its line on the card. A JSON object is applied instead: `{"text": ...}` for the result,

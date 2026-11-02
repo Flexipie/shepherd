@@ -159,8 +159,8 @@ final class AppController {
         followSourcesConfig()
     }
 
-    /// Fills the first-run guide, then again each time the palette or the notch bar opens while it shows, so installing
-    /// Claude Code's hooks is seen without a restart.
+    /// Fills the first-run guide, then again each time the palette or the notch bar opens while it
+    /// shows, so installing Claude Code's hooks is seen without a restart.
     private func explainSources() {
         let visible = withObservationTracking {
             presence.isPanelVisible

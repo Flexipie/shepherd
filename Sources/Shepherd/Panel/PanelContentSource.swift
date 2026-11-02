@@ -1,9 +1,9 @@
 import ShepherdCore
 import ShepherdUI
 
-/// What the notch bar shows, computed from the modules and the store. The palette's Status page
-/// reads its status lines and problems, so the two never drift, arranged by `layout` in config. Read inside
-/// observation tracking to redraw when any of it changes.
+/// What the notch bar shows, computed from the modules and the store and arranged by `layout` in
+/// config. The palette's Status page reads its status lines and problems, so the two never drift.
+/// Read inside observation tracking to redraw when any of it changes.
 @MainActor
 struct PanelContentSource {
     let store: HerdStore

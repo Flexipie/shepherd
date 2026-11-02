@@ -103,7 +103,8 @@ config, history, plugins or notifications); Leave Demo in the same menu or the p
   file (its folder while there is no file) and Open plugins folder, and, once you type them, Quit
   and Try Demo or Leave Demo, so Return on an empty palette never quits or relaunches. Status shows
   config, plugin and hotkey problems, each source (found, connected or not, and how to connect) and
-  the herd's status lines; when there is a problem the palette's footer says so.
+  the herd's status lines; when there is a problem the palette's footer says so, and in demo mode
+  it says the agents are made up.
   Before any agent or project shows, the first-run guide sits above the commands until you type;
   ↓ picks a command.
 - **"Next" hotkey.** ⌃⌥⌘N jumps to the next agent that needs you; press again to walk the queue.
@@ -282,8 +283,8 @@ can be left out:
   (default 300, at most 86400); `0` shows it only when it blocks.
 - `plugins.disabled`: plugin ids to leave off. Every plugin in the plugins folder is on otherwise.
 
-A mistake never breaks the app: the palette's Status page says what is wrong, and a file that is not valid
-JSON keeps the last good config.
+A mistake never breaks the app: the palette's Status page says what is wrong, and a file that is
+not valid JSON keeps the last good config.
 
 ## Development
 
