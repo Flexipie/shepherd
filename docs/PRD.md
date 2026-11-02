@@ -392,7 +392,7 @@ on both tabs. Each surface reports its tab to `Presence`, so a module reads only
   withdraws it once the agent moves on. `"auto"` stays quiet for a source whose
   `SourceUpdate.postsSystemAlerts` is set: herdr's `ui.toast.delivery` "system" or "terminal"
   ("herdr" toasts draw inside herdr's own window). Permission is asked on the first post and
-  checked before each one; while it is off in System Settings the footer says so. Confirmed: an
+  checked before each one; while it is off in System Settings the bar says so beside the notch. Confirmed: an
   ad-hoc signed `make app` bundle can ask and post; a Focus mode hides the banners.
 
   Hovering expands after 120 ms of rest and collapses 300 ms after the mouse leaves; an AppKit
