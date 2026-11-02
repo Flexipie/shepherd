@@ -56,7 +56,6 @@ struct NewTaskView: View {
                         .padding(.horizontal, 8)
                         .padding(.vertical, 6)
                         .background(RoundedRectangle(cornerRadius: 7).fill(Color.primary.opacity(0.08)))
-                        // Return starts the task, as Start does; Shift- or Option-Return adds a line.
                         .onKeyPress(.return, phases: .down) { press in
                             guard press.modifiers.isDisjoint(with: [.shift, .option]) else { return .ignored }
                             start()
