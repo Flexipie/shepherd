@@ -130,20 +130,9 @@ import Testing
         try checkExpanded("notch-expanded", SampleHerd.content)
     }
 
-    /// The Agents tab, with the tab bar on top and the "+".
+    /// The bar with the "+". The README's picture.
     @Test func expandedOnAgents() throws {
-        try checkExpanded("notch-bar", SampleHerd.contentWithGadgets, offersNewTask: true)
-    }
-
-    /// Usage and This Mac side by side. No "+" off Agents.
-    @Test func expandedOnGadgets() throws {
-        try checkExpanded("notch-bar-gadgets", SampleHerd.contentWithGadgets, offersNewTask: true, tab: .gadgets)
-    }
-
-    @Test func expandedWithUsageNotRunning() throws {
-        let content = PanelContent(sections: [SampleHerd.queue, SampleHerd.usageNotRunning, SampleHerd.system, SampleHerd.projects],
-                                   statusLines: SampleHerd.content.statusLines)
-        try checkExpanded("notch-bar-usage-not-running", content, tab: .gadgets)
+        try checkExpanded("notch-bar", SampleHerd.content, offersNewTask: true)
     }
 
     /// Worktrees of one repo share a column.

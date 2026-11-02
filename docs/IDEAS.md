@@ -64,7 +64,7 @@ know it.
   parallelism, which a single-session recap cannot.
 
 - **Per-agent CPU and memory.** herdr's `pane.process_info` could give each agent's process
-  tree; a small figure on the row or stage, sampled only while shown, like the system gadget.
+  tree; a small figure on the row or stage, sampled only while shown.
 - **Codex context size.** Codex writes its sessions under `~/.codex/sessions`; a reader there
   would give Codex agents the same context size Claude Code agents have.
 
@@ -125,15 +125,12 @@ No model in v1. Every idea here works with rules, search or the agent's own repo
 - **Liquid Glass.** Use the system glass material for the notch pill and panel so
   Shepherd looks like part of the system.
 - **Haptic nudge.** A light trackpad haptic when hovering the notch while something needs you.
-- **Built-in Claude usage reader.** For people without OpenUsage, a fallback `UsageReader` that
-  reads Claude Code's own token and asks the usage endpoint. Read-only: it must never refresh a
-  token or write to Claude Code's keychain item, and it stays opt-in since it uses the network.
-- **A badge on the Gadgets tab.** A dot or a figure on the tab when a usage limit is near, so
-  the limit is noticed without opening Gadgets. It would need a cheap signal that does not read
-  while the tab is hidden, such as the last report's numbers.
-- **More notch gadgets.** Usage, system and context size shipped; more wait for the UI pass (roadmap).
-  Others that could follow as modules whose sections become columns: a timer, a clipboard shelf,
-  a scratch note. Each must not dilute "your herd at a glance".
+- **A badge on the Gadgets tab.** A dot or a figure on the tab when a gadget's meter is near its
+  limit, so it is noticed without opening Gadgets. It would need a cheap signal that does not run
+  while the tab is hidden, such as the last card's numbers.
+- **More gadgets.** Built-in usage and system gadgets shipped, then were removed for plugin gadgets
+  (#94). Ideas for plugins: plan usage, CPU and memory, a timer, a clipboard shelf, a scratch note.
+  Each must not dilute "your herd at a glance".
 
 ## Personality
 

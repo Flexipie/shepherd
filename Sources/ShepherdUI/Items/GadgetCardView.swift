@@ -2,8 +2,8 @@ import ShepherdCore
 import SwiftUI
 
 /// A gadget's card: its title and detail, then a thin bar per meter with its value and when it
-/// resets, then its lines. Dimmed when the data is stale. One accessibility element. Usage and
-/// This Mac are both drawn by it; a gadget whose content fits needs no view of its own.
+/// resets, then its lines. Dimmed when the data is stale. One accessibility element. A gadget whose
+/// content fits needs no view of its own.
 struct GadgetCardView: View {
     let card: GadgetCard
     let now: Date
@@ -44,7 +44,7 @@ struct GadgetCardView: View {
         .accessibilityLabel(accessibilityText)
     }
 
-    private func meterView(_ meter: UsageMeter) -> some View {
+    private func meterView(_ meter: GadgetMeter) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(meter.label)

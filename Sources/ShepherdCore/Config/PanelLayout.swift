@@ -19,6 +19,17 @@ public struct PanelLayout: Sendable, Equatable {
     /// Every section id the tab lists name, for checking them against the known modules.
     public var sectionIDs: [String] { PanelTab.allCases.flatMap { tabs[$0] ?? [] } }
 
+    /// Without `ids`, as if the config never named them. A list left empty by it counts as no
+    /// list, so an old `gadgets` list of removed modules does not hide the tab's other sections.
+    public func removing(_ ids: Set<String>) -> PanelLayout {
+        var layout = self
+        for (tab, list) in tabs {
+            let kept = list.filter { !ids.contains($0) }
+            layout.tabs[tab] = kept.isEmpty && !list.isEmpty ? nil : kept
+        }
+        return layout
+    }
+
     /// The sections to show: each tab with a list keeps only the listed sections, in list order,
     /// at the place of the tab's first section; other tabs are untouched.
     public func arrange(_ sections: [PanelSection]) -> [PanelSection] {

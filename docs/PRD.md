@@ -136,24 +136,13 @@ As built:
   stand-in for tmux (`DemoScreenSource`, under tmux's source id, labelled inferred, never running
   tmux). Answering, replying, jumping and new tasks all work against it. Nothing of the user's is
   read or written: the config is the defaults (no file), there is no transition log, no plugins,
-  no notifications, no usage, no Claude Code session reads and no look for herdr's terminal. The
+  no notifications, no Claude Code session reads and no look for herdr's terminal. The
   herd starts the same each time, so screenshots do (the working report goes quiet after 15
   minutes, as reports do). Try Demo is left out while another Shepherd runs, and leaving a demo
   that runs beside one (`make demo`) only quits it.
   The `demo` module labels it at the top of the Agents tab, and the menu and the glyph's
   accessibility label say Demo. Each start replaces the socket and spool; quitting removes them.
 - `HerdrKit` stays a standalone herdr client: socket, models, `SessionEngine`, transition tracking.
-- Gadgets read through a reader target the same way: the module decides when, a separate target
-  does the I/O. `OpenUsageSource` implements `UsageReader` (in `ShepherdCore`, with
-  `UsageReport`, `UsageProvider`, `UsageMeter`) over OpenUsage's local API (`GET
-  http://127.0.0.1:6736/v1/limits`, `openusage.limits.v1`): an ephemeral session, a 2 s timeout,
-  no proxy, loopback only (`SHEPHERD_OPENUSAGE_URL` may point at another loopback address).
-  Decoding is lenient; `consumption` resources become meters, non-empty `balance` ones notes,
-  `errors[]` notes on their provider. Shepherd never reads credentials or calls a vendor API.
-  `SystemSource` implements `SystemSampler` (`SystemSample` in `ShepherdCore`) with Mach host
-  calls only: CPU as the busy share of `HOST_CPU_LOAD_INFO` ticks since the previous sample,
-  memory from `HOST_VM_INFO64` as Activity Monitor's "Memory Used" (internal less purgeable,
-  plus wired, plus compressed pages), total from `ProcessInfo.physicalMemory`.
 - An agent's own files are read the same way, never as a source: herdr reports each agent's
   `cwd` and `agent_session` (`{"agent":"claude","kind":"id","value":"<session id>"}`), which
   `HerdrSource` passes on as a source-neutral `HerdAgent.session` (`AgentSession`: kind, id,
@@ -302,14 +291,15 @@ This is the herdr source. herdr speaks newline-delimited JSON over a Unix socket
 Every surface is optional and degrades on its own.
 
 The menu bar panel and the notch bar have two tabs at the top (`PanelTab`): **Agents**, the
-needs-you queue and the project cards, and **Gadgets**, usage, This Mac and future gadgets. Each
-section says its tab (`PanelSection.tab`, Agents by default), so a new gadget needs no list. A
-surface draws the tab bar, then only the current tab's sections, and its keyboard navigation
-covers only those. Each opening starts on Agents; the tab is not saved. ⌘1 and ⌘2 switch tabs
-while the surface has the keyboard. With no section off Agents (every gadget turned off, or
-hidden by `layout.gadgets`) there is no tab bar. The stage and the "+" live on Agents; switching
-away closes a stage. The footer shows on both tabs. Each surface reports its tab to `Presence`,
-so a module reads only while its tab shows (`Presence.isShowing(_:)`).
+needs-you queue and the project cards, and **Gadgets**, for gadget cards (Shepherd ships none of its
+own; plugin gadgets, planned in "Plugins", will fill it). Each section says its tab
+(`PanelSection.tab`, Agents by default), so a new gadget needs no list. A surface draws the tab bar,
+then only the current tab's sections, and its keyboard navigation covers only those. Each opening
+starts on Agents; the tab is not saved. ⌘1 and ⌘2 switch tabs while the surface has the keyboard.
+With no section off Agents (every gadget turned off, or hidden by `layout.gadgets`) there is no tab
+bar. The stage and the "+" live on Agents; switching away closes a stage. The footer shows on both
+tabs. Each surface reports its tab to `Presence`, so a module reads only while its tab shows
+(`Presence.isShowing(_:)`).
 
 - **Menu bar.** Counts (working, needs you) and a disconnected state. On a MacBook a crowded menu
   bar can hide the item behind the notch, which is one more reason the notch surface exists.
@@ -364,16 +354,6 @@ so a module reads only while its tab shows (`Presence.isShowing(_:)`).
     `new-window` too, since tmux gives a pane its caller's PATH and an app
     opened from Finder has a short one. Until a scan lists the new pane, read, focus and replies
     reach it by its pane id. A project outside git says it has nothing to make a worktree from.
-- **Usage** (the `usage` module), on the Gadgets tab, a column in the bar and a section in the
-  menu bar panel: one card per OpenUsage provider (Claude accounts first), each limit as a thin
-  bar (orange from 80%) with its value and "resets in", notes below, dimmed when stale. It reads
-  only while a surface shows Gadgets (`Presence.isShowing(.gadgets)`): on showing it when the
-  last report is missing or past its earliest future `expiresAt`, then once more at that time if
-  still shown; leaving the tab or closing cancels it. Without OpenUsage running the column says so.
-- **This Mac** (the `system` module), on the Gadgets tab, a column after usage: one card with CPU
-  and memory as bars, in the same gadget card as usage. While Gadgets shows it samples once (which only
-  primes the CPU reading), after 0.5 s, then every 2 s; leaving the tab or closing cancels the
-  task, so nothing runs otherwise.
 - **Context size and final message** (the `context` module, no section of its own): a Claude
   Code agent's context size on its row ("184k", before the time; help "Context: 184,213
   tokens") and in its stage header ("184k context"), and its last message. While a surface shows
@@ -574,9 +554,7 @@ what it shows changes. A panel section holds agent rows and project cards, each 
 lines already styled and the `PanelAction` it performs (jump to an agent, focus a project), or
 none when the source cannot. A section names its tab (`PanelSection.tab`); a gadget sets
 `.gadgets` and reads only while `Presence.isShowing(.gadgets)`. Built in: `status`, `notch`, `demo` (says the herd is made up, in demo mode only), `queue` (the needs-you queue, live
-sources only), `usage` (plan usage, read through `ModuleContext.usage` only while Gadgets
-shows), `system` (CPU and memory, sampled through `ModuleContext.system` only while Gadgets
-shows), `context` (context sizes and final messages, read through `ModuleContext.contextReader` only
+sources only), `context` (context sizes and final messages, read through `ModuleContext.contextReader` only
 while Agents or the palette shows), `sources` (the first-run guide: while the herd has no agents, one card per place agents
 can come from, from `ModuleContext.sourceGuide`, which the app fills at launch), `notifications` and `projects` (the cards; a source that is not live shows its last known state,
 dimmed, never as current; two or more checkouts of one repo, by `HerdProject.repo`, share one
@@ -585,8 +563,9 @@ with its agents under it; a checkout with one agent is a single row, its label t
 state, which jumps to the agent).
 
 `ModuleRegistry` builds the enabled modules from `config.modules` (all, in default order, when
-absent), reports unknown ids, and rebuilds when the list changes; a module that stays enabled
-keeps its instance and state.
+absent), reports unknown ids (but not `BuiltinModules.retired`, the ids of removed modules such
+as `usage` and `system`, which an old config may still name), and rebuilds when the list
+changes; a module that stays enabled keeps its instance and state.
 
 ### Adding a module
 
@@ -626,8 +605,9 @@ Every key is optional and a missing file means defaults. As built:
   project's and its repo's names (a repo card also to each checkout's), so a project keeps its
   place when a second checkout makes it a repo card. The rest follow in source order, and a name
   with no project is not an error (projects come and go). An id that names no module is reported
-  under `layout`. A hidden gadget's module still runs while its tab shows; leave it out of
-  `modules` to stop it.
+  under `layout`, except a retired one (`usage`, `system`), which is dropped as if never listed; a
+  list left empty by that counts as no list. A hidden gadget's module still runs while its tab
+  shows; leave it out of `modules` to stop it.
 - `tokens`: `projects` and `agents`, each a list of lines in herdr's sidebar syntax (see "Tokens").
 - `hotkeys.next`: the "next" hotkey, `null` to turn it off.
 - `hotkeys.palette`: the palette's hotkey (default `option+space`), `null` to turn it

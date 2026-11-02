@@ -10,10 +10,6 @@ public final class ModuleContext {
     public let config: ConfigStore
     /// Posts system notifications; nil where there are none (tests, or before the app sets one).
     public let notifier: (any Notifier)?
-    /// Reads plan usage limits; nil where there is no reader.
-    public let usage: (any UsageReader)?
-    /// Measures the Mac's CPU and memory; nil where there is no sampler.
-    public let system: (any SystemSampler)?
     /// Reads an agent's context size from its session; nil where there is no reader.
     public let contextReader: (any AgentContextReader)?
     /// Context sizes by agent, filled by the module that reads them.
@@ -26,15 +22,12 @@ public final class ModuleContext {
     public let isDemo: Bool
 
     public init(store: HerdStore, presence: Presence, actions: any AgentActions, config: ConfigStore = ConfigStore(fixed: .defaults),
-                notifier: (any Notifier)? = nil, usage: (any UsageReader)? = nil, system: (any SystemSampler)? = nil,
-                contextReader: (any AgentContextReader)? = nil, plugins: PluginHost? = nil, isDemo: Bool = false) {
+                notifier: (any Notifier)? = nil, contextReader: (any AgentContextReader)? = nil, plugins: PluginHost? = nil, isDemo: Bool = false) {
         self.store = store
         self.presence = presence
         self.actions = actions
         self.config = config
         self.notifier = notifier
-        self.usage = usage
-        self.system = system
         self.contextReader = contextReader
         self.plugins = plugins
         self.isDemo = isDemo

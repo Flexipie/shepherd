@@ -110,45 +110,15 @@ enum SampleHerd {
         return PanelContent(sections: [queue, projects], statusLines: ["4 working, 3 waiting"])
     }()
 
-    // MARK: Usage
+    // MARK: Gadgets
 
-    static func meter(_ id: String, _ label: String, _ fraction: Double, _ text: String? = nil, resetsIn: TimeInterval? = nil) -> UsageMeter {
-        UsageMeter(id: id, label: label, fraction: fraction, valueText: text ?? "\(Int(fraction * 100))%",
-                   resetsAt: resetsIn.map { now.addingTimeInterval($0) })
-    }
-
-    static let personal = UsageProvider(id: "claude", name: "Claude, personal", plan: "Max 5x", meters: [
-        meter("session", "Session", 0.77, resetsIn: 3 * 3600 + 37 * 60),
-        meter("weekly", "Weekly", 0.21, resetsIn: 6 * 86_400 + 12 * 3600),
-        meter("sonnet", "Sonnet", 0.03),
-    ], notes: ["1 limit reset available"])
-
-    static let team = UsageProvider(id: "claude@a1", name: "Claude, team", plan: "Team", isStale: true, meters: [
-        meter("weekly", "Weekly", 1, resetsIn: 18 * 3600),
-        meter("extraUsage", "Extra usage", 0.33, "$114 of $350"),
-    ], notes: ["Session expired. Run `claude` to log in again."])
-
-    static let codex = UsageProvider(id: "codex", name: "Codex", plan: "Plus", meters: [
-        meter("weekly", "Weekly", 0.36, resetsIn: 5 * 86_400 + 8 * 3600),
-    ])
-
-    static let usage = PanelSection(id: "usage", title: "Usage", items: [personal, team, codex].map { .gadget(GadgetCard($0)) },
-                                    emptyText: "Reading usage…", tab: .gadgets)
-
-    static let usageNotRunning = PanelSection(id: "usage", title: "Usage", items: [
-        .notice("OpenUsage is not running. Shepherd reads Claude and Codex usage from it: github.com/robinebers/openusage"),
+    static let gadget = PanelSection(id: "deploys", title: "Deploys", items: [
+        .gadget(GadgetCard(id: "deploys", title: "Deploys", meters: [
+            GadgetMeter(id: "today", label: "Today", fraction: 0.4, valueText: "4 of 10"),
+        ])),
     ], emptyText: "", tab: .gadgets)
 
-    // MARK: This Mac
-
-    static let system = PanelSection(id: "system", title: "This Mac", items: [
-        .gadget(GadgetCard(id: "system", title: "CPU and memory", meters: [
-            meter("cpu", "CPU", 0.23),
-            meter("memory", "Memory", 0.86, "31.0 of 36 GB"),
-        ])),
-    ], emptyText: "Measuring…", tab: .gadgets)
-
-    /// Every module on, in default order: the Agents and Gadgets tabs.
-    static let contentWithGadgets = PanelContent(sections: [queue, usage, system, projects], statusLines: content.statusLines)
+    /// A gadget on: the Agents and Gadgets tabs.
+    static let contentWithGadgets = PanelContent(sections: [queue, gadget, projects], statusLines: content.statusLines)
 }
 

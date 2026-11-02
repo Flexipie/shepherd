@@ -2,12 +2,10 @@ import AppKit
 import ClaudeSessionSource
 import DemoHerd
 import HerdrSource
-import OpenUsageSource
 import ReportSource
 import ShellPlugins
 import ShepherdCore
 import ShepherdModules
-import SystemSource
 import TmuxSource
 
 /// Wires the store, sources, modules and surfaces together. Owns everything for the app's lifetime.
@@ -38,8 +36,8 @@ final class AppController {
     /// The first-run guide has been filled once; after that it is refreshed only when a panel opens.
     private var guideFilled = false
 
-    /// In demo mode no plugin runs, no notification is posted and no usage or Claude Code session
-    /// is read: they are the user's own.
+    /// In demo mode no plugin runs, no notification is posted and no Claude Code session is read:
+    /// they are the user's own.
     init(demo: Bool) {
         isDemo = demo
         log = demo ? nil : TransitionLog(url: ProcessInfo.processInfo.environment["SHEPHERD_TRANSITION_LOG"]
@@ -51,9 +49,8 @@ final class AppController {
         notifier = demo ? nil : SystemNotifier(store: store, actions: actions, config: config)
         let plugins = demo ? nil : PluginHost(runner: ProcessPluginRunner(), store: store, config: config)
         context = ModuleContext(store: store, presence: presence, actions: actions, config: config, notifier: notifier,
-                                    usage: demo ? nil : OpenUsageReader(), system: MachSystemSampler(),
                                     contextReader: demo ? nil : ClaudeContextReader(), plugins: plugins, isDemo: demo)
-        registry = ModuleRegistry(available: BuiltinModules.all, context: context)
+        registry = ModuleRegistry(available: BuiltinModules.all, retired: BuiltinModules.retired, context: context)
     }
 
     func start() {

@@ -26,24 +26,31 @@ import Testing
         }
     }
 
-    let sections = [section("queue"), section("usage", .gadgets), section("system", .gadgets), section("projects")]
+    let sections = [section("queue"), section("deploys", .gadgets), section("load", .gadgets), section("projects")]
 
     @Test func leftOutKeepsEverySectionInModuleOrder() throws {
         let (layout, problems) = try read("{}")
         #expect(layout == PanelLayout())
         #expect(problems.isEmpty)
-        #expect(layout.arrange(sections).map(\.id) == ["queue", "usage", "system", "projects"])
+        #expect(layout.arrange(sections).map(\.id) == ["queue", "deploys", "load", "projects"])
         #expect(names(layout.orderProjects([card("b"), card("a")])) == ["b", "a"])
     }
 
     @Test func badPartsAreReportedAndKeepTheirDefaults() throws {
-        let (layout, problems) = try read(#"{"layout": {"agents": "queue", "gadgets": ["usage"], "projects": [1], "tabs": []}}"#)
-        #expect(layout == PanelLayout(tabs: [.gadgets: ["usage"]]))
+        let (layout, problems) = try read(#"{"layout": {"agents": "queue", "gadgets": ["deploys"], "projects": [1], "tabs": []}}"#)
+        #expect(layout == PanelLayout(tabs: [.gadgets: ["deploys"]]))
         #expect(problems == [
             "config: unknown key \"layout.tabs\"",
             "config: layout.agents must be a list of section ids",
             "config: layout.projects must be a list of project names",
         ])
         #expect(try read(#"{"layout": []}"#).problems == ["config: layout must be an object with agents, gadgets and projects"])
+    }
+
+    @Test func removedIdsDropAndAListTheyEmptyCountsAsNone() {
+        let layout = PanelLayout(tabs: [.agents: ["queue", "old"], .gadgets: ["old"]], projects: ["api"])
+        #expect(layout.removing(["old"]) == PanelLayout(tabs: [.agents: ["queue"]], projects: ["api"]))
+        let hidden = PanelLayout(tabs: [.gadgets: []])
+        #expect(hidden.removing(["old"]) == hidden, "an empty list the user wrote still hides the tab's sections")
     }
 }

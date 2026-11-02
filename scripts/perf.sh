@@ -52,7 +52,6 @@ SHEPHERD_PLUGINS_PATH="$work/plugins" \
 SHEPHERD_SPOOL_DIR="$work/spool" \
 HERDR_CONFIG_PATH="$work/herdr.toml" \
 CLAUDE_CONFIG_DIR="$work/claude" \
-SHEPHERD_OPENUSAGE_URL="http://127.0.0.1:9" \
     "$root/build/Shepherd.app/Contents/MacOS/Shepherd" >"$work/app.log" 2>&1 &
 app_pid=$!
 

@@ -4,18 +4,21 @@ import Observation
 /// default order when the key is absent) and rebuilt when that list changes, so a config save
 /// adds, removes and reorders modules live. A module that stays enabled keeps its instance and
 /// its state. Surfaces read `modules` inside observation tracking. Section ids in `layout` that
-/// name no module are reported too.
+/// name no module are reported too, except `retired` ones: removed modules an old config may
+/// still name, ignored without a word.
 @MainActor
 @Observable
 public final class ModuleRegistry {
     public private(set) var modules: [any ShepherdModule] = []
+    public let retired: Set<String>
 
     @ObservationIgnored private let available: [any ShepherdModule.Type]
     @ObservationIgnored private let context: ModuleContext
     @ObservationIgnored private var enabled: [String]?
 
-    public init(available: [any ShepherdModule.Type], context: ModuleContext) {
+    public init(available: [any ShepherdModule.Type], retired: Set<String> = [], context: ModuleContext) {
         self.available = available
+        self.retired = retired
         self.context = context
         update()
     }
@@ -45,7 +48,7 @@ public final class ModuleRegistry {
     }
 
     private func report(_ unknown: [String], for key: String, suffix: String = "") {
-        let names = unknown.map { "\"\($0)\"" }.joined(separator: ", ")
-        context.config.report(unknown.isEmpty ? nil : "config: unknown module \(names)\(suffix)", for: key)
+        let names = unknown.filter { !retired.contains($0) }.map { "\"\($0)\"" }.joined(separator: ", ")
+        context.config.report(names.isEmpty ? nil : "config: unknown module \(names)\(suffix)", for: key)
     }
 }
