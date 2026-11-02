@@ -34,18 +34,14 @@ they run.
   jumps, Tab opens an agent's prompt page. ⌃⌥⌘N jumps to the next agent that needs you.
 - **Judge finished work from the row.** Claude Code agents under herdr show their context size and,
   once they stop, their final message, in full on the stage and in the palette.
-- **Gadgets.** A second tab with plan usage from
-  [OpenUsage](https://github.com/robinebers/openusage) and the Mac's own CPU and memory, read only
-  while the tab shows.
-- **Yours to shape.** `~/.config/shepherd/config.json`, applied on save: the columns and gadgets
-  each tab shows and their order, tmux screen patterns for new agent kinds, hotkeys, token styling
+- **Yours to shape.** `~/.config/shepherd/config.json`, applied on save: the columns each tab
+  shows and their order, tmux screen patterns for new agent kinds, hotkeys, token styling
   (yours, or herdr's own), and opt-in notifications with Jump and Reply. Which sources run applies
   at the next launch.
 - **Plugins.** A folder with a small manifest adds palette actions for the herd, a project or an
   agent, sets tokens on rows, and runs on events (agent started, blocked, finished, task started).
-- **Private.** Nothing leaves your Mac: no telemetry, no account, and the only network request is
-  the usage gadget asking OpenUsage on loopback. The README lists every file Shepherd reads and
-  writes.
+- **Private.** Nothing leaves your Mac: no telemetry, no account and no network requests at all.
+  The README lists every file Shepherd reads and writes.
 - **Light on the Mac.** No polling: Shepherd waits for events. Measured at idle against a fake
   herdr, it uses 0% CPU and about 14 MB of memory; `make perf` fails if idle goes over 0.5% CPU or
   60 MB.

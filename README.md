@@ -107,11 +107,6 @@ Leave Demo in the same menu goes back.
 - **Projects and worktrees.** tmux agents are grouped by git checkout and herdr's by workspace,
   and the worktrees of one repo share a card: the repo's name on top, then each checkout with its own agents. Type the repo's
   name in the palette to find them all.
-- **Agents | Gadgets.** Two tabs (⌘1, ⌘2) in the panel and the bar. Gadgets holds **Usage** (your
-  Claude Code, Codex and other plan limits with when each resets, read from
-  [OpenUsage](https://github.com/robinebers/openusage) if it is running) and **This Mac** (CPU and
-  memory). A gadget reads only while its tab shows. With every gadget turned off there are no
-  tabs.
 - **Context size and final message** (Claude Code under herdr, or reporting through its hooks
   outside tmux). A row shows how full the agent's context is ("184k"), and once it stops, its
   last message on one line; the stage and the palette show the whole message.
@@ -133,8 +128,8 @@ hotkeys work either way; to see the menu bar icon too, ⌘-drag it somewhere vis
 Shepherd runs on your Mac and talks to nothing outside it. No telemetry, no analytics, no update
 check, no account.
 
-- **Network:** none, except the Usage gadget, which asks OpenUsage on `127.0.0.1:6736` (loopback
-  only) while the Gadgets tab shows. Shepherd holds no credentials and never calls a vendor API.
+- **Network:** none. Shepherd makes no network calls at all, holds no credentials and never calls
+  a vendor API.
 - **What it reads:** herdr's local socket and its `config.toml`; tmux's socket folder, to find
   its servers, and its pane list, the last lines
   of agent panes and the process table (`ps`), to tell which panes run an agent (one control client,
@@ -187,8 +182,8 @@ can be left out:
 
 ```json
 {
-  "modules": ["status", "notch", "demo", "sources", "queue", "usage", "system", "projects",
-              "notifications", "context", "plugins"],
+  "modules": ["status", "notch", "demo", "sources", "queue", "projects", "notifications",
+              "context", "plugins"],
   "tokens": {
     "projects": [[{ "token": "pr", "fg": "#94e2d5", "rules": [{ "contains": "draft", "dim": true }] }, "ticket_state"]],
     "agents": [["summary"]]
@@ -198,14 +193,14 @@ can be left out:
   "notifications": "off",
   "plugins": { "disabled": [] },
   "sources": ["herdr", "report", "tmux"],
-  "layout": { "agents": ["sources", "queue", "projects"], "gadgets": ["system", "usage"],
-              "projects": ["api"] }
+  "layout": { "agents": ["sources", "queue", "projects"], "projects": ["api"] }
 }
 ```
 
 - `modules`: which modules run, in order. Panel sections follow this order (unless `layout`
   lists that tab); in the notch bar the queue stays on the left and the others follow as columns.
-  `demo` shows something only in demo mode.
+  `demo` shows something only in demo mode. `usage` and `system`, the gadgets of earlier
+  versions, are ignored here and in `layout`.
 - `sources`: where agents come from, in the order listed: `herdr`, `report` (`shepherd-report`)
   and `tmux`. Left out, all three run, in that order. A change applies the next time Shepherd starts. tmux can be an
   object instead, to teach it an agent or change how it reads one:
@@ -223,8 +218,7 @@ can be left out:
   kinds on one process are reported. Pattern changes apply on save.
 - `layout`: choose and order what the panel and the bar show, without turning modules off.
   `agents` and `gadgets` list the sections of that tab in order (`sources` (the first-run guide),
-  `queue` and `projects` on Agents; `usage` and `system` on Gadgets); one you leave out is
-  hidden. `projects` names the project or repo columns to show first, in that order (a project
+  `queue` and `projects` on Agents); one you leave out is hidden. `projects` names the project or repo columns to show first, in that order (a project
   or its repo's name); the rest follow.
 - `tokens`: per section, lines of tokens in herdr's sidebar syntax (`fg`, `bold`, `dim`, and
   `rules` with `equals`, `contains`, `starts_with`, `gt`, `lt`, `ignore_case`, `hide`). A section
@@ -272,11 +266,6 @@ Shepherd has no third-party dependencies.
 [docs/README.md](docs/README.md) indexes everything else, including the architecture and how to
 add a module or a source ([docs/PRD.md](docs/PRD.md)).
 What changed in each release is in [docs/CHANGELOG.md](docs/CHANGELOG.md).
-
-## Thanks
-
-The usage gadget reads from [OpenUsage](https://github.com/robinebers/openusage) by Robin Ebers
-(MIT), which does the hard part of finding and refreshing each account.
 
 ## License
 

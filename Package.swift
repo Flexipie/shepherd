@@ -24,10 +24,6 @@ let package = Package(
         .target(name: "ShepherdCore"),
         // herdr as a source: adapts HerdrKit to the herd model. The only target that sees both.
         .target(name: "HerdrSource", dependencies: ["HerdrKit", "ShepherdCore"]),
-        // OpenUsage's local API as a usage reader: loopback only, read-only, no credentials.
-        .target(name: "OpenUsageSource", dependencies: ["ShepherdCore"]),
-        // The Mac's CPU and memory from Mach host calls, as a system sampler. No files, no I/O.
-        .target(name: "SystemSource", dependencies: ["ShepherdCore"]),
         // Plugin commands as processes, for the plugin host in ShepherdCore.
         .target(name: "ShellPlugins", dependencies: ["ShepherdCore"]),
         // Claude Code's session files as a context reader: read-only, the file's tail only.
@@ -52,12 +48,10 @@ let package = Package(
         // every view can be snapshot tested.
         .target(name: "ShepherdUI", dependencies: ["ShepherdCore"]),
         // The app: menu bar item, panel, notch pill, settings.
-        .executableTarget(name: "Shepherd", dependencies: ["ShepherdModules", "ShepherdCore", "ShepherdUI", "HerdrSource", "OpenUsageSource", "SystemSource", "ClaudeSessionSource", "ShellPlugins", "ReportSource", "TmuxSource", "DemoHerd"]),
+        .executableTarget(name: "Shepherd", dependencies: ["ShepherdModules", "ShepherdCore", "ShepherdUI", "HerdrSource", "ClaudeSessionSource", "ShellPlugins", "ReportSource", "TmuxSource", "DemoHerd"]),
         .testTarget(name: "HerdrKitTests", dependencies: ["HerdrKit", "HerdrFake"]),
         .testTarget(name: "HerdrSourceTests", dependencies: ["HerdrSource", "HerdrKit", "HerdrFake", "ShepherdCore"]),
-        .testTarget(name: "OpenUsageSourceTests", dependencies: ["OpenUsageSource", "ShepherdCore"], resources: [.copy("Fixtures")]),
         .testTarget(name: "ClaudeSessionSourceTests", dependencies: ["ClaudeSessionSource", "ShepherdCore", "HerdrSource", "HerdrKit"], resources: [.copy("Fixtures")]),
-        .testTarget(name: "SystemSourceTests", dependencies: ["SystemSource", "ShepherdCore"]),
         .testTarget(name: "ShellPluginsTests", dependencies: ["ShellPlugins", "ShepherdCore"]),
         .testTarget(name: "ReportKitTests", dependencies: ["ReportKit"]),
         .testTarget(name: "ReportSourceTests", dependencies: ["ReportSource", "ReportKit", "ShepherdCore"]),

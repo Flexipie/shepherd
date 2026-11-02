@@ -9,8 +9,6 @@ public enum BuiltinModules {
         DemoModule.self,
         SourcesModule.self,
         QueueModule.self,
-        UsageModule.self,
-        SystemModule.self,
         ProjectsModule.self,
         NotificationsModule.self,
         ContextModule.self,
