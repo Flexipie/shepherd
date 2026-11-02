@@ -75,7 +75,8 @@ Point a dev run at the fake and away from your real files with environment varia
   with a running Shepherd.
 - `HERDR_CONFIG_PATH=<path>`: herdr's config, read for sidebar token styling.
 - `SHEPHERD_PLUGINS_PATH=<path>`: the plugins folder (default `~/.config/shepherd/plugins`).
-- `SHEPHERD_SPOOL_DIR=<path>`: the agent report folder.
+- `SHEPHERD_SPOOL_DIR=<path>`: the agent report folder (default
+  `~/Library/Application Support/Shepherd/reports`).
 - `TMUX_TMPDIR=<path>`: tmux's socket folder, for the tmux source; give the same existing folder
   to a tmux started with `env -u TMUX`. `docs/CONTRIBUTING.md` has the whole recipe.
 

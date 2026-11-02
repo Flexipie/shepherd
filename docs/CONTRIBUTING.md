@@ -41,7 +41,7 @@ swift run FakeHerdr /tmp/shepherd-fake.sock
 ```
 
 Then, in another terminal, point a build at it. The config turns the tmux and report sources off
-(they would find your real agents) and the hotkeys off (so a running Shepherd keeps its own), and
+(tmux would find your real agents) and the hotkeys off (so a running Shepherd keeps its own), and
 the other variables keep your history, plugins and report folder out of it:
 
 ```bash
@@ -68,8 +68,11 @@ env -u TMUX TMUX_TMPDIR=/tmp/shepherd-dev/tmux SHEPHERD_SPOOL_DIR=/tmp/shepherd-
 ```
 
 Then run Shepherd as above with `TMUX_TMPDIR=/tmp/shepherd-dev/tmux` added and
-`"sources": ["herdr", "tmux"]` in its config. The folder must exist first: without it, tmux
-quietly uses its usual one.
+`"sources": ["herdr", "report", "tmux"]` in its config (the report source reads only the dev
+folder). The folder must exist first: without it, tmux quietly uses its usual one.
+
+Do not use Try Demo in a dev build: Leave Demo relaunches the app without these variables, on your
+real config and agents.
 
 `Sources/FakeHerdr/main.swift` lists every fake herdr command.
 
@@ -88,8 +91,8 @@ These keep the app small, fast and easy to change. A PR that breaks one will be 
   `BuiltinModules.all`. See "Adding a module" in [PRD.md](PRD.md).
 - Decode herdr and agent JSON leniently: ignore unknown fields, tolerate missing optional ones.
 - No polling where events exist: subscribe and re-read state when told it changed. A gadget
-  samples only while it shows. Idle CPU must stay
-  under the budget in [PRD.md](PRD.md), "Performance budget".
+  samples only while it shows. Idle CPU must stay under the budget in [PRD.md](PRD.md),
+  "Performance budget".
 - Never commit real data. Test fixtures are sanitised (no real paths, titles or ids); record
   them with `make fixture NAME=<name> SECONDS=10` and read them before committing.
 - Keep files small and focused.
