@@ -306,6 +306,7 @@ HERDR_SOCKET_PATH=/tmp/shepherd-fake.sock SHEPHERD_TRANSITION_LOG=/tmp/fake-log.
 ```
 
 Shepherd has no third-party dependencies.
+[docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) says how to build, test and send a change.
 [docs/README.md](docs/README.md) indexes everything else, including the architecture and how to
 add a module or a source ([docs/PRD.md](docs/PRD.md)).
 What changed in each release is in [docs/CHANGELOG.md](docs/CHANGELOG.md).
