@@ -2,8 +2,9 @@ import Foundation
 import Observation
 
 /// The user's plugins: loads them from their folder, runs their actions and gadgets and keeps the
-/// tokens they set. Plugins are read at launch and when a surface asks (a panel opening), not
-/// watched, so nothing runs at idle. Problems go to the config footer under `plugins`.
+/// tokens they set. Plugins are read at launch and when a surface asks (a panel opening, with the
+/// `plugins` module on), not watched, so nothing runs at idle. Problems go to the config footer
+/// under `plugins`.
 @MainActor
 @Observable
 public final class PluginHost {
@@ -264,7 +265,7 @@ public final class PluginHost {
             }
             gadgetRuns.remove(plugin.id)
             guard plugins.contains(plugin) else { return }
-            if let card { gadgetCards[plugin.id] = card }
+            if let card, gadgetCards[plugin.id] != card { gadgetCards[plugin.id] = card }
             if gadgetFailures[plugin.id] != failure {
                 gadgetFailures[plugin.id] = failure
                 report()

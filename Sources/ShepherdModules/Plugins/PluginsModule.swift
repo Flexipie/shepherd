@@ -20,6 +20,11 @@ public final class PluginsModule: ShepherdModule {
         watch()
     }
 
+    /// Turned off while Gadgets shows, its loops would otherwise run on.
+    isolated deinit {
+        loops.values.forEach { $0.task.cancel() }
+    }
+
     public var panel: PanelSection? {
         guard let plugins = context.plugins, !plugins.gadgetPlugins.isEmpty else { return nil }
         return PanelSection(id: Self.id, title: "Gadgets", items: Self.cards(plugins).map(PanelItem.gadget), emptyText: "Running…",

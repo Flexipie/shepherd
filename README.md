@@ -247,7 +247,8 @@ can be left out:
   kinds on one process are reported. Pattern changes apply on save.
 - `layout`: choose and order what the panel and the bar show, without turning modules off.
   `agents` and `gadgets` list the sections of that tab in order (`sources` (the first-run guide),
-  `queue` and `projects` on Agents; none are built in on Gadgets); one you leave out is hidden.
+  `queue` and `projects` on Agents; `plugins`, the plugin gadgets, on Gadgets); one you leave out
+  is hidden.
   `projects` names the project or repo columns to show first, in that order (a project or its
   repo's name); the rest follow.
 - `tokens`: per section, lines of tokens in herdr's sidebar syntax (`fg`, `bold`, `dim`, and

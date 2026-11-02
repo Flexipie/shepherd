@@ -422,7 +422,7 @@ tabs. Each surface reports its tab to `Presence`, so a module reads only while i
   change, losing key or after an action, and is built fresh on every opening. While open it counts
   as a panel showing Agents (so `context` reads), and as showing Gadgets only while its Gadgets
   page shows (the "Gadgets" command, offered while a plugin has a gadget), so plugin gadgets run
-  for it then and not on opening. Escape goes back to the list. Tab (or →) on an agent whose
+  for it then and not on opening. Tab (or →) on an agent whose
   source can take text opens its prompt page, and the "New task" commands (from `projects`)
   open the new task form; both are a second `StageModel`, so the palette reads an agent's last
   lines only while its prompt shows (on entering and on a status change) and a started task
@@ -477,7 +477,8 @@ plugin tokens (`PluginHost` in Core, `ProcessPluginRunner` in the `ShellPlugins`
   ready to land card. `listActions` prints more actions (`{"actions": [...]}`, same shape) at
   runtime, for plugins whose actions are not known in advance; a manifest action with the same
   id wins. A failed listing keeps the last good actions.
-- **When plugins run.** Manifests are read at launch and whenever a panel opens, and
+- **When plugins run.** Manifests are read at launch and whenever a panel opens (while the
+  `plugins` module is on), and
   `listActions` run each time the palette opens (off the main actor; a refresh already on its
   way is shared), not watched, so nothing runs at idle. Removing a plugin drops its actions,
   tokens and gadget on the next read.
@@ -570,7 +571,7 @@ none when the source cannot. A section names its tab (`PanelSection.tab`); a gad
 `.gadgets` and reads only while `Presence.isShowing(.gadgets)`. Built in: `status`, `notch`, `demo` (says the herd is made up, in demo mode only), `queue` (the needs-you queue, live
 sources only), `context` (context sizes and final messages, read through `ModuleContext.contextReader` only
 while Agents or the palette shows), `sources` (the first-run guide: while the herd has no agents, one card per place agents
-can come from, from `ModuleContext.sourceGuide`, which the app fills at launch), `notifications` and `projects` (the cards; a source that is not live shows its last known state,
+can come from, from `ModuleContext.sourceGuide`, which the app fills at launch), `notifications`, `plugins` (plugin actions as commands, and plugin gadgets as cards on Gadgets) and `projects` (the cards; a source that is not live shows its last known state,
 dimmed, never as current; two or more checkouts of one repo, by `HerdProject.repo`, share one
 `PanelRepoCard` at the place of the first, main checkout first, each checkout a sub-header
 with its agents under it; a checkout with one agent is a single row, its label then the agent's
