@@ -7,8 +7,8 @@ public enum NotchSurfaceMode: Sendable, Equatable {
     case ear(StatusContribution)
     /// Someone is blocked or just finished: the pill below the notch.
     case alert(NotchItem)
-    /// Hovered: the bar, with a stage open in it or not, and with a "+" for new tasks when the
-    /// herd can start them.
+    /// Hovered: the bar, with a stage open in it or not, and with a New task button when the herd
+    /// can start tasks.
     case expanded(PanelContent, stage: BarStage? = nil, offersNewTask: Bool = false)
 
     public var kind: NotchMetrics.Kind {

@@ -55,7 +55,7 @@ struct BarColumn: Sendable, Equatable, Identifiable {
             switch item {
             // A project with one agent is a single row, as a repo's checkout with one is.
             case .project(let card): RepoCard.soleAgent(card) == nil ? 1 + card.agents.count : 1
-            case .repo(let card): 1 + card.projects.reduce(0) { $0 + max(1, $1.agents.count) }
+            case .repo(let card): 1 + card.projects.reduce(0) { $0 + (RepoCard.soleAgent($1) == nil ? 1 + $1.agents.count : 1) }
             default: nil
             }
         }

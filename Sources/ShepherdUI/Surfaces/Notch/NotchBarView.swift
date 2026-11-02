@@ -3,12 +3,12 @@ import SwiftUI
 
 /// The notch's expanded state: a wide, short bar along the top of the screen. The band beside the
 /// notch holds the Agents | Gadgets tabs (when any gadget is on) on its left, and the status
-/// lines, config problems and New task button on its right. On Agents the needs-you queue is pinned on the left, then
-/// the project cards in two columns that share the rest of the width, then a column per other
-/// section; a project with one agent is that agent's row under the project's name, not a card.
-/// On Gadgets each gadget is a column. Columns past the width scroll sideways, and each
-/// scrolls on its own past `maxHeight`. Arrows move across the grid, Return chooses, hovering
-/// selects, ⌘1 and ⌘2 switch tabs.
+/// lines, config problems and New task button on its right. On Agents the needs-you queue is
+/// pinned on the left, then the project cards in two columns that share the rest of the width,
+/// then a column per other section; a project with one agent is that agent's row under the
+/// project's name, not a card. On Gadgets each gadget is a column. Columns past the width scroll
+/// sideways, and each scrolls on its own past `maxHeight`. Arrows move across the grid, Return
+/// chooses, hovering selects, ⌘1 and ⌘2 switch tabs.
 ///
 /// With `onStage`, choosing an agent's row opens its stage in place of the project columns
 /// instead of jumping, and `offersNewTask` shows the New task button, which opens the new task
@@ -91,7 +91,7 @@ public struct NotchBarView: View {
             strip
             HStack(alignment: .top, spacing: Self.spacing) {
                 if let pinned {
-                    column(pinned, now: now)
+                    column(pinned, now: now, cardWidth: Self.columnWidth)
                 }
                 if pinned != nil, stage != nil || !rest.isEmpty {
                     Divider()
@@ -146,7 +146,7 @@ public struct NotchBarView: View {
     }
 
     @ViewBuilder
-    private func column(_ column: BarColumn, now: Date, cardWidth: CGFloat = 0) -> some View {
+    private func column(_ column: BarColumn, now: Date, cardWidth: CGFloat) -> some View {
         let width = column.isQueue ? Self.queueWidth : column.kind == .projects ? cardWidth : Self.columnWidth
         let items = columnItems(column, now: now).frame(width: width, alignment: .topLeading)
         if let maxHeight {
@@ -191,8 +191,9 @@ public struct NotchBarView: View {
         }
     }
 
-    /// Room the stage needs around its lines: its header and an error line.
-    static let stageChrome: CGFloat = 58
+    /// Room the stage needs around its lines: its header (with a line of tokens) and a two-line
+    /// error.
+    static let stageChrome: CGFloat = 80
 
     private var newTaskButton: Bool { offersNewTask && onStage != nil && content.shownTab(tab) == .agents }
 

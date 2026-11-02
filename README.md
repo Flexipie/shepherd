@@ -87,7 +87,7 @@ config, history, plugins or notifications); Leave Demo in the same menu or the p
 
 - **The notch.** A paw to the left of the notch shows a count when agents need you, orange while
   one is blocked. Hover it and a bar grows along the top of the screen: the needs-you queue
-  (blocked first, then finished, longest waiting first), then one column per project. Hovering
+  (blocked first, then finished, longest waiting first), then the projects in two columns. Hovering
   does not take your typing; click inside for the arrow keys, Return and Escape. A pill under the
   notch (a small floating one on Macs without a notch) is for news: an agent that becomes blocked
   or finishes shows for a few seconds, then folds away while the paw keeps the count (the menu
