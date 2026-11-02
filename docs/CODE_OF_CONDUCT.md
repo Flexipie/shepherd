@@ -21,8 +21,8 @@ background, identity or experience.
 
 Report a problem privately to the maintainer through the repository's
 [Security tab](https://github.com/Flexipie/shepherd/security) (**Report a vulnerability**, and say
-it is a conduct report), or use GitHub's **Report content** on the comment itself. Reports are
-kept confidential.
+it is a conduct report). Reports are kept confidential. You can also report a comment to GitHub
+itself with **Report content**.
 
 The maintainer may edit or remove comments, commits and issues that break this code, and may warn
 or ban someone from the project, temporarily or for good.

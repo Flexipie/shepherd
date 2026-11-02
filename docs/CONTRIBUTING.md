@@ -40,19 +40,26 @@ swift run FakeHerdr /tmp/shepherd-fake.sock
 # token w1 pr=#12 draft, token w2:p1 summary=tests pass, stop, start
 ```
 
-Point a build at it, and away from your own config, history and plugins, with environment
-variables:
+Then, in another terminal, point a build at it. The config turns the tmux and report sources off
+(they would find your real agents) and the hotkeys off (so a running Shepherd keeps its own), and
+the other variables keep your history, plugins and report folder out of it:
 
 ```bash
 make app
+mkdir -p /tmp/shepherd-dev/plugins /tmp/shepherd-dev/spool
+echo '{ "sources": ["herdr"], "hotkeys": { "next": null, "palette": null } }' \
+  >/tmp/shepherd-dev/config.json
 HERDR_SOCKET_PATH=/tmp/shepherd-fake.sock \
-  SHEPHERD_TRANSITION_LOG=/tmp/shepherd-fake-log.jsonl \
-  SHEPHERD_CONFIG_PATH=/tmp/shepherd-config.json \
-  SHEPHERD_PLUGINS_PATH=/tmp/shepherd-plugins \
+  SHEPHERD_CONFIG_PATH=/tmp/shepherd-dev/config.json \
+  SHEPHERD_TRANSITION_LOG=/tmp/shepherd-dev/transitions.jsonl \
+  SHEPHERD_PLUGINS_PATH=/tmp/shepherd-dev/plugins \
+  SHEPHERD_SPOOL_DIR=/tmp/shepherd-dev/spool \
   build/Shepherd.app/Contents/MacOS/Shepherd
 ```
 
-For the tmux source, use a private server (`tmux -L shepherd-dev`) rather than your own.
+To work on the tmux source, give tmux and Shepherd their own socket folder, so Shepherd sees only
+the tmux you start for it: run tmux with `TMUX_TMPDIR=/tmp/shepherd-dev/tmux`, and Shepherd with
+the same variable and `"tmux"` in its `sources`.
 `Sources/FakeHerdr/main.swift` lists every fake herdr command.
 
 ## Rules
@@ -94,15 +101,16 @@ Anti-aliasing differs between macOS builds, so the comparison is strict only on 
 in `Tests/ShepherdUITests/__Snapshots__/RECORDED_ON`. On any other build (and in CI) the views are
 rendered but not compared; CI uploads them as the `view-renders` artifact.
 
-To re-record after changing a view:
+Recording rewrites every reference and `RECORDED_ON` with your build, so record only when your
+build (`sw_vers -buildVersion`) is the one in `RECORDED_ON`:
 
 ```bash
 SHEPHERD_RECORD_SNAPSHOTS=1 swift test --filter ShepherdUITests
 ```
 
 Look at every image that changed before committing it, and say in the PR which changed and why.
-If your macOS build is not the one in `RECORDED_ON`, say so: the maintainer re-records on that
-build. A failure in a snapshot with a text field is sometimes a few points off under load
+On any other build, do not record: run the tests, look at your view in `.build/snapshot-renders/`,
+and say in the PR that the snapshots need recording. The maintainer records them on that build. A failure in a snapshot with a text field is sometimes a few points off under load
 ([#54](https://github.com/Flexipie/shepherd/issues/54)); run it again on its own before chasing
 it.
 
@@ -114,7 +122,8 @@ it.
   ran to check it (and what you could not try).
 - Update the README and [PRD.md](PRD.md) where behaviour or config changed. Config changes are
   additive.
-- CI runs `make build` and `make test` on macOS 26 for every PR.
+- CI runs `make build` and `make test` on macOS 26 for every PR. On a first PR from a fork it
+  starts once the maintainer approves it.
 
 Commit messages are short and plain: say what changed.
 

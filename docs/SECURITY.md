@@ -5,12 +5,12 @@
 Report a security problem privately, not in a public issue: open the repository's
 [Security tab](https://github.com/Flexipie/shepherd/security) and choose **Report a
 vulnerability**. Only the maintainer sees it. Say what you found, how to reproduce it, and which
-version or commit you built.
+commit you built.
 
-Once it is fixed, the fix ships in the next release, and you are credited in the advisory unless
-you would rather not be.
+Once it is fixed, the fix lands on `main`, and you are credited in the advisory unless you would
+rather not be.
 
-Only the latest code on `main` and the latest release are supported.
+Only the latest code on `main` is supported.
 
 ## What Shepherd trusts
 
