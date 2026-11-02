@@ -104,7 +104,7 @@ config, history, plugins or notifications); Leave Demo in the same menu or the p
   and Try Demo or Leave Demo, so Return on an empty palette never quits or relaunches. Status shows
   config, plugin and hotkey problems, each source (found, connected or not, and how to connect) and
   the status lines the menu bar panel shows; when there is a problem the palette's footer says so.
-  Before any agent shows, the palette shows the first-run guide until you type.
+  Before any agent or project shows, the palette shows the first-run guide until you type.
 - **"Next" hotkey.** ⌃⌥⌘N jumps to the next agent that needs you; press again to walk the queue.
 - **New task.** The "+" after the project columns, or "New task…" in the palette: pick a project,
   an agent and a prompt (a branch name is optional). Shepherd makes a git worktree from that
