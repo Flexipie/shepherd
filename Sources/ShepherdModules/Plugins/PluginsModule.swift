@@ -3,8 +3,8 @@ import ShepherdCore
 
 /// The user's plugins in the palette and on the Gadgets tab: each global action is a command,
 /// and each gadget a card. Project and agent actions show on ⌘K for the selected project or
-/// agent. Gadgets run only while a surface shows the Gadgets tab: once on showing it, then every
-/// `every` seconds. With no gadget plugin there is no section and no Gadgets command, so no tab.
+/// agent, and Open plugins folder is a command too. Gadgets run only while a surface shows the
+/// Gadgets tab: once on showing it, then every `every` seconds. With no gadget plugin there is no section and no Gadgets command, so no tab.
 /// Opening a panel reads the manifests again, so a plugin dropped in shows. With no plugin host
 /// in the context it offers nothing.
 @MainActor
@@ -35,12 +35,13 @@ public final class PluginsModule: ShepherdModule {
 
     public var commands: [PaletteCommand] {
         guard let plugins = context.plugins else { return [] }
+        let folder = PaletteCommand(id: "plugins.folder", title: "Open plugins folder", symbol: "folder", action: .openPluginsFolder)
         let actions = plugins.actions(for: .global).map { plugin, action in
             Self.command(plugin, action, target: .global)
         }
-        guard !plugins.gadgetPlugins.isEmpty else { return actions }
+        guard !plugins.gadgetPlugins.isEmpty else { return actions + [folder] }
         return actions + [PaletteCommand(id: "plugins.gadgets", title: "Gadgets", symbol: "square.grid.2x2",
-                                         keywords: ["plugin", "widgets"], action: .gadgets)]
+                                         keywords: ["plugin", "widgets"], action: .gadgets), folder]
     }
 
     /// Every gadget's card that has run, in plugin order.

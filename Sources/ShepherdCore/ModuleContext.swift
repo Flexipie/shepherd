@@ -20,9 +20,12 @@ public final class ModuleContext {
     public let plugins: PluginHost?
     /// The herd is demo mode's made-up one, so surfaces say so.
     public let isDemo: Bool
+    /// The demo switch's title (Try Demo or Leave Demo), read when asked; nil while it is not offered.
+    public let demoTitle: @MainActor () -> String?
 
     public init(store: HerdStore, presence: Presence, actions: any AgentActions, config: ConfigStore = ConfigStore(fixed: .defaults),
-                notifier: (any Notifier)? = nil, contextReader: (any AgentContextReader)? = nil, plugins: PluginHost? = nil, isDemo: Bool = false) {
+                notifier: (any Notifier)? = nil, contextReader: (any AgentContextReader)? = nil, plugins: PluginHost? = nil, isDemo: Bool = false,
+                demoTitle: @escaping @MainActor () -> String? = { nil }) {
         self.store = store
         self.presence = presence
         self.actions = actions
@@ -31,6 +34,7 @@ public final class ModuleContext {
         self.contextReader = contextReader
         self.plugins = plugins
         self.isDemo = isDemo
+        self.demoTitle = demoTitle
     }
 
     /// Token lines for a project's or an agent's values: the config's layout for that section,

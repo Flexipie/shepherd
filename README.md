@@ -76,11 +76,11 @@ Any other agent can report too, from its own hooks or scripts:
 `shepherd-report report --status working|blocked|done|idle|closed [--message <text>]`.
 
 To try Shepherd without real agents, right-click the menu bar icon and choose Try Demo (the
-first-run guide points there too), or run `make demo` (the app with `--demo`, beside any Shepherd
-already running). You get a made-up herd from all three sources: three herdr projects, two Claude
-Code reports and two tmux agents, under a "Demo herd" card that says they are made up. Demo mode
-reads and writes nothing of yours (no herdr, tmux, config, history, plugins or notifications);
-Leave Demo in the same menu goes back.
+first-run guide points there too, and typing "demo" in the palette finds it), or run `make demo`
+(the app with `--demo`, beside any Shepherd already running). You get a made-up herd from all three
+sources: three herdr projects, two Claude Code reports and two tmux agents, under a "Demo herd"
+card that says they are made up. Demo mode reads and writes nothing of yours (no herdr, tmux,
+config, history, plugins or notifications); Leave Demo in the same menu or the palette goes back.
 
 ## What it does
 
@@ -99,7 +99,9 @@ Leave Demo in the same menu goes back.
 - **Palette.** ⌥Space from any app opens a search box. Type part of an agent, a project, a state
   or any token (a PR number, a ticket) and press Return to jump. Tab (or →) on an agent turns the
   field into a prompt for it, with its last lines underneath; approval choices are ⌘1, ⌘2 and so
-  on. Your current app stays frontmost.
+  on. Your current app stays frontmost. Shepherd's own commands are there too: Open config file (its
+  folder while there is no file) and Open plugins folder, and, once you type them, Quit and Try
+  Demo or Leave Demo, so Return on an empty palette never quits or relaunches.
 - **"Next" hotkey.** ⌃⌥⌘N jumps to the next agent that needs you; press again to walk the queue.
 - **New task.** The "+" after the project columns, or "New task…" in the palette: pick a project,
   an agent and a prompt (a branch name is optional). Shepherd makes a git worktree from that
@@ -211,7 +213,7 @@ can be left out:
 ```json
 {
   "modules": ["status", "notch", "demo", "sources", "queue", "projects", "notifications",
-              "context", "plugins"],
+              "context", "plugins", "app"],
   "tokens": {
     "projects": [[{ "token": "pr", "fg": "#94e2d5", "rules": [{ "contains": "draft", "dim": true }] }, "ticket_state"]],
     "agents": [["summary"]]
@@ -228,8 +230,10 @@ can be left out:
 
 - `modules`: which modules run, in order. Panel sections follow this order (unless `layout`
   lists that tab); in the notch bar the queue stays on the left and the others follow as columns.
-  `demo` shows something only in demo mode. `usage` and `system`, the gadgets of earlier
-  versions, are ignored here and in `layout`.
+  `demo` shows its card only in demo mode, and offers Try Demo or Leave Demo in the palette. `app`
+  gives the palette Quit and Open config file; a list written before it existed needs
+  `app` added for them. `usage` and `system`, the gadgets of earlier versions, are ignored here
+  and in `layout`.
 - `sources`: where agents come from, in the order listed: `herdr`, `report` (`shepherd-report`)
   and `tmux`. Left out, all three run, in that order. A change applies the next time Shepherd starts. tmux can be an
   object instead, to teach it an agent or change how it reads one:

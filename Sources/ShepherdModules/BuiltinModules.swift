@@ -13,6 +13,7 @@ public enum BuiltinModules {
         NotificationsModule.self,
         ContextModule.self,
         PluginsModule.self,
+        AppModule.self,
     ]
 
     /// Ids of modules that were removed, so an old config naming them still loads quietly.

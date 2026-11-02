@@ -186,7 +186,9 @@ final class StubPluginRunner: PluginRunner, @unchecked Sendable {
         let context = ModuleContext(store: store, presence: Presence(), actions: RecordingActions(), plugins: host)
         let commands = PluginsModule(context: context).commands
         #expect(commands == [PaletteCommand(id: "plugins.alpha.y", title: "Deploy", symbol: "paperplane", keywords: ["Alpha", "plugin"],
-                                            action: .plugin(PluginActionRef(plugin: "alpha", action: "y", target: .global)))])
+                                            action: .plugin(PluginActionRef(plugin: "alpha", action: "y", target: .global))),
+                             PaletteCommand(id: "plugins.folder", title: "Open plugins folder", symbol: "folder",
+                                            action: .openPluginsFolder)])
         #expect(PluginsModule(context: ModuleContext(store: store, presence: Presence(), actions: RecordingActions())).commands.isEmpty)
     }
 }
