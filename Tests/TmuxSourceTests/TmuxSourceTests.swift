@@ -307,4 +307,32 @@ struct TmuxSourceTests {
             try await store.prompt(agent.id, "hello")
         }
     }
+
+    // A report says done as the turn ends, before the screen's idle has settled: Reply must work then (#88).
+    @Test func aPromptIsTakenAsSoonAsTheScreenShowsIdle() async throws {
+        let folder = try scratch()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        // The turn ends when the test says so, so a slow start cannot make the first reading idle.
+        let end = folder.appending(path: "end")
+        try "#!/bin/sh\ncat <<'SCREEN'\n\(Self.working)\nSCREEN\nwhile [ ! -f \(end.path) ]; do sleep 0.1; done\nprintf '\\033[2J\\033[H'\ncat <<'SCREEN'\n\(Self.idle)\nSCREEN\nsleep 120\n"
+            .write(to: folder.appending(path: "claude"), atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: folder.appending(path: "claude").path)
+        let tmux = try PrivateTmux(binary: binary, folder: folder, command: "\(folder.path)/claude")
+        defer { withExtendedLifetime(tmux) {} }
+        let (store, source) = try running(folder)
+        defer { Task { await source.stop() } }
+        await until { store.agents.first?.status == .working }
+        let agent = try #require(store.agents.first)
+        try Data().write(to: end)
+        var shownWhenTaken: HerdStatus?
+        for _ in 0..<40 {
+            let shown = store.agents.first?.status
+            if (try? await store.prompt(agent.id, "hello")) != nil {
+                shownWhenTaken = shown
+                break
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        #expect(shownWhenTaken == .working)
+    }
 }

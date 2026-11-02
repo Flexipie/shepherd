@@ -8,14 +8,16 @@ import Testing
     static let pane = "tmux:/tmp/tmux-501/default:%3"
     let folder = "/work/app"
 
-    func screenAgent(status: HerdStatus = .working) -> HerdAgent {
+    func screenAgent(status: HerdStatus = .working, at time: TimeInterval? = nil) -> HerdAgent {
         HerdAgent(id: AgentID(source: "tmux", local: Self.pane), kind: "claude", name: "claude",
-                  projectID: ProjectID(source: "tmux", local: folder), project: "app", status: status, isInferred: true)
+                  projectID: ProjectID(source: "tmux", local: folder), project: "app", status: status,
+                  since: time.map { Since(Date(timeIntervalSince1970: $0), .exact) }, isInferred: true)
     }
 
-    func reportAgent(status: HerdStatus = .blocked) -> HerdAgent {
+    func reportAgent(status: HerdStatus = .blocked, at time: TimeInterval? = nil) -> HerdAgent {
         HerdAgent(id: AgentID(source: "report", local: Self.pane), kind: "claude", name: "claude",
-                  projectID: ProjectID(source: "report", local: folder), project: "app", status: status)
+                  projectID: ProjectID(source: "report", local: folder), project: "app", status: status,
+                  since: time.map { Since(Date(timeIntervalSince1970: $0), .exact) })
     }
 
     func screenProject() -> HerdProject {
@@ -124,6 +126,81 @@ import Testing
         store.apply(SourceUpdate(agents: [], state: .live, transitions: [closed]), from: "report")
         #expect(store.agents.map(\.id) == [tmuxID])
         #expect(store.agents.first?.isInferred == true)
+    }
+
+    // Claude Code runs no hook when an approval is answered No, so its report stays blocked: the
+    // screen settling on idle afterwards takes the row out of needs-you, told once (#88).
+    @Test func aBlockedReportTheScreenMovedOnFromGivesWay() async {
+        let store = makeStore()
+        var events = store.events().makeAsyncIterator()
+        let tmuxID = AgentID(source: "tmux", local: Self.pane)
+        store.apply(SourceUpdate(agents: [screenAgent(status: .blocked, at: 100)], state: .live), from: "tmux")
+        store.apply(SourceUpdate(agents: [reportAgent(status: .blocked, at: 101)], state: .live), from: "report")
+        #expect(store.needsYou.map(\.id) == [tmuxID])
+
+        let answered = HerdTransition(agent: tmuxID, from: .blocked, to: .idle, at: Date(timeIntervalSince1970: 110))
+        store.apply(SourceUpdate(agents: [screenAgent(status: .idle, at: 110)], state: .live, transitions: [answered]),
+                    from: "tmux")
+        #expect(store.agents.map(\.status) == [.idle])
+        #expect(store.needsYou.isEmpty)
+        let gaveWay = HerdTransition(agent: tmuxID, kind: "claude", project: "app", from: .blocked, to: .idle,
+                                     at: Date(timeIntervalSince1970: 110))
+        #expect(store.lastTransitions == [gaveWay])
+        // A screen that then reads unknown (a long draft, a menu) does not hand the row back to the old report.
+        store.apply(SourceUpdate(agents: [screenAgent(status: .unknown, at: 115)], state: .live), from: "tmux")
+        #expect(store.agents.map(\.status) == [.unknown])
+        #expect(store.needsYou.isEmpty)
+
+        // The next prompt's report is newer than the screen: the row is the report's again, and plugins hear it.
+        let prompted = HerdTransition(agent: reportAgent().id, from: .blocked, to: .working, at: Date(timeIntervalSince1970: 120))
+        store.apply(SourceUpdate(agents: [reportAgent(status: .working, at: 120)], state: .live, transitions: [prompted]),
+                    from: "report")
+        #expect(store.agents.map(\.status) == [.working])
+        let back = HerdTransition(agent: tmuxID, kind: "claude", project: "app", from: .unknown, to: .working,
+                                  at: Date(timeIntervalSince1970: 120))
+        #expect(store.lastTransitions == [back])
+        guard case .transitions(let batch)? = await events.next() else { Issue.record("nothing announced"); return }
+        #expect(batch == [back])
+    }
+
+    // An interrupted turn leaves a working report, and a quiet one reads unknown: the screen says better.
+    @Test func aWorkingOrQuietReportTheScreenContradictsGivesWay() {
+        let store = makeStore()
+        store.apply(SourceUpdate(agents: [screenAgent(status: .idle, at: 110)], state: .live), from: "tmux")
+        store.apply(SourceUpdate(agents: [reportAgent(status: .working, at: 100)], state: .live), from: "report")
+        #expect(store.agents.map(\.status) == [.idle])
+        store.apply(SourceUpdate(agents: [screenAgent(status: .working, at: 90)], state: .live), from: "tmux")
+        store.apply(SourceUpdate(agents: [reportAgent(status: .unknown, at: 1000)], state: .live), from: "report")
+        #expect(store.agents.map(\.status) == [.working])
+    }
+
+    // After Esc and a new prompt the report keeps its old working, so the screen gives the row; an
+    // approval the screen reads first still reaches plugins and notices when the report blocks.
+    @Test func aBlockAfterTheRowGaveWayIsStillTold() {
+        let store = makeStore()
+        let tmuxID = AgentID(source: "tmux", local: Self.pane)
+        store.apply(SourceUpdate(agents: [screenAgent(status: .idle, at: 110)], state: .live), from: "tmux")
+        store.apply(SourceUpdate(agents: [reportAgent(status: .working, at: 100)], state: .live), from: "report")
+        store.apply(SourceUpdate(agents: [screenAgent(status: .working, at: 120)], state: .live), from: "tmux")
+        store.apply(SourceUpdate(agents: [screenAgent(status: .blocked, at: 130)], state: .live), from: "tmux")
+        let blocked = HerdTransition(agent: reportAgent().id, from: .working, to: .blocked, at: Date(timeIntervalSince1970: 131))
+        store.apply(SourceUpdate(agents: [reportAgent(status: .blocked, at: 131)], state: .live, transitions: [blocked]),
+                    from: "report")
+        #expect(store.agents.first?.isInferred == false)
+        let told = HerdTransition(agent: tmuxID, kind: "claude", project: "app", from: .working, to: .blocked,
+                                  at: Date(timeIntervalSince1970: 131))
+        #expect(store.lastTransitions == [told])
+    }
+
+    // The usual approval: the report blocks after the screen last settled, so the report's state stands,
+    // and a done report over an idle screen stays done.
+    @Test func aReportNewerThanTheScreenKeepsTheRow() {
+        let store = makeStore()
+        store.apply(SourceUpdate(agents: [screenAgent(status: .idle, at: 100)], state: .live), from: "tmux")
+        store.apply(SourceUpdate(agents: [reportAgent(status: .blocked, at: 110)], state: .live), from: "report")
+        #expect(store.agents.map(\.status) == [.blocked])
+        store.apply(SourceUpdate(agents: [reportAgent(status: .done, at: 90)], state: .live), from: "report")
+        #expect(store.agents.map(\.status) == [.done])
     }
 
     // A hooked Claude Code in herdr is herdr's one row: herdr's state, the report's words where herdr has none.

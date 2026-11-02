@@ -156,6 +156,7 @@ public final class HerdStore {
     package func apply(_ update: SourceUpdate, from source: SourceID) {
         bySource[source] = update
         let previousMerges = merges
+        let previousRows = agents
         let (merged, mergedProjects) = mergedHerd()
         if agents != merged { agents = merged }
         if projects != mergedProjects { projects = mergedProjects }
@@ -171,7 +172,21 @@ public final class HerdStore {
         }
         // A merged row's changes are told once, under its row's id. A pair that just ended still
         // decides, so a report going away is not told as its own agent leaving.
-        let transitions = update.transitions.compactMap { transition in
+        // A row that switched sides (`HerdMerge.stale`) and so changed state tells one change, from
+        // what it showed to what it shows, in place of either side's own. A switch that kept the
+        // state leaves the sides' own changes to be told as usual.
+        let switches: [(merge: HerdMerge, transition: HerdTransition)] = merges.compactMap { merge in
+            guard previousMerges.contains(where: {
+                $0.host == merge.host && $0.guest == merge.guest && $0.stateFromGuest != merge.stateFromGuest
+            }), let old = previousRows.first(where: { $0.id == merge.host }),
+                let new = merged.first(where: { $0.id == merge.host }), old.status != new.status else { return nil }
+            return (merge, HerdTransition(agent: merge.host, kind: merge.hostKind, project: merge.hostProject,
+                                          from: old.status, to: new.status, at: new.since?.date ?? Date()))
+        }
+        let switched = switches.map(\.merge)
+        let switchedIDs = Set(switched.flatMap { [$0.host, $0.guest] })
+        let transitions = switches.map(\.transition) + update.transitions.compactMap { transition in
+            if switchedIDs.contains(transition.agent) { return nil }
             let merge = (merges + previousMerges).first { $0.host == transition.agent || $0.guest == transition.agent }
             return merge.map { $0.view(of: transition) } ?? transition
         }
@@ -180,20 +195,22 @@ public final class HerdStore {
             if let log { Task { await log.append(transitions) } }
             // A screen reading is a guess, so no event announces it: plugins run for reported changes only.
             let inferred = Set(update.agents.filter(\.isInferred).map(\.id))
+                .union(switched.filter { !$0.stateFromGuest }.map(\.host))
+                .subtracting(switched.filter(\.stateFromGuest).map(\.host))
             let announced = transitions.filter { !inferred.contains($0.agent) }
             if !announced.isEmpty { publish(.transitions(announced)) }
         }
     }
 
     /// Every source's agents and projects. An agent two sources see is one row (`HerdMerge`): the
-    /// row of the source that can act on it, with a report's state over a screen reading. A project
-    /// is dropped when only a folded-in agent used it. A project read from a screen is dropped once
-    /// no agent is left in it and a reported project is in its folder (a screen's project is a whole
-    /// checkout, a report's the agent's own folder).
+    /// row of the source that can act on it, with a report's state over a screen reading unless the
+    /// screen has moved on from it. A project is dropped when only a folded-in agent used it. A
+    /// project read from a screen is dropped once no agent is left in it and a reported project is
+    /// in its folder (a screen's project is a whole checkout, a report's the agent's own folder).
     private func mergedHerd() -> (agents: [HerdAgent], projects: [HerdProject]) {
         let all = sources.flatMap { bySource[$0.id]?.agents ?? [] }
         let byID = Dictionary(all.map { ($0.id, $0) }) { first, _ in first }
-        merges = HerdMerge.find(in: all) { source($0)?.capabilities ?? [] }
+        merges = HerdMerge.find(in: all, previous: merges) { source($0)?.capabilities ?? [] }
         let byHost = Dictionary(merges.map { ($0.host, $0) }) { first, _ in first }
         let guests = Set(merges.map(\.guest))
         let kept: [HerdAgent] = all.compactMap { agent in

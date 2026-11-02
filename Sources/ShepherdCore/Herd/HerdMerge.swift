@@ -8,8 +8,12 @@ struct HerdMerge: Equatable {
     let host: AgentID
     /// The agent folded into the host's row.
     let guest: AgentID
-    /// The row's state comes from the guest: the host only read it from a screen and the guest did not.
+    /// The row's state comes from the guest: the host only read it from a screen and the guest did
+    /// not, and the screen has not moved on since (`stale`).
     let stateFromGuest: Bool
+    /// The guest's state the screen has moved on from (`isStale`), kept until the guest's state
+    /// changes, so a screen that then reads unknown (a long draft, a menu) does not hand the row back.
+    let stale: Stale?
     /// The host's kind and project name, so the guest's changes are told as the row's.
     var hostKind: String? = nil
     var hostProject = ""
@@ -18,7 +22,8 @@ struct HerdMerge: Equatable {
     /// with the same key (`tmux:<socket>:<pane>`, which both give a pane), or two agents with the
     /// same session (a report from a hook and herdr's agent for that session). Other local ids are
     /// each source's own and say nothing. Each agent is in at most one pair.
-    static func find(in agents: [HerdAgent], capabilities: (SourceID) -> SourceCapabilities) -> [HerdMerge] {
+    static func find(in agents: [HerdAgent], previous: [HerdMerge],
+                     capabilities: (SourceID) -> SourceCapabilities) -> [HerdMerge] {
         var merges: [HerdMerge] = []
         var paired = Set<AgentID>()
         for (index, first) in agents.enumerated() where !paired.contains(first.id) {
@@ -28,11 +33,33 @@ struct HerdMerge: Equatable {
             let firstCount = capabilities(first.id.source).rawValue.nonzeroBitCount
             let secondCount = capabilities(second.id.source).rawValue.nonzeroBitCount
             let (host, guest) = secondCount > firstCount ? (second, first) : (first, second)
-            merges.append(HerdMerge(host: host.id, guest: guest.id, stateFromGuest: host.isInferred && !guest.isInferred,
+            let readsBetter = host.isInferred && !guest.isInferred
+            let was = previous.first { $0.host == host.id && $0.guest == guest.id }?.stale
+            let state = Stale(status: guest.status, since: guest.since?.date)
+            let stale = readsBetter && (was == state || isStale(guest, against: host)) ? state : nil
+            merges.append(HerdMerge(host: host.id, guest: guest.id, stateFromGuest: readsBetter && stale == nil, stale: stale,
                                     hostKind: host.kind ?? guest.kind, hostProject: host.project))
             paired.formUnion([first.id, second.id])
         }
         return merges
+    }
+
+    struct Stale: Equatable {
+        let status: HerdStatus
+        let since: Date?
+    }
+
+    /// A report the screen has moved on from. Claude Code runs no hook on an interrupt (Esc in a
+    /// turn, or No at an approval), so its report stays working or blocked while the screen shows
+    /// idle; a working report gone quiet reads unknown while the screen may still read working. The
+    /// screen counts once it settled on idle or working after the report's state began, except a
+    /// done report over an idle screen, which is the same moment told better.
+    private static func isStale(_ report: HerdAgent, against screen: HerdAgent) -> Bool {
+        guard [.idle, .working].contains(screen.status), screen.status != report.status,
+              !(report.status == .done && screen.status == .idle) else { return false }
+        if report.status == .unknown { return true }
+        guard let reported = report.since?.date, let shown = screen.since?.date else { return false }
+        return shown > reported
     }
 
     /// Agents of different kinds never pair: a report left behind in a pane number tmux reuses
