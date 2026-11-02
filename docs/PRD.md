@@ -134,9 +134,9 @@ As built:
   Its last card offers demo mode.
 - Demo mode (`Shepherd --demo`, or Try Demo in the status item's right-click menu or the palette,
   which opens a new Shepherd with `--demo` and quits this one; Leave Demo goes back) replaces every
-  source with `DemoHerd`'s made-up herd: `HerdrFake`'s `FakeHerd.demo` on `/tmp/shepherd-demo.sock` served by a
-  real `HerdrSource` (no history, no herdr config, no terminal), two Claude Code reports in the
-  spool `/tmp/shepherd-demo` read by a real `ReportSource`, and two screen-read agents from a
+  source with `DemoHerd`'s made-up herd: `HerdrFake`'s `FakeHerd.demo` on `/tmp/shepherd-demo.sock`
+  served by a real `HerdrSource` (no history, no herdr config, no terminal), two Claude Code reports
+  in the spool `/tmp/shepherd-demo` read by a real `ReportSource`, and two screen-read agents from a
   stand-in for tmux (`DemoScreenSource`, under tmux's source id, labelled inferred, never running
   tmux). Answering, replying, jumping and new tasks all work against it. Nothing of the user's is
   read or written: the config is the defaults (no file), there is no transition log, no plugins,
