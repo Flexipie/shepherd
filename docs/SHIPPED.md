@@ -306,3 +306,10 @@ Oldest first.
   dimmed, and in the footer. With no gadget plugin there is no tab and no command. Manifests are
   now also read at launch and when a panel opens, so plugin events no longer wait for the first
   palette opening. `examples/plugins/load-average` is the example.
+- A stale report gives way to the screen on a merged tmux row (#88): Claude Code runs no hook on
+  an interrupt, so after Esc or No at an approval its report stayed working or blocked and the row
+  stayed "needs you". Now once the screen settles on idle or working after the report's state
+  began, or the report went quiet, the row shows the screen's state (a done report over an idle
+  screen stays done), and the switch is told as one change, so the notice is withdrawn. Prompting a
+  tmux agent reads the screen again when its idle has not settled yet, so Reply works as soon as
+  the report says done.
