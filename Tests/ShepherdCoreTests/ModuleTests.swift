@@ -121,8 +121,10 @@ final class RecordingActions: AgentActions {
         module.handle([change("b", from: .blocked, to: .working), change("b", from: .working, to: .blocked)])
         #expect(module.notch != nil, "blocking again starts over")
         module.handle([change("b", from: .blocked, to: .working)])
-        try await Task.sleep(for: .milliseconds(500))
-        #expect(module.notch == nil, "unblocking cancels the second time")
+        for _ in 0..<60 {
+            #expect(module.notch == nil, "unblocking cancels the second time")
+            try await Task.sleep(for: .milliseconds(10))
+        }
     }
 
     @Test func notchIgnoresScreenReadings() {
