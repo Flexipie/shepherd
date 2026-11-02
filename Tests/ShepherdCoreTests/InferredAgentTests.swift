@@ -174,6 +174,24 @@ import Testing
         #expect(store.agents.map(\.status) == [.working])
     }
 
+    // After Esc and a new prompt the report keeps its old working, so the screen gives the row; an
+    // approval the screen reads first still reaches plugins and notices when the report blocks.
+    @Test func aBlockAfterTheRowGaveWayIsStillTold() {
+        let store = makeStore()
+        let tmuxID = AgentID(source: "tmux", local: Self.pane)
+        store.apply(SourceUpdate(agents: [screenAgent(status: .idle, at: 110)], state: .live), from: "tmux")
+        store.apply(SourceUpdate(agents: [reportAgent(status: .working, at: 100)], state: .live), from: "report")
+        store.apply(SourceUpdate(agents: [screenAgent(status: .working, at: 120)], state: .live), from: "tmux")
+        store.apply(SourceUpdate(agents: [screenAgent(status: .blocked, at: 130)], state: .live), from: "tmux")
+        let blocked = HerdTransition(agent: reportAgent().id, from: .working, to: .blocked, at: Date(timeIntervalSince1970: 131))
+        store.apply(SourceUpdate(agents: [reportAgent(status: .blocked, at: 131)], state: .live, transitions: [blocked]),
+                    from: "report")
+        #expect(store.agents.first?.isInferred == false)
+        let told = HerdTransition(agent: tmuxID, kind: "claude", project: "app", from: .working, to: .blocked,
+                                  at: Date(timeIntervalSince1970: 131))
+        #expect(store.lastTransitions == [told])
+    }
+
     // The usual approval: the report blocks after the screen last settled, so the report's state stands,
     // and a done report over an idle screen stays done.
     @Test func aReportNewerThanTheScreenKeepsTheRow() {

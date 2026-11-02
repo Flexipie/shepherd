@@ -172,19 +172,20 @@ public final class HerdStore {
         }
         // A merged row's changes are told once, under its row's id. A pair that just ended still
         // decides, so a report going away is not told as its own agent leaving.
-        // A row that switched sides (`HerdMerge.isStale`) tells one change, from what it showed to
-        // what it shows, in place of either side's own.
-        let switched = merges.filter { merge in
-            previousMerges.contains { $0.host == merge.host && $0.guest == merge.guest && $0.stateFromGuest != merge.stateFromGuest }
+        // A row that switched sides (`HerdMerge.stale`) and so changed state tells one change, from
+        // what it showed to what it shows, in place of either side's own. A switch that kept the
+        // state leaves the sides' own changes to be told as usual.
+        let switches: [(merge: HerdMerge, transition: HerdTransition)] = merges.compactMap { merge in
+            guard previousMerges.contains(where: {
+                $0.host == merge.host && $0.guest == merge.guest && $0.stateFromGuest != merge.stateFromGuest
+            }), let old = previousRows.first(where: { $0.id == merge.host }),
+                let new = merged.first(where: { $0.id == merge.host }), old.status != new.status else { return nil }
+            return (merge, HerdTransition(agent: merge.host, kind: merge.hostKind, project: merge.hostProject,
+                                          from: old.status, to: new.status, at: new.since?.date ?? Date()))
         }
+        let switched = switches.map(\.merge)
         let switchedIDs = Set(switched.flatMap { [$0.host, $0.guest] })
-        let switches: [HerdTransition] = switched.compactMap { merge in
-            guard let old = previousRows.first(where: { $0.id == merge.host }),
-                  let new = merged.first(where: { $0.id == merge.host }), old.status != new.status else { return nil }
-            return HerdTransition(agent: merge.host, kind: merge.hostKind, project: merge.hostProject, from: old.status,
-                                  to: new.status, at: new.since?.date ?? Date())
-        }
-        let transitions = switches + update.transitions.compactMap { transition in
+        let transitions = switches.map(\.transition) + update.transitions.compactMap { transition in
             if switchedIDs.contains(transition.agent) { return nil }
             let merge = (merges + previousMerges).first { $0.host == transition.agent || $0.guest == transition.agent }
             return merge.map { $0.view(of: transition) } ?? transition

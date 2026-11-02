@@ -13,7 +13,7 @@ struct HerdMerge: Equatable {
     let stateFromGuest: Bool
     /// The guest's state the screen has moved on from (`isStale`), kept until the guest's state
     /// changes, so a screen that then reads unknown (a long draft, a menu) does not hand the row back.
-    var stale: Stale? = nil
+    let stale: Stale?
     /// The host's kind and project name, so the guest's changes are told as the row's.
     var hostKind: String? = nil
     var hostProject = ""
@@ -22,7 +22,7 @@ struct HerdMerge: Equatable {
     /// with the same key (`tmux:<socket>:<pane>`, which both give a pane), or two agents with the
     /// same session (a report from a hook and herdr's agent for that session). Other local ids are
     /// each source's own and say nothing. Each agent is in at most one pair.
-    static func find(in agents: [HerdAgent], previous: [HerdMerge] = [],
+    static func find(in agents: [HerdAgent], previous: [HerdMerge],
                      capabilities: (SourceID) -> SourceCapabilities) -> [HerdMerge] {
         var merges: [HerdMerge] = []
         var paired = Set<AgentID>()
