@@ -17,7 +17,7 @@ struct RepoCard: View {
                 let project = card.projects[index]
                 Divider().padding(.horizontal, 8).padding(.vertical, 2)
                 if let agent = Self.soleAgent(project) {
-                    soleAgentRow(project, agent)
+                    SoleAgentRow(project: project, agent: agent, now: now, rows: rows)
                 } else {
                     ProjectHeader(card: project, compact: true, rows: rows)
                     ProjectAgentRows(card: project, now: now, rows: rows)
@@ -31,14 +31,6 @@ struct RepoCard: View {
     /// keyboard targets follow the same rule.
     static func soleAgent(_ project: PanelProjectCard) -> PanelAgentRow? {
         project.agents.count == 1 ? project.agents.first : nil
-    }
-
-    private func soleAgentRow(_ project: PanelProjectCard, _ agent: PanelAgentRow) -> some View {
-        let merged = PanelAgentRow(agent: agent.agent, tokens: project.tokens + agent.tokens, isLive: agent.isLive,
-                                   action: agent.action, contextTokens: agent.contextTokens, finalMessage: agent.finalMessage)
-        return AgentRow(row: merged, now: now, checkout: project.project, isSelected: rows.isSelected(agent.action),
-                        onJump: rows.onJump(agent.action))
-            .choosable(agent.action, in: rows)
     }
 
     private var header: some View {
@@ -59,5 +51,22 @@ struct RepoCard: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(card.name), \(card.projects.count) checkouts, \(ProjectSummary.text(agents))")
         .accessibilityAddTraits(.isHeader)
+    }
+}
+
+/// A project or checkout with one agent, as one row: its label, the agent's state, and both their
+/// tokens. Choosing it does what the agent's row does.
+struct SoleAgentRow: View {
+    let project: PanelProjectCard
+    let agent: PanelAgentRow
+    let now: Date
+    let rows: RowContext
+
+    var body: some View {
+        let merged = PanelAgentRow(agent: agent.agent, tokens: project.tokens + agent.tokens, isLive: agent.isLive,
+                                   action: agent.action, contextTokens: agent.contextTokens, finalMessage: agent.finalMessage)
+        AgentRow(row: merged, now: now, checkout: project.project, isSelected: rows.isSelected(agent.action),
+                 onJump: rows.onJump(agent.action))
+            .choosable(agent.action, in: rows)
     }
 }

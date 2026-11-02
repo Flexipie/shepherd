@@ -5,7 +5,8 @@ import SwiftUI
 /// notch holds the Agents | Gadgets tabs (when any gadget is on) on its left, and the status
 /// lines, config problems and New task button on its right. On Agents the needs-you queue is pinned on the left, then
 /// the project cards in two columns that share the rest of the width, then a column per other
-/// section; on Gadgets each gadget is a column. Columns past the width scroll sideways, and each
+/// section; a project with one agent is that agent's row under the project's name, not a card.
+/// On Gadgets each gadget is a column. Columns past the width scroll sideways, and each
 /// scrolls on its own past `maxHeight`. Arrows move across the grid, Return chooses, hovering
 /// selects, ⌘1 and ⌘2 switch tabs.
 ///
@@ -77,6 +78,7 @@ public struct NotchBarView: View {
         }
         .onKeyPress(.return, phases: .down) { press in choose(command: press.modifiers.contains(.command)) }
         .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: content)
+        .environment(\.fullSizeRows, true)
     }
 
     private var columns: [BarColumn] { BarColumn.layout(content.sections(on: tab)) }
@@ -114,7 +116,7 @@ public struct NotchBarView: View {
     /// Card columns share what the queue and the other columns leave, never narrower than a
     /// section column.
     private func cardWidth(_ columns: [BarColumn], pinned: Bool) -> CGFloat {
-        let cards = columns.count { $0.isCards }
+        let cards = columns.count { $0.kind == .projects }
         guard cards > 0 else { return Self.columnWidth }
         let others = CGFloat(columns.count - cards) * Self.columnWidth
         let gaps = CGFloat(columns.count - 1) * Self.spacing + (pinned ? Self.queueWidth + 2 * Self.spacing + 1 : 0)
@@ -145,7 +147,7 @@ public struct NotchBarView: View {
 
     @ViewBuilder
     private func column(_ column: BarColumn, now: Date, cardWidth: CGFloat = 0) -> some View {
-        let width = column.isQueue ? Self.queueWidth : column.isCards ? cardWidth : Self.columnWidth
+        let width = column.isQueue ? Self.queueWidth : column.kind == .projects ? cardWidth : Self.columnWidth
         let items = columnItems(column, now: now).frame(width: width, alignment: .topLeading)
         if let maxHeight {
             ScrollViewReader { proxy in
@@ -169,13 +171,22 @@ public struct NotchBarView: View {
         let rows = RowContext(sectionID: column.section.id, selection: selection, jump: perform, perform: barPerform) {
             selection = $0
         }
-        if column.isCards {
+        switch column.kind {
+        case .projects:
             VStack(alignment: .leading, spacing: Self.spacing) {
                 ForEach(column.items.indices, id: \.self) { index in
-                    PanelItemView(item: column.items[index], now: now, rows: rows)
+                    let item = column.items[index]
+                    if case .project(let card) = item, let agent = RepoCard.soleAgent(card) {
+                        // Inset like a card's rows, so the names line up.
+                        SoleAgentRow(project: card, agent: agent, now: now, rows: rows).padding(.horizontal, 4)
+                    } else {
+                        PanelItemView(item: item, now: now, rows: rows)
+                    }
                 }
             }
-        } else {
+        case .card:
+            if let item = column.items.first { PanelItemView(item: item, now: now, rows: rows) }
+        case .section:
             PanelSectionView(section: column.section, now: now, rows: rows)
         }
     }

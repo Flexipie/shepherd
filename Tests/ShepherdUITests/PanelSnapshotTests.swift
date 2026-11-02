@@ -179,7 +179,7 @@ import Testing
     @Test func queueIsPinnedFirstAndCardsFillTwoColumns() {
         #expect(columns.map(\.id) == ["queue", "projects/0", "projects/1"])
         #expect(columns[0].isQueue)
-        #expect(columns.dropFirst().allSatisfy { $0.isCards })
+        #expect(columns.dropFirst().allSatisfy { $0.kind == .projects })
         // Config order does not move the queue off the left.
         let reordered = BarColumn.layout(SampleHerd.content.sections.reversed())
         #expect(reordered.first?.isQueue == true)
@@ -200,10 +200,14 @@ import Testing
     }
 
     @Test func targetsAreLaidOutByColumn() {
-        // Queue: three agents. Cards: header plus agents, api (2) and docs (1), then web (2).
-        #expect(targets.map(\.column) == [0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2])
-        #expect(targets.map(\.row) == [0, 1, 2, 0, 1, 2, 3, 4, 0, 1, 2])
-        #expect(Set(targets.map(\.id)) == Set(PanelTarget.all(in: SampleHerd.content.sections).map(\.id)))
+        // Queue: three agents. api's header and two agents, then docs' one agent as a single row;
+        // web's header and two agents.
+        #expect(targets.map(\.column) == [0, 0, 0, 1, 1, 1, 1, 2, 2, 2])
+        #expect(targets.map(\.row) == [0, 1, 2, 0, 1, 2, 3, 0, 1, 2])
+        let docsHeader = PanelTarget.id(section: "projects", action: .focusProject(SampleHerd.docs.id))
+        let panel = Set(PanelTarget.all(in: SampleHerd.content.sections).map(\.id))
+        #expect(panel.contains(docsHeader))
+        #expect(Set(targets.map(\.id)) == panel.subtracting([docsHeader]))
     }
 
     @Test func upAndDownStayInTheColumn() {
@@ -214,7 +218,7 @@ import Testing
 
     @Test func leftAndRightGoToTheNearestRow() {
         #expect(PanelTarget.move(from: target(0, 2), .right, in: targets) == target(1, 2))
-        #expect(PanelTarget.move(from: target(1, 4), .right, in: targets) == target(2, 2))
+        #expect(PanelTarget.move(from: target(1, 3), .right, in: targets) == target(2, 2))
         #expect(PanelTarget.move(from: target(2, 2), .right, in: targets) == target(2, 2))
         #expect(PanelTarget.move(from: target(1, 1), .left, in: targets) == target(0, 1))
         #expect(PanelTarget.move(from: target(0, 0), .left, in: targets) == target(0, 0))

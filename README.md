@@ -7,7 +7,7 @@ without switching to the terminal.
 
 <picture>
   <source media="(prefers-color-scheme: light)" srcset="Tests/ShepherdUITests/__Snapshots__/notch-bar.light.png">
-  <img alt="The notch bar: a needs-you queue on the left (codex waiting on an approval, claude waiting, claude finished), then one column per project with each agent's state and time in state" src="Tests/ShepherdUITests/__Snapshots__/notch-bar.dark.png">
+  <img alt="The notch bar: a needs-you queue on the left (codex waiting on an approval, claude waiting, claude finished), then the projects in two columns, each agent with its state and time in state" src="Tests/ShepherdUITests/__Snapshots__/notch-bar.dark.png">
 </picture>
 
 - **Glanceable.** A paw by the notch counts the agents that are blocked or finished, and turns
@@ -109,7 +109,7 @@ config, history, plugins or notifications); Leave Demo in the same menu or the p
   Before any agent or project shows, the first-run guide sits above the commands until you type;
   ↓ picks a command.
 - **"Next" hotkey.** ⌃⌥⌘N jumps to the next agent that needs you; press again to walk the queue.
-- **New task.** The "+" after the project columns, or "New task…" in the palette: pick a project,
+- **New task.** The New task button beside the notch, or "New task…" in the palette: pick a project,
   an agent and a prompt (a branch name is optional). Shepherd makes a git worktree from that
   project's repo, starts the agent in it with the prompt, and shows you the new agent. In tmux the
   worktree goes next to the repo's folder (`app-fix-login` beside `app`) and the agent opens in a
@@ -235,7 +235,7 @@ can be left out:
 ```
 
 - `modules`: which modules run, in order. The notch bar's sections follow this order (unless
-  `layout` lists that tab): the queue stays on the left and the others follow as columns.
+  `layout` lists that tab): the queue stays on the left and the others follow it.
   `demo` shows its card only in demo mode, and offers Try Demo or Leave Demo in the palette. `app`
   gives the palette Status, Quit and Open config file; a list written before it existed needs
   `app` added for them. `usage` and `system`, the gadgets of earlier versions, are ignored here
@@ -279,7 +279,7 @@ can be left out:
   it.
 - `notifications`: `"off"` (the default), `"on"`, or `"auto"` (on unless herdr already posts
   system notifications itself, `ui.toast.delivery` "system" or "terminal"). macOS asks for
-  permission the first time; if it is off in System Settings, the bar's footer says so.
+  permission the first time; if it is off in System Settings, the bar says so beside the notch.
 - `notch.escalateAfter`: seconds an agent stays blocked before the notch pill shows it once more
   (default 300, at most 86400); `0` shows it only when it blocks.
 - `plugins.disabled`: plugin ids to leave off. Every plugin in the plugins folder is on otherwise.

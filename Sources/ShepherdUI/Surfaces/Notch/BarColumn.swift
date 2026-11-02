@@ -45,11 +45,6 @@ struct BarColumn: Sendable, Equatable, Identifiable {
         }
     }
 
-    /// A project with one agent shows as that agent's row, under the project's name.
-    static func soleAgent(_ card: PanelProjectCard) -> PanelAgentRow? {
-        card.agents.count == 1 ? card.agents.first : nil
-    }
-
     private static func whole(_ section: PanelSection) -> BarColumn {
         BarColumn(id: section.id, section: section, items: section.items, kind: .section)
     }
@@ -58,7 +53,8 @@ struct BarColumn: Sendable, Equatable, Identifiable {
     private static func projectRows(_ items: [PanelItem]) -> [Int]? {
         let rows = items.compactMap { item -> Int? in
             switch item {
-            case .project(let card): soleAgent(card) == nil ? 1 + card.agents.count : 1
+            // A project with one agent is a single row, as a repo's checkout with one is.
+            case .project(let card): RepoCard.soleAgent(card) == nil ? 1 + card.agents.count : 1
             case .repo(let card): 1 + card.projects.reduce(0) { $0 + max(1, $1.agents.count) }
             default: nil
             }

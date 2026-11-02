@@ -21,11 +21,13 @@ public struct PanelTarget: Sendable, Hashable, Identifiable {
         }
     }
 
-    static func actions(in items: [PanelItem]) -> [PanelAction] {
+    /// With `soleAgentRows`, a project with one agent is that agent's row only, as in the notch bar.
+    static func actions(in items: [PanelItem], soleAgentRows: Bool = false) -> [PanelAction] {
         items.flatMap { item -> [PanelAction] in
             switch item {
             case .agent(let row): [row.action].compactMap { $0 }
-            case .project(let card): actions(in: card)
+            case .project(let card):
+                if soleAgentRows, let agent = RepoCard.soleAgent(card) { [agent.action].compactMap { $0 } } else { actions(in: card) }
             case .repo(let card):
                 card.projects.flatMap { project in
                     RepoCard.soleAgent(project).map { [$0.action].compactMap { $0 } } ?? actions(in: project)
@@ -51,7 +53,7 @@ public struct PanelTarget: Sendable, Hashable, Identifiable {
     /// Every selectable item in the notch bar, column by column.
     static func all(in columns: [BarColumn]) -> [PanelTarget] {
         columns.enumerated().flatMap { column, bar in
-            actions(in: bar.items).enumerated().map { row, action in
+            actions(in: bar.items, soleAgentRows: bar.kind == .projects).enumerated().map { row, action in
                 PanelTarget(id: id(section: bar.section.id, action: action), action: action, column: column, row: row)
             }
         }

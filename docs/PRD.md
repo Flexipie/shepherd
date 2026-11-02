@@ -300,8 +300,8 @@ own; plugin gadgets fill it, see "Plugins", each card its own bar column). Each 
 then only the current tab's sections, and its keyboard navigation covers only those. Each opening
 starts on Agents; the tab is not saved. ⌘1 and ⌘2 switch tabs while the surface has the keyboard.
 With no section off Agents (every gadget turned off, or hidden by `layout.gadgets`) there is no tab
-bar. The stage and the "+" live on Agents; switching away closes a stage. The footer shows on both
-tabs. Each surface reports its tab to `Presence`, so a module reads only while its tab shows
+bar. The stage and New task live on Agents; switching away closes a stage. The status lines show
+on both tabs. Each surface reports its tab to `Presence`, so a module reads only while its tab shows
 (`Presence.isShowing(_:)`).
 
 - **Menu bar.** Counts (working, needs you) and a disconnected state. A click opens the palette
@@ -325,12 +325,16 @@ tabs. Each surface reports its tab to `Presence`, so a module reads only while i
   - **Expanded**, while hovered: the bar. A wide, short shape centred on the notch,
     `min(1000, screen width - 160)` wide and as tall as its content, up to 30% of the screen,
     so it never covers the middle. It reads the same `PanelContentSource` as the palette's Status page
-    but lays it out in columns (`BarColumn`): the `queue` section pinned on the left, then one
-    column per project or repo card (and per gadget card on Gadgets), and any other section as one column, so a new module's section
-    just appears as another column. Past the left column the columns scroll sideways; each
-    column scrolls on its own past the height cap. Status lines and config problems share one
-    line along the bottom. Up and down move within a column, left and right to the nearest row
-    of the next column.
+    but lays it out in columns (`BarColumn`): the `queue` section pinned on the left, then the
+    project and repo cards in two columns that share the rest of the width (each card goes to
+    the shorter one), then one column per gadget card on Gadgets and per other section, so a new
+    module's section just appears as another column. A project with one agent is a single row
+    (the project's name, then the agent's state and time) instead of a card; choosing it does
+    what the agent's row does. Agent rows use the queue's type sizes throughout. Columns past the
+    width scroll sideways; each column scrolls on its own past the height cap. The band beside
+    the notch holds the tabs and config problems on its left and the status lines and New task
+    on its right. Up and down move within a column, left and right to the nearest row of the next
+    column.
   - **Stage**, inside the bar: choosing an agent's row anywhere in the bar (click or Return)
     swaps the project columns for that agent's stage, when its source can read output
     (otherwise it jumps). The arrow on a hovered or selected agent row, ⌘-click and ⌘Return
@@ -339,13 +343,15 @@ tabs. Each surface reports its tab to `Presence`, so a module reads only while i
     open and again only when the agent's status changes while it is open; nothing while
     closed), the choices `ChoiceParser` finds in them (a run of options numbered from 1 with
     the agent's cursor on one, as Claude Code and Codex draw approval prompts) as buttons with
-    their digit, Return and Escape when none parse, and a reply field. A digit or a choice
+    their digit, Return and Escape when none parse, and a reply field, drawn like the palette's
+    prompt box (Return sends). A digit or a choice
     sends `agent.send_keys`; a reply sends `pane.send_input` (the text as one bracketed paste,
     then Enter). An agent that is not blocked gets a prompt field instead, sent with
     `agent.prompt` (which herdr refuses for a blocked agent). Escape or Left goes back to the columns; Jump shows the agent in its
     terminal. Typing needs the bar to be key, which a click in the field gives it; while key,
     leaving with the mouse does not fold it. Errors are shown in the stage, never silent.
-  - **New task**, a "+" after the project columns when a source can start tasks: a form with
+  - **New task**, a button beside the notch when a source can start tasks: the same form as the
+    palette's New task page, with
     the project (whose repo the checkout comes from), an agent kind, an optional branch and a
     prompt. Start runs `worktree.create` (`workspace_id`, `branch`, herdr names the branch when
     it is left out), `agent.start` in the new workspace's root pane (a unique name, the kind,

@@ -53,10 +53,10 @@ struct NewTaskView: View {
                     TextField("What should it do?", text: $prompt, axis: .vertical)
                         .lineLimit(3...5)
                         .textFieldStyle(.plain)
-                        .font(.system(size: 12))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 6)
-                        .background(RoundedRectangle(cornerRadius: 7).fill(Color.primary.opacity(0.08)))
+                        .font(.system(size: 13))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 7)
+                        .background(RoundedRectangle(cornerRadius: 10).fill(Color.primary.opacity(0.07)))
                         .onKeyPress(.return, phases: .down) { press in
                             // While an input method is composing, Return confirms its candidate.
                             let composing = (NSApp.keyWindow?.firstResponder as? NSTextView)?.hasMarkedText() ?? false
@@ -92,9 +92,10 @@ struct NewTaskView: View {
     private func field(_ title: String, text: Binding<String>) -> some View {
         TextField(title, text: text)
             .textFieldStyle(.plain)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 5)
-            .background(RoundedRectangle(cornerRadius: 7).fill(Color.primary.opacity(0.08)))
+            .font(.system(size: 13))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(RoundedRectangle(cornerRadius: 10).fill(Color.primary.opacity(0.07)))
     }
 
     private func start() {

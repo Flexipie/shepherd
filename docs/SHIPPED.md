@@ -337,3 +337,8 @@ Oldest first.
   the notch bar. In demo mode the palette's footer says the agents are made up and how to leave,
   since a Mac without a notch has no bar to show the demo card. Macs without a notch keep the
   floating pill.
+- Notch bar: cleaner and simpler (#96): the queue stays on the left; project and repo cards fill
+  two columns that share the rest of the width, so none is cut off at the edge, and a project with
+  one agent is a single row. Tabs, status lines, config problems and a New task button sit in the
+  band beside the notch, replacing the footer and the "+" box. Agent rows use the queue's sizes, and
+  the stage's reply field and the New task fields are drawn like the palette's prompt box.
