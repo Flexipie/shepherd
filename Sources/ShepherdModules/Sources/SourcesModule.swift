@@ -19,7 +19,9 @@ public final class SourcesModule: ShepherdModule {
             let on = guide.isOn(intro, in: context.store)
             let text = on ? intro.on : intro.off
             // Not `isStale`: a source that is off is not out of date, and VoiceOver would say so.
-            return PanelItem.gadget(GadgetCard(id: intro.id, title: intro.name, detail: text.detail, lines: [text.line]))
+            // One line per `\n`, so a command sits on a line of its own and copies without the prose.
+            return PanelItem.gadget(GadgetCard(id: intro.id, title: intro.name, detail: text.detail,
+                                               lines: text.line.components(separatedBy: "\n")))
         }
         return PanelSection(id: Self.id, title: "Where agents come from", items: cards, emptyText: "")
     }

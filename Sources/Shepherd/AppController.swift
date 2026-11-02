@@ -171,7 +171,10 @@ final class AppController {
         Task {
             let environment = ProcessInfo.processInfo.environment
             let claude = await Task.detached(priority: .utility) { ClaudeSetup.detect(environment: environment) }.value
+            let reportBinary = (Bundle.main.executableURL?.deletingLastPathComponent().appending(path: "shepherd-report")
+                .path) ?? "shepherd-report"
             context.sourceGuide.set(SourceIntros.make(sources: sources, tmuxInstalled: tmuxInstalled, claude: claude,
+                                                      reportBinary: reportBinary,
                                                       canTryDemo: Bundle.main.bundleURL.pathExtension == "app"))
         }
     }

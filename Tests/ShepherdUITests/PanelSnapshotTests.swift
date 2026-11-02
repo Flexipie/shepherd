@@ -108,6 +108,13 @@ import Testing
         }
     }
 
+    /// The first-run guide, with Claude Code's install command as a full path on its own line.
+    @Test func firstRunGuide() throws {
+        try Snapshot.check("panel-first-run", width: PanelView.width) {
+            PanelView(content: SampleHerd.firstRun, clock: .fixed(SampleHerd.now)) { _ in }
+        }
+    }
+
     @Test func notchPill() throws {
         let item = NotchItem(agent: SampleHerd.blockedCodex, reason: .blocked, others: 2)
         try Snapshot.check("notch-pill-floating", width: 340) {
