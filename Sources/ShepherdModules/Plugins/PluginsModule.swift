@@ -12,7 +12,7 @@ public final class PluginsModule: ShepherdModule {
     public static let id = "plugins"
     private let context: ModuleContext
     /// The running gadget loops, with the plugin each was started for.
-    private var loops: [String: (plugin: Plugin, task: Task<Void, Never>)] = [:]
+    private(set) var loops: [String: (plugin: Plugin, task: Task<Void, Never>)] = [:]
     private var wasPanelVisible = false
 
     public init(context: ModuleContext) {

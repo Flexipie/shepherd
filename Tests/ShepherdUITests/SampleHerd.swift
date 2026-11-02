@@ -130,6 +130,22 @@ enum SampleHerd {
                            lines: ["If you use herdr, its agents show here once it starts."])),
     ], emptyText: "")], statusLines: ["No agents yet"])
 
+    /// Two plugin gadgets, the second failing after a good run.
+    static let pluginGadgetCards = [
+        GadgetCard(id: "load-average", title: "Load average", detail: "10 cores", meters: [
+            GadgetMeter(id: "0", label: "1 min", fraction: 0.31, valueText: "3.1"),
+            GadgetMeter(id: "1", label: "5 min", fraction: 0.86, valueText: "8.6"),
+        ]),
+        GadgetCard(id: "deploys", title: "Deploys", meters: [
+            GadgetMeter(id: "0", label: "Today", fraction: 0.4, valueText: "4 of 10"),
+        ], lines: ["Last: api, 12 minutes ago", "Exited with 1: token expired"], isStale: true),
+    ]
+
+    static let contentWithPluginGadgets = PanelContent(sections: [
+        queue, projects,
+        PanelSection(id: "plugins", title: "Gadgets", items: pluginGadgetCards.map(PanelItem.gadget), emptyText: "Running…", tab: .gadgets),
+    ], statusLines: content.statusLines)
+
     /// A gadget on: the Agents and Gadgets tabs.
     static let contentWithGadgets = PanelContent(sections: [queue, gadget, projects], statusLines: content.statusLines)
 }

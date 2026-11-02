@@ -42,7 +42,7 @@ public enum PaletteMode: Sendable, Equatable {
         case (.prompt, .left): fieldEmpty ? .back : .pass
         case (.prompt, .right): .pass
         case (.prompt, .tab): .swallow
-        case (.prompt, .escape), (.newTask, .escape), (.actions, .escape), (.result, .escape), (.gadgets, .escape), (.gadgets, .left): .back
+        case (.prompt, .escape), (.newTask, .escape), (.actions, .escape), (.result, .escape), (.gadgets, .escape): .back
         case (.actions, .left): fieldEmpty ? .back : .pass
         case (.actions, .tab), (.result, .tab), (.gadgets, _): .swallow
         case (.actions, _), (.result, _): .pass
