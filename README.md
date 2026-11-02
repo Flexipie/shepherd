@@ -98,16 +98,16 @@ config, history, plugins or notifications); Leave Demo in the same menu or the p
   choices are buttons (click one or press its digit); otherwise type a reply. An idle or finished
   agent gets a prompt field. ⌘-click, the row's arrow or ⌘Return jumps to its terminal instead.
 - **Palette.** ⌥Space from any app opens a search box. Type part of an agent, a project, a state
-  or any token (a PR number, a ticket) and press Return to jump. Tab (or →) on an agent turns the
-  field into a prompt for it, with its last lines underneath; approval choices are ⌘1, ⌘2 and so
-  on. Your current app stays frontmost. Shepherd's own commands are there too: Status, Open config
-  file (its folder while there is no file) and Open plugins folder, and, once you type them, Quit
-  and Try Demo or Leave Demo, so Return on an empty palette never quits or relaunches. Status shows
-  config, plugin and hotkey problems, each source (found, connected or not, and how to connect) and
-  the herd's status lines; when there is a problem the palette's footer says so, and in demo mode
-  it says the agents are made up.
-  Before any agent or project shows, the first-run guide sits above the commands until you type;
-  ↓ picks a command.
+  or any token (a PR number, a ticket) and press Return to jump. Beside the list, the highlighted
+  agent's last lines (its approval text while blocked, its last message once finished) or a
+  project's agents. Tab (or →) on an agent turns the field into a prompt for it, with its last lines
+  underneath; approval choices are ⌘1, ⌘2 and so on. Your current app stays frontmost. Shepherd's
+  own commands are there too: Status, Open config file (its folder while there is no file) and Open
+  plugins folder, and, once you type them, Quit and Try Demo or Leave Demo, so Return on an empty
+  palette never quits or relaunches. Status shows config, plugin and hotkey problems, each source
+  (found, connected or not, and how to connect) and the herd's status lines; when there is a problem
+  the palette's footer says so, and in demo mode it says the agents are made up. Before any agent or
+  project shows, the first-run guide sits above the commands until you type; ↓ picks a command.
 - **"Next" hotkey.** ⌃⌥⌘N jumps to the next agent that needs you; press again to walk the queue.
 - **New task.** The New task button beside the notch, or "New task…" in the palette: pick a project,
   an agent and a prompt (a branch name is optional). Shepherd makes a git worktree from that

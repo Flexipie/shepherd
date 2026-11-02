@@ -342,3 +342,9 @@ Oldest first.
   one agent is a single row. Tabs, status lines, config problems and a New task button sit in the
   band beside the notch, replacing the footer and the "+" box. Agent rows use the queue's sizes, and
   the stage's reply field and the New task fields are drawn like the palette's prompt box.
+- Palette preview of the highlighted agent (#97): the list shows the highlighted agent's last
+  lines, its final message once finished, or its approval text while blocked, in a pane right of
+  the list; a project shows its agents and tokens, a command nothing. The lines are read 150 ms
+  after the highlight stops and again on a status change, never for an agent passed over and
+  never while the list is not showing. The notch stage, the palette's prompt page and the preview
+  each read through an `AgentScreenReader` in Core.

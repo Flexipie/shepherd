@@ -2,9 +2,9 @@ import Observation
 import ShepherdCore
 import ShepherdUI
 
-/// What the notch bar's stage shows: an agent, or the new task form. For an agent it reads the
-/// last lines once when the stage opens and again only when the agent's status changes while it
-/// is open; closed, it reads and watches nothing.
+/// What the notch bar's stage shows: an agent, or the new task form. For an agent its reader reads
+/// the last lines once when the stage opens and again only when the agent's status changes while
+/// it is open; closed, it reads and watches nothing.
 @MainActor
 @Observable
 final class StageModel {
@@ -14,7 +14,6 @@ final class StageModel {
     }
 
     private(set) var mode: Mode?
-    private(set) var text: String?
     private(set) var error: String?
     /// A send or a task start is on its way.
     private(set) var isBusy = false
@@ -26,9 +25,9 @@ final class StageModel {
     @ObservationIgnored private let store: HerdStore
     @ObservationIgnored private let actions: any AgentActions
     @ObservationIgnored private let config: ConfigStore
-    /// Bumps on every open and close, so late reads and watches for an earlier stage are dropped.
+    @ObservationIgnored private let screen: AgentScreenReader
+    /// Bumps on every open and close, so late sends for an earlier stage are dropped.
     @ObservationIgnored private var generation = 0
-    @ObservationIgnored private var watchedStatus: HerdStatus?
 
     /// Enough for a whole approval prompt and what led to it.
     static let lineCount = 40
@@ -39,11 +38,12 @@ final class StageModel {
         self.store = store
         self.actions = actions
         self.config = config
+        screen = AgentScreenReader(store: store, actions: actions, lineCount: Self.lineCount)
     }
 
     /// Whether the agent's source can show it here; when not, choosing it jumps instead.
     func canOpen(_ agent: AgentID) -> Bool {
-        actions.capabilities(of: agent).contains(.readOutput)
+        screen.canRead(agent)
     }
 
     /// Projects a new task can start in; none hides the New task button.
@@ -54,8 +54,7 @@ final class StageModel {
     func open(_ agent: AgentID) {
         guard mode != .agent(agent) else { return }
         reset(to: .agent(agent))
-        watch(agent, generation)
-        read(agent, generation)
+        screen.show(agent)
     }
 
     func openNewTask(in project: ProjectID? = nil) {
@@ -71,12 +70,11 @@ final class StageModel {
     private func reset(to mode: Mode?) {
         generation += 1
         self.mode = mode
-        text = nil
+        screen.close()
         error = nil
         isBusy = false
         starting = nil
         taskProject = nil
-        watchedStatus = nil
     }
 
     // MARK: Sending
@@ -157,50 +155,13 @@ final class StageModel {
         let capabilities = actions.capabilities(of: agent)
         let blocked = herdAgent.status == .blocked
         return AgentStage(
-            row: row, lines: text.map(Self.lines), choices: blocked ? ChoiceParser.choices(in: text ?? "") : [],
+            row: row, lines: screen.lines, choices: blocked ? ChoiceParser.choices(in: screen.text ?? "") : [],
             canSendKeys: blocked && capabilities.contains(.sendKeys),
             canReply: capabilities.contains(blocked ? .sendText : .prompt), prompts: !blocked,
-            error: error, isSending: isBusy)
-    }
-
-    // MARK: Reading
-
-    private func read(_ agent: AgentID, _ generation: Int) {
-        Task {
-            do {
-                let text = try await actions.read(agent, lines: Self.lineCount)
-                guard generation == self.generation else { return }
-                self.text = text
-            } catch {
-                guard generation == self.generation else { return }
-                self.error = "Could not read: \(error)"
-            }
-        }
-    }
-
-    /// Re-reads when the agent's status changes (including appearing, for a new task's agent).
-    /// Re-armed after every change to the store's agents, for as long as this stage is open.
-    private func watch(_ agent: AgentID, _ generation: Int) {
-        watchedStatus = withObservationTracking {
-            store.agents.first { $0.id == agent }?.status
-        } onChange: { [weak self] in
-            Task { @MainActor in
-                guard let self, generation == self.generation else { return }
-                let previous = self.watchedStatus
-                self.watch(agent, generation)
-                if self.watchedStatus != previous, self.watchedStatus != nil { self.read(agent, generation) }
-            }
-        }
+            error: error ?? screen.error, isSending: isBusy)
     }
 
     // MARK: Helpers
-
-    /// The lines without trailing blank ones, so the box ends at the agent's last words.
-    static func lines(_ text: String) -> [String] {
-        var lines = text.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
-        while let last = lines.last, last.trimmingCharacters(in: .whitespaces).isEmpty { lines.removeLast() }
-        return lines
-    }
 
     static func row(for agent: AgentID, in content: PanelContent) -> PanelAgentRow? {
         for section in content.sections {

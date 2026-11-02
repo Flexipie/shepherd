@@ -24,11 +24,7 @@ struct PalettePromptPage: View {
             Divider().padding(.horizontal, 10)
             VStack(alignment: .leading, spacing: 8) {
                 AgentRow(row: stage.row, now: now, showsProject: true, namesContext: true, showsPreview: false)
-                if stage.row.showsFinalMessage, let message = stage.row.finalMessage {
-                    FinalMessage(message: message, maxHeight: maxHeight)
-                } else {
-                    lines
-                }
+                AgentOutput(row: stage.row, lines: stage.lines, lineCount: Self.lineCount, maxHeight: maxHeight)
                 if stage.canSendKeys {
                     if stage.choices.isEmpty {
                         HStack(spacing: 6) {
@@ -91,18 +87,6 @@ struct PalettePromptPage: View {
         let name = stage.row.agent.project.isEmpty ? stage.row.agent.name : "\(stage.row.agent.name) (\(stage.row.agent.project))"
         guard stage.canReply else { return "Cannot send text to \(name)" }
         return stage.prompts ? "Prompt \(name)…" : "Reply to \(name)…"
-    }
-
-    private var lines: some View {
-        let shown = stage.lines.map { $0.suffix(Self.lineCount).joined(separator: "\n") }
-        return Text(shown ?? "Reading…")
-            .font(.system(size: 10.5, design: .monospaced))
-            .foregroundStyle(stage.lines == nil ? .secondary : .primary)
-            .lineLimit(Self.lineCount)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
-            .padding(8)
-            .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.06)))
-            .accessibilityLabel("Last lines")
     }
 
     private func key(_ key: PaletteMode.Key) -> KeyPress.Result {

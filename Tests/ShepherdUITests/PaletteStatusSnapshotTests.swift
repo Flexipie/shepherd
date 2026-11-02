@@ -25,7 +25,7 @@ import Testing
 
     /// Problems in the footer point to the Status page.
     @Test func problemNotice() throws {
-        try Snapshot.check("palette-problem-notice", width: PaletteView.width) {
+        try Snapshot.check("palette-problem-notice", width: PaletteView.listWidth) {
             PaletteView(content: PaletteContent(items: SamplePalette.content.items, notice: "3 problems, see Status",
                                                 noticeIsProblem: true),
                         clock: .fixed(SampleHerd.now)) { _ in }
