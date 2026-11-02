@@ -92,7 +92,8 @@ public struct PaletteView: View {
     /// The lines box's height in the pane beside the list.
     static let sideLinesHeight: CGFloat = 230
 
-    /// The palette's width on its list page, with the preview; other pages are `width` wide.
+    /// The palette's width on its list page, with the preview; other pages, and the list over only
+    /// commands (the first-run guide's), are `width` wide.
     static let listWidth = width + sideWidth
 
     /// `maxListHeight` makes the results scroll past that height; nil lets the view grow.
@@ -110,7 +111,7 @@ public struct PaletteView: View {
 
     public var body: some View {
         Clocked(clock: clock) { now in page(now: now) }
-        .frame(width: content.page == .list ? Self.listWidth : Self.width)
+        .frame(width: content.page == .list && content.guide == nil ? Self.listWidth : Self.width)
     }
 
     private func page(now: Date) -> some View {
@@ -162,17 +163,22 @@ public struct PaletteView: View {
         return VStack(alignment: .leading, spacing: 0) {
             field(results, selected: selected)
             Divider().padding(.horizontal, 10)
-            // As tall as an agent's preview whatever is highlighted, so the palette keeps its height.
-            HStack(alignment: .top, spacing: 0) {
-                resultList(results, selected: selected, now: now).frame(width: Self.width)
-                Divider().padding(.vertical, 10)
-                PalettePreviewPane(item: item, items: content.items, preview: content.preview, now: now,
-                                   height: Self.sideLinesHeight)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .frame(width: Self.sideWidth - 1, alignment: .topLeading)
+            if content.guide != nil {
+                // Only commands, nothing to preview.
+                resultList(results, selected: selected, now: now)
+            } else {
+                // As tall as an agent's preview whatever is highlighted, so the palette keeps its height.
+                HStack(alignment: .top, spacing: 0) {
+                    resultList(results, selected: selected, now: now).frame(width: Self.width)
+                    Divider().padding(.vertical, 10)
+                    PalettePreviewPane(item: item, items: content.items, preview: content.preview, now: now,
+                                       height: Self.sideLinesHeight)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .frame(width: Self.sideWidth - 1, alignment: .topLeading)
+                }
+                .frame(minHeight: Self.sideLinesHeight + 50, alignment: .top)
             }
-            .frame(minHeight: Self.sideLinesHeight + 50, alignment: .top)
         }
         .onChange(of: agent, initial: true) { _, agent in onEvent(.highlight(agent)) }
         .onDisappear { onEvent(.highlight(nil)) }
