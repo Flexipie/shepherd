@@ -15,8 +15,8 @@ terminals.**
 
 Shepherd is a general tool for developers who run coding agents, not a herdr tool. herdr is the
 first source of agents; Claude Code, Codex and cloud agents follow as source adapters (see PRD
-"Sources"). Shepherd does not run agents itself. It owns the
-developer's attention and the decisions between the agents.
+"Sources"). Shepherd does not run agents itself. It owns the developer's attention and the
+decisions between the agents.
 
 ## The core: confident merges per minute of attention
 
