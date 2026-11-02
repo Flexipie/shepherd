@@ -1,7 +1,7 @@
 import Foundation
 
-/// Which sections each tab shows, in what order, and which project columns come first. Shared by
-/// the menu bar panel and the notch bar. Every part left out keeps the default: a tab's sections
+/// Which sections each tab shows, in what order, and which project columns come first. Read by
+/// the notch bar. Every part left out keeps the default: a tab's sections
 /// in module order, projects in source order.
 public struct PanelLayout: Sendable, Equatable {
     /// Section (module) ids per tab, in order; a section on that tab left out is hidden. A tab

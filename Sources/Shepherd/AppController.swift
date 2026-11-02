@@ -26,14 +26,13 @@ final class AppController {
     private let registry: ModuleRegistry
     private let notifier: SystemNotifier?
     private var statusItem: StatusItemController?
-    private var panel: PanelController?
     private var hotKeys: HotKeyCenter?
     private var notch: NotchSurfaceController?
     private var palette: PaletteController?
     private var tmux: TmuxSource?
     /// The source order the running sources were built from. A different one applies at the next launch.
     private var startedOrder: [String] = []
-    /// The first-run guide has been filled once; after that it is refreshed only when a panel opens.
+    /// The first-run guide has been filled once; after that it is refreshed only when a surface opens.
     private var guideFilled = false
 
     /// In demo mode no plugin runs, no notification is posted and no Claude Code session is read:
@@ -56,14 +55,13 @@ final class AppController {
 
     func start() {
         let content = PanelContentSource(store: store, registry: registry, config: config)
-        let panel = PanelController(content: content, actions: actions, presence: presence)
-        self.panel = panel
-        statusItem = StatusItemController(store: store, registry: registry, panel: panel, isDemo: isDemo,
+        let palette = PaletteController(context: context, registry: registry, actions: actions,
+                                        switchDemo: { [weak self] in self?.relaunch() },
+                                        readSources: { [weak self] in self?.fillGuide() })
+        self.palette = palette
+        statusItem = StatusItemController(store: store, registry: registry, palette: palette, isDemo: isDemo,
                                           demoItem: context.demoTitle, switchDemo: { [weak self] in self?.relaunch() })
         notch = NotchSurfaceController(registry: registry, content: content, actions: actions, presence: presence)
-        palette = PaletteController(context: context, registry: registry, actions: actions,
-                                    switchDemo: { [weak self] in self?.relaunch() },
-                                    readSources: { [weak self] in self?.fillGuide() })
         hotKeys = HotKeyCenter(config: config, bindings: [
             .init(name: "next", combo: \.nextHotkey) { [weak self] in
                 self?.closeSurfaces()
@@ -71,8 +69,8 @@ final class AppController {
             },
             .init(name: "palette", combo: \.paletteHotkey) { [weak self] in
                 guard let self else { return }
-                if palette?.isOpen != true { closeSurfaces() }
-                palette?.toggle()
+                if self.palette?.isOpen != true { closeSurfaces() }
+                self.palette?.toggle()
             },
         ])
         Task {
@@ -161,7 +159,7 @@ final class AppController {
         followSourcesConfig()
     }
 
-    /// Fills the first-run guide, then again each time a panel opens while it shows, so installing
+    /// Fills the first-run guide, then again each time the palette or the notch bar opens while it shows, so installing
     /// Claude Code's hooks is seen without a restart.
     private func explainSources() {
         let visible = withObservationTracking {
@@ -202,9 +200,8 @@ final class AppController {
         config.report(restart, for: "sources")
     }
 
-    /// Closes the menu bar panel, the notch bar and the palette, before a hotkey does its thing.
+    /// Closes the notch bar and the palette, before a hotkey does its thing.
     private func closeSurfaces() {
-        panel?.close()
         notch?.collapse()
         palette?.close()
     }

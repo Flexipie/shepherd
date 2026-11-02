@@ -118,18 +118,6 @@ enum SampleHerd {
         ])),
     ], emptyText: "", tab: .gadgets)
 
-    // MARK: First-run guide
-
-    /// No agents yet: Claude Code found without hooks, its install command on a line of its own.
-    static let firstRun = PanelContent(sections: [PanelSection(id: "sources", title: "Where agents come from", items: [
-        .gadget(GadgetCard(id: "claude", title: "Claude Code", detail: "found", lines: [
-            "For exact status in any terminal, tmux and herdr included, run this in Terminal. It shows the change before writing it.",
-            "'/Applications/Shepherd.app/Contents/MacOS/shepherd-report' install claude",
-        ])),
-        .gadget(GadgetCard(id: "herdr", title: "herdr", detail: "not running",
-                           lines: ["If you use herdr, its agents show here once it starts."])),
-    ], emptyText: "")], statusLines: ["No agents yet"])
-
     /// Two plugin gadgets, the second failing after a good run.
     static let pluginGadgetCards = [
         GadgetCard(id: "load-average", title: "Load average", detail: "10 cores", meters: [

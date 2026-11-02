@@ -1,7 +1,7 @@
 import ShepherdCore
 import SwiftUI
 
-/// The Agents | Gadgets switch at the top of the panel and the notch bar. Drawn by hand rather
+/// The Agents | Gadgets switch at the top of the notch bar. Drawn by hand rather
 /// than as a segmented picker, which is an AppKit control that snapshots cannot render.
 struct PanelTabBar: View {
     let selected: PanelTab

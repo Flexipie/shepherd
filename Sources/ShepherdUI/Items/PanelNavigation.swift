@@ -6,8 +6,7 @@ public struct PanelTarget: Sendable, Hashable, Identifiable {
     public typealias ID = String
     public let id: ID
     public let action: PanelAction
-    /// The notch bar column it sits in, and its place in that column. The menu bar panel is one
-    /// column.
+    /// The notch bar column it sits in, and its place in that column.
     public let column: Int
     public let row: Int
 
@@ -56,16 +55,6 @@ public struct PanelTarget: Sendable, Hashable, Identifiable {
                 PanelTarget(id: id(section: bar.section.id, action: action), action: action, column: column, row: row)
             }
         }
-    }
-
-    /// The next selection after moving `offset` items from `current`, clamped to the ends. With
-    /// nothing selected, down picks the first item and up the last.
-    public static func move(from current: ID?, by offset: Int, in targets: [PanelTarget]) -> ID? {
-        guard !targets.isEmpty else { return nil }
-        guard let current, let index = targets.firstIndex(where: { $0.id == current }) else {
-            return offset >= 0 ? targets.first?.id : targets.last?.id
-        }
-        return targets[min(max(index + offset, 0), targets.count - 1)].id
     }
 
     /// The next selection in a grid of columns. Up and down stay in the column, clamped to its

@@ -330,3 +330,10 @@ Oldest first.
   apply to contributors, re-recording snapshots and the `RECORDED_ON` caveat), `docs/SECURITY.md`
   (private reports through GitHub, and what Shepherd trusts by design, plugins first) and
   `docs/CODE_OF_CONDUCT.md`, plus bug and feature issue templates and a PR template in `.github/`.
+- Menu bar: the icon opens the palette (#103). The menu bar panel is gone; a left click on the
+  paw opens the palette at its usual place (a click that just closed it does not reopen it), and
+  the right-click menu keeps the summary lines, Try or Leave Demo and Quit. Everything the panel
+  showed has a home in the palette (agents, Status, the first-run guide, Gadgets, Quit, Demo) or
+  the notch bar. In demo mode the palette's footer says the agents are made up and how to leave,
+  since a Mac without a notch has no bar to show the demo card. Macs without a notch keep the
+  floating pill.

@@ -87,34 +87,6 @@ import Testing
         }
     }
 
-    /// The Agents tab, with the tab bar on top.
-    @Test func wholePanel() throws {
-        try Snapshot.check("panel", width: PanelView.width) {
-            PanelView(content: SampleHerd.contentWithGadgets, clock: .fixed(SampleHerd.now),
-                      selection: PanelTarget.all(in: SampleHerd.content.sections).first?.id) { _ in }
-        }
-    }
-
-    /// With every gadget turned off there is no tab bar.
-    @Test func panelWithoutGadgets() throws {
-        try Snapshot.check("panel-no-gadgets", width: PanelView.width) {
-            PanelView(content: SampleHerd.content, clock: .fixed(SampleHerd.now)) { _ in }
-        }
-    }
-
-    @Test func emptyAndDisconnectedPanel() throws {
-        try Snapshot.check("panel-disconnected", width: PanelView.width) {
-            PanelView(content: SampleHerd.disconnected, clock: .fixed(SampleHerd.now)) { _ in }
-        }
-    }
-
-    /// The first-run guide, with Claude Code's install command as a full path on its own line.
-    @Test func firstRunGuide() throws {
-        try Snapshot.check("panel-first-run", width: PanelView.width) {
-            PanelView(content: SampleHerd.firstRun, clock: .fixed(SampleHerd.now)) { _ in }
-        }
-    }
-
     @Test func notchPill() throws {
         let item = NotchItem(agent: SampleHerd.blockedCodex, reason: .blocked, others: 2)
         try Snapshot.check("notch-pill-floating", width: 340) {
@@ -174,16 +146,6 @@ import Testing
             agent("w4:p1"), project("w5"), agent("w5:p1"), agent("w5:p2"), agent("w6:p1"),
         ])
         #expect(Set(targets.map(\.id)).count == targets.count)
-    }
-
-    @Test func movingClampsAtTheEnds() {
-        let targets = PanelTarget.all(in: SampleHerd.content.sections)
-        #expect(PanelTarget.move(from: nil, by: 1, in: targets) == targets.first?.id)
-        #expect(PanelTarget.move(from: nil, by: -1, in: targets) == targets.last?.id)
-        #expect(PanelTarget.move(from: targets[0].id, by: -1, in: targets) == targets[0].id)
-        #expect(PanelTarget.move(from: targets[0].id, by: 1, in: targets) == targets[1].id)
-        #expect(PanelTarget.move(from: targets.last?.id, by: 1, in: targets) == targets.last?.id)
-        #expect(PanelTarget.move(from: "gone", by: 1, in: []) == nil)
     }
 }
 

@@ -43,7 +43,7 @@ herdr's own state stays, and the report adds its message). When the screen has m
 report, such as after you interrupt a turn or answer No to an approval, the screen's state shows.
 
 With no config file, every source that is on your Mac runs. Until the first agent shows, the
-panel says which sources it found and what to do next.
+palette and the notch bar say which sources it found and what to do next.
 
 ## Install
 
@@ -103,7 +103,7 @@ config, history, plugins or notifications); Leave Demo in the same menu or the p
   file (its folder while there is no file) and Open plugins folder, and, once you type them, Quit
   and Try Demo or Leave Demo, so Return on an empty palette never quits or relaunches. Status shows
   config, plugin and hotkey problems, each source (found, connected or not, and how to connect) and
-  the status lines the menu bar panel shows; when there is a problem the palette's footer says so.
+  the herd's status lines; when there is a problem the palette's footer says so.
   Before any agent or project shows, the first-run guide sits above the commands until you type;
   ↓ picks a command.
 - **"Next" hotkey.** ⌃⌥⌘N jumps to the next agent that needs you; press again to walk the queue.
@@ -112,8 +112,8 @@ config, history, plugins or notifications); Leave Demo in the same menu or the p
   project's repo, starts the agent in it with the prompt, and shows you the new agent. In tmux the
   worktree goes next to the repo's folder (`app-fix-login` beside `app`) and the agent opens in a
   new background window of the same session.
-- **Panel.** Click the paw icon in the menu bar for the same queue and projects as a list. Up and
-  down move, Return jumps, Escape closes. Right-click the icon for the connection state, Try Demo and Quit.
+- **Menu bar.** The paw icon shows a count while agents need you. Click it to open the palette;
+  right-click it for the connection state, Try Demo and Quit.
 - **Projects and worktrees.** tmux agents are grouped by git checkout and herdr's by workspace,
   and the worktrees of one repo share a card: the repo's name on top, then each checkout with its own agents. Type the repo's
   name in the palette to find them all.
@@ -183,8 +183,8 @@ JSON such as `{"tokens": {"pr": "#12"}}`, which sets tokens on that row for any 
 can also run on agent events (`agent.blocked`, `agent.finished` and others), for states that herdr
 or a report gives; a screen reading never fires one.
 
-A plugin can also add a gadget: a card on the Gadgets tab of the notch bar and the menu bar panel,
-and on the palette's "Gadgets" page. Its command runs every `every` seconds, only while one of
+A plugin can also add a gadget: a card on the Gadgets tab of the notch bar and on the palette's
+"Gadgets" page. Its command runs every `every` seconds, only while one of
 those shows, and prints the card as JSON. This one shows the load average:
 
 ```json
@@ -232,8 +232,8 @@ can be left out:
 }
 ```
 
-- `modules`: which modules run, in order. Panel sections follow this order (unless `layout`
-  lists that tab); in the notch bar the queue stays on the left and the others follow as columns.
+- `modules`: which modules run, in order. The notch bar's sections follow this order (unless
+  `layout` lists that tab): the queue stays on the left and the others follow as columns.
   `demo` shows its card only in demo mode, and offers Try Demo or Leave Demo in the palette. `app`
   gives the palette Status, Quit and Open config file; a list written before it existed needs
   `app` added for them. `usage` and `system`, the gadgets of earlier versions, are ignored here
@@ -253,7 +253,7 @@ can be left out:
   its list is found, checked in that order. A numbered prompt (`1. Yes`) is blocked for any agent.
   A kind replaces the built-in one of the same name or process (`claude`, `codex`); two of your
   kinds on one process are reported. Pattern changes apply on save.
-- `layout`: choose and order what the panel and the bar show, without turning modules off.
+- `layout`: choose and order what the notch bar shows, without turning modules off.
   `agents` and `gadgets` list the sections of that tab in order (`sources` (the first-run guide),
   `queue` and `projects` on Agents; `plugins`, the plugin gadgets, on Gadgets); one you leave out
   is hidden.
@@ -268,8 +268,8 @@ can be left out:
   (a-z, 0-9, `space`, `return`, `tab`, `f1`-`f12`); `null` turns one off. macOS does not say when
   another app (Raycast and Alfred like ⌥Space too) already owns a combination, so if the palette
   does not open, pick another (`ctrl+option+space`, for example). A combination that cannot be
-  registered at all is named, with its config key, in the panel's footer and on the palette's
-  Status page.
+  registered at all is named, with its config key, on the palette's Status page and along the
+  bottom of the notch bar.
 - `agents.<kind>.args`: extra arguments when a new task starts that agent, for example
   `"claude": { "args": ["--dangerously-skip-permissions"] }`. That flag lets Claude Code run every
   tool and command without asking you first, so nothing will block for approval; use it only
@@ -282,7 +282,7 @@ can be left out:
   (default 300, at most 86400); `0` shows it only when it blocks.
 - `plugins.disabled`: plugin ids to leave off. Every plugin in the plugins folder is on otherwise.
 
-A mistake never breaks the app: the panel footer says what is wrong, and a file that is not valid
+A mistake never breaks the app: the palette's Status page says what is wrong, and a file that is not valid
 JSON keeps the last good config.
 
 ## Development

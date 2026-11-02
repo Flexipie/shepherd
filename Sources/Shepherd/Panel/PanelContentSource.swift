@@ -1,8 +1,8 @@
 import ShepherdCore
 import ShepherdUI
 
-/// What the panel shows, computed from the modules and the store. Shared by the menu bar panel
-/// and the notch surface, so the two never drift, arranged by `layout` in config. Read inside
+/// What the notch bar shows, computed from the modules and the store. The palette's Status page
+/// reads its status lines and problems, so the two never drift, arranged by `layout` in config. Read inside
 /// observation tracking to redraw when any of it changes.
 @MainActor
 struct PanelContentSource {
@@ -18,8 +18,8 @@ struct PanelContentSource {
     }
 }
 
-/// The herd's state in a line, then each source's own lines: shared by the panel footer and the
-/// status item's menu.
+/// The herd's state in a line, then each source's own lines: shared by the notch bar, the
+/// palette's Status page and the status item's menu.
 @MainActor
 enum HerdSummary {
     static func lines(_ store: HerdStore) -> [String] {

@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// The panel under the menu bar icon. It takes key focus for the arrow keys without activating
+/// The palette's window. It takes key focus for the arrow keys without activating
 /// Shepherd, so the app the user was in stays frontmost and a jump lands straight in the terminal.
 final class ShepherdPanel: NSPanel {
     /// Escape.
@@ -48,8 +48,8 @@ extension NSText {
     }
 }
 
-/// Reports when SwiftUI's preferred size changes, so the panel can resize and keep its top edge
-/// under the menu bar.
+/// Reports when SwiftUI's preferred size changes, so the palette can resize and keep its top edge
+/// in place.
 final class PanelHostingView<Content: View>: NSHostingView<Content> {
     var onSizeChange: (() -> Void)?
 
