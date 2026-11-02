@@ -156,6 +156,7 @@ public final class HerdStore {
     package func apply(_ update: SourceUpdate, from source: SourceID) {
         bySource[source] = update
         let previousMerges = merges
+        let previousRows = agents
         let (merged, mergedProjects) = mergedHerd()
         if agents != merged { agents = merged }
         if projects != mergedProjects { projects = mergedProjects }
@@ -171,7 +172,20 @@ public final class HerdStore {
         }
         // A merged row's changes are told once, under its row's id. A pair that just ended still
         // decides, so a report going away is not told as its own agent leaving.
-        let transitions = update.transitions.compactMap { transition in
+        // A row that switched sides (`HerdMerge.isStale`) tells one change, from what it showed to
+        // what it shows, in place of either side's own.
+        let switched = merges.filter { merge in
+            previousMerges.contains { $0.host == merge.host && $0.guest == merge.guest && $0.stateFromGuest != merge.stateFromGuest }
+        }
+        let switchedIDs = Set(switched.flatMap { [$0.host, $0.guest] })
+        let switches: [HerdTransition] = switched.compactMap { merge in
+            guard let old = previousRows.first(where: { $0.id == merge.host }),
+                  let new = merged.first(where: { $0.id == merge.host }), old.status != new.status else { return nil }
+            return HerdTransition(agent: merge.host, kind: merge.hostKind, project: merge.hostProject, from: old.status,
+                                  to: new.status, at: new.since?.date ?? Date())
+        }
+        let transitions = switches + update.transitions.compactMap { transition in
+            if switchedIDs.contains(transition.agent) { return nil }
             let merge = (merges + previousMerges).first { $0.host == transition.agent || $0.guest == transition.agent }
             return merge.map { $0.view(of: transition) } ?? transition
         }
@@ -180,6 +194,8 @@ public final class HerdStore {
             if let log { Task { await log.append(transitions) } }
             // A screen reading is a guess, so no event announces it: plugins run for reported changes only.
             let inferred = Set(update.agents.filter(\.isInferred).map(\.id))
+                .union(switched.filter { !$0.stateFromGuest }.map(\.host))
+                .subtracting(switched.filter(\.stateFromGuest).map(\.host))
             let announced = transitions.filter { !inferred.contains($0.agent) }
             if !announced.isEmpty { publish(.transitions(announced)) }
         }

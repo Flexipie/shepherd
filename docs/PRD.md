@@ -102,7 +102,10 @@ As built:
   `agent_session`), and never two of different kinds. The row is the one whose source has more
   capabilities, so reading, answering, jumping and new tasks keep working; a report's state, message and question replace
   a screen reading's, while herdr's own state stays and the report only fills its message and
-  question. Its transitions are told once, under the row's id: the side that gives the state
+  question. A report the screen has moved on from gives way: Claude Code runs no hook on an
+  interrupt (Esc, or No at an approval), so once the screen settles on idle or working after the
+  report's state began, or the report went quiet, the screen's state shows (a done report over an
+  idle screen stays done). The row switching sides is told as one change. Its transitions are told once, under the row's id: the side that gives the state
   counts, the report going is not the row's, and the report appearing is the row starting
   when the report gives the row's state. A project only a folded-in agent
   used is dropped. `HerdProject.repo` (`HerdRepo`: a key, a name, whether it is a linked checkout)

@@ -39,7 +39,8 @@ in tmux to get those.
 Reports and the other sources work together. A Claude Code session with the hooks installed that
 runs in a tmux pane or a herdr pane is one row: the pane's, so you can still read, answer, prompt
 and jump to it, with the exact state from its report instead of the screen's reading (under herdr,
-herdr's own state stays, and the report adds its message).
+herdr's own state stays, and the report adds its message). When the screen has moved on from the
+report, such as after you interrupt a turn or answer No to an approval, the screen's state shows.
 
 With no config file, every source that is on your Mac runs. Until the first agent shows, the
 panel says which sources it found and what to do next.

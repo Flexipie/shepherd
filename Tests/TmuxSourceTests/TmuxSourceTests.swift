@@ -307,4 +307,27 @@ struct TmuxSourceTests {
             try await store.prompt(agent.id, "hello")
         }
     }
+
+    // A report says done as the turn ends, before the screen's idle has settled: Reply must work then (#88).
+    @Test func aPromptIsTakenAsSoonAsTheScreenShowsIdle() async throws {
+        let folder = try scratch()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        try fakeClaude(in: folder, screens: [Self.working, "\u{1B}[2J\u{1B}[H" + Self.idle], pause: 2)
+        let tmux = try PrivateTmux(binary: binary, folder: folder, command: "\(folder.path)/claude")
+        defer { withExtendedLifetime(tmux) {} }
+        let (store, source) = try running(folder)
+        defer { Task { await source.stop() } }
+        await until { store.agents.first?.status == .working }
+        let agent = try #require(store.agents.first)
+        var shownWhenTaken: HerdStatus?
+        for _ in 0..<40 {
+            let shown = store.agents.first?.status
+            if (try? await store.prompt(agent.id, "hello")) != nil {
+                shownWhenTaken = shown
+                break
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        #expect(shownWhenTaken == .working)
+    }
 }

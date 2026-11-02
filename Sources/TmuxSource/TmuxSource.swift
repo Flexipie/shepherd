@@ -190,8 +190,19 @@ public final class TmuxSource: AgentSource {
     }
 
     /// Only to an agent that shows as idle: a prompt typed into a running turn would go to the wrong place.
+    /// A screen that turned idle a moment ago has not settled yet, so it is read again now: a report of
+    /// the same agent can say done before the screen settles.
     public func prompt(_ agent: AgentID, _ text: String) async throws {
-        guard tracker.shown(agent.local) == .idle else { throw AgentSourceError.failed("the agent is not idle") }
+        if tracker.shown(agent.local) != .idle {
+            guard let observation = observations[agent.local] else { throw AgentSourceError.failed("the agent is not idle") }
+            let client = TmuxClient(binary: binary, socket: observation.socket)
+            let (screens, pane, kind) = (screens, observation.paneID, observation.kind)
+            // Patterns come from config, so they are matched off the main actor too.
+            let status = try await tmux { screens.status(kind: kind, screen: try client.screen(pane)) }
+            guard status == .idle else {
+                throw AgentSourceError.failed("the agent is not idle")
+            }
+        }
         try await sendText(agent, text)
     }
 
