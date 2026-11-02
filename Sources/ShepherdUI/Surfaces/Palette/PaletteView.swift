@@ -9,7 +9,7 @@ public struct PaletteContent: Sendable, Equatable {
     public var notice: String?
     /// The notice is about problems, so it shows a warning.
     public var noticeIsProblem: Bool
-    /// The first-run guide, shown in place of the list while nothing is typed; nil once agents show.
+    /// The first-run guide, shown above the commands while nothing is typed; nil once agents or projects show.
     public var guide: PanelSection?
     public var page: PalettePage
 
@@ -123,18 +123,20 @@ public struct PaletteView: View {
         }
     }
 
-    /// None while the first-run guide shows, so Return never picks a command it hides.
     private var results: [PaletteResult] {
-        showsGuide ? [] : PaletteSearch.results(content.items, query: query)
+        PaletteSearch.results(content.items, query: query)
     }
 
     private var showsGuide: Bool {
         content.guide != nil && query.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
-    /// The selection if it is still among the results, else the first result.
+    /// The selection if it is still among the results, else the first result. While the first-run
+    /// guide shows, nothing until an arrow picks a row, so Return never runs a command it pushed
+    /// out of view.
     private func selected(in results: [PaletteResult]) -> PaletteItem.ID? {
-        results.contains { $0.id == selection } ? selection : results.first?.id
+        if results.contains(where: { $0.id == selection }) { return selection }
+        return showsGuide ? nil : results.first?.id
     }
 
     private func palette(now: Date) -> some View {
@@ -143,9 +145,7 @@ public struct PaletteView: View {
         return VStack(alignment: .leading, spacing: 0) {
             field(results, selected: selected)
             Divider().padding(.horizontal, 10)
-            if showsGuide, let guide = content.guide {
-                PaletteGuideView(guide: guide, now: now, maxHeight: maxListHeight)
-            } else if results.isEmpty {
+            if results.isEmpty && !showsGuide {
                 Text(query.trimmingCharacters(in: .whitespaces).isEmpty ? "Nothing to show yet" : "No matches")
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
@@ -209,8 +209,12 @@ public struct PaletteView: View {
         }
     }
 
+    /// The rows, under the first-run guide while it shows.
     private func list(_ results: [PaletteResult], selected: PaletteItem.ID?, now: Date) -> some View {
         VStack(alignment: .leading, spacing: 0) {
+            if showsGuide, let guide = content.guide {
+                PaletteGuideView(guide: guide, now: now)
+            }
             ForEach(results) { result in
                 PaletteRow(result: result, now: now, isSelected: result.id == selected)
                     .onContinuousHover(coordinateSpace: .global) { phase in
@@ -248,7 +252,7 @@ public struct PaletteView: View {
 
     private var hint: String {
         switch content.page {
-        case .list: showsGuide ? "type to find a command · esc close" : "↩ jump · ⇥ prompt · ⌘K actions · esc close"
+        case .list: showsGuide ? "↓ commands · esc close" : "↩ jump · ⇥ prompt · ⌘K actions · esc close"
         case .prompt(let stage):
             [stage.canReply ? (stage.prompts ? "↩ prompt" : "↩ reply") : nil,
              stage.canSendKeys && !stage.choices.isEmpty ? "⌘digit choose" : nil, "esc back"]
@@ -273,8 +277,9 @@ public struct PaletteView: View {
 
     private func move(_ offset: Int, in results: [PaletteResult]) -> KeyPress.Result {
         guard !results.isEmpty else { return .handled }
-        let index = results.firstIndex { $0.id == selected(in: results) } ?? 0
-        selection = results[min(max(index + offset, 0), results.count - 1)].id
+        // From no selection (under the guide) either arrow picks the first row.
+        let index = results.firstIndex { $0.id == selected(in: results) }.map { $0 + offset } ?? 0
+        selection = results[min(max(index, 0), results.count - 1)].id
         return .handled
     }
 

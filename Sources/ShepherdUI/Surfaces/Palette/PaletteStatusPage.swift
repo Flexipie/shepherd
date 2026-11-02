@@ -59,39 +59,23 @@ struct PaletteStatusPageView: View {
     }
 }
 
-/// The first-run guide in place of the list while no agents show and nothing is typed: a card per
-/// place agents can come from.
+/// The first-run guide above the palette's rows while no agents or projects show and nothing is
+/// typed: a card per place agents can come from.
 struct PaletteGuideView: View {
     let guide: PanelSection
     let now: Date
-    let maxHeight: CGFloat?
-
-    @State private var cardsHeight: CGFloat = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(guide.title)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
-            if let maxHeight {
-                ScrollView {
-                    cards.onGeometryChange(for: CGFloat.self) { $0.size.height } action: { cardsHeight = $0 }
-                }
-                .scrollBounceBehavior(.basedOnSize)
-                .frame(height: min(cardsHeight, maxHeight))
-            } else {
-                cards
-            }
-        }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 12)
-    }
-
-    private var cards: some View {
-        VStack(spacing: 8) {
             ForEach(guide.items.compactMap { item -> GadgetCard? in
                 if case .gadget(let card) = item { card } else { nil }
             }) { GadgetCardView(card: $0, now: now) }
         }
+        .padding(.horizontal, 8)
+        .padding(.top, 4)
+        .padding(.bottom, 10)
     }
 }

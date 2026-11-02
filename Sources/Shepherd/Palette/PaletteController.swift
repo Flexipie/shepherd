@@ -108,7 +108,7 @@ final class PaletteController: NSObject, NSWindowDelegate {
         case (nil, nil): .list
         }
         let notice = page.mode == .status ? nil : notice(summary, items: items)
-        // Only in place of commands: live projects without agents keep their rows and New task.
+        // Only over commands: live projects without agents keep the list as it was.
         let onlyCommands = items.allSatisfy { if case .command = $0.kind { true } else { false } }
         return PaletteContent(items: items, notice: notice?.text, noticeIsProblem: notice?.isProblem == true,
                               guide: onlyCommands ? sources?.panel : nil, page: page)

@@ -5,12 +5,12 @@ import Testing
 
 @MainActor
 @Suite struct PaletteStatusSnapshotTests {
-    /// No agents yet, on a Mac with no tmux and no herdr: the guide in place of the list.
+    /// No agents yet, on a Mac with no tmux and no herdr: the guide above the commands, none selected.
     @Test func firstRun() throws {
         let guide = PanelSection(id: "sources", title: "Where agents come from", items: SampleStatus.guide.map(PanelItem.gadget),
                                  emptyText: "")
         try Snapshot.check("palette-first-run", width: PaletteView.width) {
-            PaletteView(content: PaletteContent(items: [], guide: guide), clock: .fixed(SampleHerd.now)) { _ in }
+            PaletteView(content: PaletteContent(items: SampleStatus.commands, guide: guide), clock: .fixed(SampleHerd.now)) { _ in }
         }
     }
 
@@ -33,6 +33,7 @@ import Testing
     }
 }
 
+@MainActor
 enum SampleStatus {
     static let guide = [
         GadgetCard(id: "tmux", title: "tmux", detail: "not installed",
@@ -45,6 +46,12 @@ enum SampleStatus {
         GadgetCard(id: "demo", title: "Demo", detail: "made-up agents",
                    lines: ["To see Shepherd with a herd first, right-click the menu bar icon and choose Try Demo."]),
     ]
+
+    static let commands = [
+        PaletteCommand(id: "app.status", title: "Status", symbol: "stethoscope", action: .status),
+        PaletteCommand(id: "app.config", title: "Open config file", symbol: "doc.text", action: .openConfig),
+        PaletteCommand(id: "plugins.folder", title: "Open plugins folder", symbol: "folder", action: .openPluginsFolder),
+    ].map { PaletteIndex.commandItem($0) }
 
     static let problems = [
         "config: unknown key \"hotkey\"",

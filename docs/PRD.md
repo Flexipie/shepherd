@@ -444,8 +444,9 @@ Shepherd's own commands come from modules too: `app` (Quit, and Open config file
   include plugin and hotkey reports, layout problems and `HerdSummary`) and the `sources` module's
   cards without the Try Demo tip, read again on opening it so a hooks install shows. With problems
   the footer notice counts them and points to Status (only while the command is offered). While no
-  agents or projects show, the `sources` module's first-run guide replaces the list until something is typed,
-  so Return picks nothing hidden.
+  agents or projects show, the `sources` module's first-run guide sits above the command rows
+  until something is typed, with no row selected until an arrow picks one, so Return never runs a
+  command the guide pushed out of view.
 - **Mac integration** (planned): a Services menu entry to send selected text to an agent, drag and
   drop onto the notch, and App Intents so Spotlight, Shortcuts and Focus filters can drive
   Shepherd.
