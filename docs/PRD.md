@@ -31,7 +31,7 @@ Personal actions are config, not code.
 - Cross-platform, or macOS before 26. Shepherd targets macOS 26 and later so it can use the
   on-device model, `SpeechAnalyzer`, Liquid Glass and current App Intents without fallbacks for
   old systems.
-- Talking to Linear, GitHub or a review tool directly. Plugins publish tokens; Shepherd reads them.
+- Talking to Linear or GitHub directly. Plugins publish tokens; Shepherd reads them.
 - Sending data off the Mac by default. Any network use is a user-configured action or endpoint.
 
 ## Inspiration: Coucou
