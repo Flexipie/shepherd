@@ -19,7 +19,7 @@ final class RecordingActions: AgentActions {
 }
 
 @MainActor
-@Suite struct ModuleTests {
+@Suite(.serialized) struct ModuleTests {
     let store = HerdStore()
     let presence = Presence()
     var context: ModuleContext { ModuleContext(store: store, presence: presence, actions: RecordingActions()) }
@@ -77,21 +77,78 @@ final class RecordingActions: AgentActions {
         #expect(module.status?.accessibilityLabel == "Shepherd: 2 finished")
     }
 
-    @Test func notchShowsBlockedUntilHandled() {
+    func change(_ local: String, from: HerdStatus?, to: HerdStatus?) -> HerdTransition {
+        HerdTransition(agent: AgentID(source: "herdr", local: local), from: from, to: to, at: Date())
+    }
+
+    /// Waits until the module's pill is shown (or hidden), or about five seconds.
+    func waitFor(_ module: NotchModule, shown: Bool) async throws {
+        for _ in 0..<500 where (module.notch != nil) != shown { try await Task.sleep(for: .milliseconds(10)) }
+    }
+
+    @Test func notchShowsANewBlockBrieflyThenThePaw() async throws {
+        NotchModule.briefDuration = .milliseconds(100)
+        defer { NotchModule.briefDuration = .seconds(4) }
         let module = NotchModule(context: context)
         show([agent("a", .working), agent("b", .blocked), agent("c", .done)])
+        #expect(module.notch == nil, "a blocked agent seen at launch is not news")
+
+        module.handle([change("b", from: .working, to: .blocked)])
         #expect(module.notch?.agent.id.local == "b")
         #expect(module.notch?.reason == .blocked)
         #expect(module.notch?.others == 1)
         #expect(module.notch?.subtitle == "project 1 · needs you")
-        show([agent("b", .working)])
+        try await waitFor(module, shown: false)
         #expect(module.notch == nil)
+        #expect(StatusModule(context: context).status?.count == 2, "the paw still counts it")
+    }
+
+    @Test func notchShowsAStillBlockedAgentOnceMore() async throws {
+        NotchModule.briefDuration = .milliseconds(100)
+        defer { NotchModule.briefDuration = .seconds(4) }
+        var config = ShepherdConfig()
+        config.notchEscalateAfter = 0.3
+        let module = NotchModule(context: ModuleContext(store: store, presence: presence, actions: RecordingActions(),
+                                                        config: ConfigStore(fixed: config)))
+        show([agent("b", .blocked)])
+        module.handle([change("b", from: .working, to: .blocked)])
+        try await waitFor(module, shown: false)
+        try await waitFor(module, shown: true)
+        #expect(module.notch?.reason == .blocked)
+        try await waitFor(module, shown: false)
+        try await Task.sleep(for: .milliseconds(500))
+        #expect(module.notch == nil, "nothing after the second time")
+
+        module.handle([change("b", from: .blocked, to: .working), change("b", from: .working, to: .blocked)])
+        #expect(module.notch != nil, "blocking again starts over")
+        module.handle([change("b", from: .blocked, to: .working)])
+        try await Task.sleep(for: .milliseconds(500))
+        #expect(module.notch == nil, "unblocking cancels the second time")
+    }
+
+    @Test func notchIgnoresScreenReadings() {
+        let module = NotchModule(context: context)
+        let read = HerdAgent(id: AgentID(source: "herdr", local: "b"), kind: "claude", name: "agent b",
+                             projectID: ProjectID(source: "herdr", local: "p1"), project: "project 1",
+                             status: .blocked, since: nil, isInferred: true)
+        show([read])
+        module.handle([change("b", from: .working, to: .blocked)])
+        #expect(module.notch == nil)
+    }
+
+    @Test func notchHearsTheStoresChanges() async throws {
+        let module = NotchModule(context: context)
+        store.apply(SourceUpdate(agents: [agent("b", .blocked)], state: .live,
+                                 transitions: [change("b", from: .working, to: .blocked)]), from: "herdr")
+        try await waitFor(module, shown: true)
+        #expect(module.notch?.agent.id.local == "b")
     }
 
     @Test func notchStaysQuietForWhatYouAreLookingAt() {
         let module = NotchModule(context: context)
         presence.frontmostSources = ["herdr"]
         show([agent("b", .blocked, focused: true)])
+        module.handle([change("b", from: .working, to: .blocked)])
         #expect(module.notch == nil)
         presence.frontmostSources = []
         #expect(module.notch?.agent.id.local == "b")
@@ -100,6 +157,7 @@ final class RecordingActions: AgentActions {
     @Test func notchHidesAgentsOfSourcesThatAreNotLive() {
         let module = NotchModule(context: context)
         show([agent("b", .blocked)], state: .stale("fell behind herdr's events"))
+        module.handle([change("b", from: .working, to: .blocked)])
         #expect(module.notch == nil)
     }
 
@@ -110,9 +168,9 @@ final class RecordingActions: AgentActions {
         show([agent("c", .done)])
         #expect(module.notch == nil, "a done agent seen at launch is not news")
 
-        module.startBriefWindows(for: [HerdTransition(agent: AgentID(source: "herdr", local: "c"), from: .working, to: .done, at: Date())])
+        module.handle([change("c", from: .working, to: .done)])
         #expect(module.notch?.reason == .finished)
-        for _ in 0..<500 where module.notch != nil { try await Task.sleep(for: .milliseconds(10)) }
+        try await waitFor(module, shown: false)
         #expect(module.notch == nil)
         #expect(StatusModule(context: context).status?.count == 1)
     }
