@@ -24,15 +24,16 @@ they run.
   pane are one row you can still read, answer and jump to. Any agent or script can report its
   own with `shepherd-report report`. With no agents yet, the panel says where agents come from and
   what each source needs.
-- **Try it before your own agents.** Try Demo in the menu bar icon's right-click menu (or
-  `make demo`) runs Shepherd on a made-up herd, with approvals, finished work and questions to
+- **Try it before your own agents.** Try Demo in the menu bar icon's right-click menu or the
+  palette (or `make demo`) runs Shepherd on a made-up herd, with approvals, finished work and questions to
   click through. It touches nothing of yours; Leave Demo goes back.
 - **Act without switching to the terminal.** Answer an approval from the notch with buttons or digit
   keys, reply to a blocked agent, prompt an idle one, or start a new task in a fresh worktree. Works
   for agents under herdr and tmux. Jumping brings the agent's terminal app forward; under tmux, an
   agent in a session no terminal shows is switched into your most recently used terminal.
 - **A palette on ⌥Space.** Fuzzy search over agents, projects and commands from any app; Return
-  jumps, Tab opens an agent's prompt page. ⌃⌥⌘N jumps to the next agent that needs you.
+  jumps, Tab opens an agent's prompt page. Shepherd's own commands are there too: Quit, Try Demo,
+  Open config file and Open plugins folder. ⌃⌥⌘N jumps to the next agent that needs you.
 - **Judge finished work from the row.** Claude Code agents under herdr show their context size and,
   once they stop, their final message, in full on the stage and in the palette.
 - **Yours to shape.** `~/.config/shepherd/config.json`, applied on save: the columns each tab

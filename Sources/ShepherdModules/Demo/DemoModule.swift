@@ -1,7 +1,7 @@
 import ShepherdCore
 
 /// Says, at the top of the panel, that the herd is demo mode's made-up one and how to leave it.
-/// Outside demo mode it has no section.
+/// Outside demo mode it has no section. Its command, Try Demo or Leave Demo, is the menu's demo item.
 @MainActor
 public final class DemoModule: ShepherdModule {
     public static let id = "demo"
@@ -18,5 +18,10 @@ public final class DemoModule: ShepherdModule {
             "Right-click the menu bar icon and choose Leave Demo.",
         ])
         return PanelSection(id: Self.id, title: "Demo", items: [.gadget(card)], emptyText: "")
+    }
+
+    public var commands: [PaletteCommand] {
+        guard let title = context.demoTitle() else { return [] }
+        return [PaletteCommand(id: "demo.switch", title: title, symbol: "theatermasks", action: .switchDemo)]
     }
 }

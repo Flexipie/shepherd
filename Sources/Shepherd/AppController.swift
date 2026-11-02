@@ -49,7 +49,8 @@ final class AppController {
         notifier = demo ? nil : SystemNotifier(store: store, actions: actions, config: config)
         let plugins = demo ? nil : PluginHost(runner: ProcessPluginRunner(), store: store, config: config)
         context = ModuleContext(store: store, presence: presence, actions: actions, config: config, notifier: notifier,
-                                    contextReader: demo ? nil : ClaudeContextReader(), plugins: plugins, isDemo: demo)
+                                    contextReader: demo ? nil : ClaudeContextReader(), plugins: plugins, isDemo: demo,
+                                demoTitle: { Self.demoTitle(isDemo: demo) })
         registry = ModuleRegistry(available: BuiltinModules.all, retired: BuiltinModules.retired, context: context)
     }
 
@@ -58,10 +59,10 @@ final class AppController {
         let panel = PanelController(content: content, actions: actions, presence: presence)
         self.panel = panel
         statusItem = StatusItemController(store: store, registry: registry, panel: panel, isDemo: isDemo,
-                                          demoItem: { [weak self] in self?.demoMenuTitle },
-                                          switchDemo: { [weak self] in self?.relaunch() })
+                                          demoItem: context.demoTitle, switchDemo: { [weak self] in self?.relaunch() })
         notch = NotchSurfaceController(registry: registry, content: content, actions: actions, presence: presence)
-        palette = PaletteController(context: context, registry: registry, actions: actions)
+        palette = PaletteController(context: context, registry: registry, actions: actions,
+                                    switchDemo: { [weak self] in self?.relaunch() })
         hotKeys = HotKeyCenter(config: config, bindings: [
             .init(name: "next", combo: \.nextHotkey) { [weak self] in
                 self?.closeSurfaces()
@@ -106,15 +107,16 @@ final class AppController {
         demo?.removeFiles()
     }
 
-    /// The menu's demo item, when this Shepherd runs as an app: Leave Demo in demo mode, else Try
-    /// Demo, left out while another Shepherd runs (a second demo would share its socket and spool).
-    private var demoMenuTitle: String? {
+    /// The demo item of the menu and the palette, when this Shepherd runs as an app: Leave Demo in
+    /// demo mode, else Try Demo, left out while another Shepherd runs (a second demo would share its
+    /// socket and spool).
+    private static func demoTitle(isDemo: Bool) -> String? {
         guard Bundle.main.bundleURL.pathExtension == "app" else { return nil }
         if isDemo { return "Leave Demo" }
         return otherShepherdRunning ? nil : "Try Demo"
     }
 
-    private var otherShepherdRunning: Bool {
+    private static var otherShepherdRunning: Bool {
         NSRunningApplication.runningApplications(withBundleIdentifier: Bundle.main.bundleIdentifier ?? "")
             .contains { $0.processIdentifier != ProcessInfo.processInfo.processIdentifier }
     }
@@ -123,7 +125,7 @@ final class AppController {
     /// first, so the new one can take them; they come back if it does not open. Leaving a demo
     /// that runs beside another Shepherd (`make demo`) only quits it.
     private func relaunch() {
-        if isDemo, otherShepherdRunning {
+        if isDemo, Self.otherShepherdRunning {
             NSApp.terminate(nil)
             return
         }

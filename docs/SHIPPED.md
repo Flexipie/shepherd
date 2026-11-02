@@ -313,3 +313,9 @@ Oldest first.
   screen stays done), and the switch is told as one change, so the notice is withdrawn. Prompting a
   tmux agent reads the screen again when its idle has not settled yet, so Reply works as soon as
   the report says done.
+- Palette: Shepherd commands (#101): Quit, Try Demo / Leave Demo (offered when the
+  right-click menu offers it and `demo` is enabled), Open config file and Open plugins folder are
+  palette commands, from a new `app` module and the `demo` and `plugins` modules. A missing config
+  file opens its folder; a missing folder is made first, never a file. Demo mode offers neither
+  open command, since it reads no config and runs no plugins. A failure to open shows in the
+  panel's footer.

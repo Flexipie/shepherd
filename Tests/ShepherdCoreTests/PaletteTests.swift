@@ -163,4 +163,34 @@ import Testing
                                             .newTask(ProjectID(source: "herdr", local: "w2"))])
         #expect(PaletteSearch.results(items(), query: "new task web").first?.id == "command/projects.new-task.herdr:w2")
     }
+
+    func commandIDs(_ context: ModuleContext) -> [String] {
+        let modules: [any ShepherdModule] = [DemoModule(context: context), PluginsModule(context: context), AppModule(context: context)]
+        return PaletteIndex.items(context: context, modules: modules).map(\.id)
+    }
+
+    @Test func shepherdCommandsAreFoundByName() {
+        let folder = FileManager.default.temporaryDirectory.appending(path: "shepherd-palette-\(UUID().uuidString)")
+        let config = ConfigStore(url: folder.appending(path: "config.json"), watch: false)
+        let plugins = PluginHost(directory: folder.appending(path: "plugins"), runner: StubPluginRunner(), store: store, config: config)
+        let context = ModuleContext(store: store, presence: Presence(), actions: RecordingActions(), config: config, plugins: plugins,
+                                    demoTitle: { "Try Demo" })
+        let modules: [any ShepherdModule] = [DemoModule(context: context), PluginsModule(context: context), AppModule(context: context)]
+        let items = PaletteIndex.items(context: context, modules: modules)
+        #expect(items.map(\.id) == ["command/demo.switch", "command/plugins.folder", "command/app.config", "command/app.quit"])
+        let found = ["quit": PaletteAction.quit, "try demo": .switchDemo, "config": .openConfig, "plugins folder": .openPluginsFolder]
+        for (query, action) in found {
+            #expect(PaletteSearch.results(items, query: query).first?.item.action == action, "\(query)")
+        }
+        // Typing "shepherd" to find a repo never puts Quit first.
+        #expect(PaletteSearch.results(items, query: "shepherd").isEmpty)
+    }
+
+    @Test func demoModeOffersLeaveDemoAndQuitOnly() {
+        // Demo mode reads no config and runs no plugins, so neither has a command.
+        let demo = ModuleContext(store: store, presence: Presence(), actions: RecordingActions(), isDemo: true, demoTitle: { "Leave Demo" })
+        #expect(commandIDs(demo) == ["command/demo.switch", "command/app.quit"])
+        // No demo switch while it is not offered (another Shepherd runs, or not run as an app).
+        #expect(commandIDs(context) == ["command/app.quit"])
+    }
 }

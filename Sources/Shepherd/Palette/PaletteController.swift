@@ -19,6 +19,7 @@ final class PaletteController: NSObject, NSWindowDelegate {
     private let context: ModuleContext
     private let registry: ModuleRegistry
     private let actions: AppActions
+    private let switchDemo: () -> Void
     private let stage: StageModel
     private let plugin = PalettePluginState()
     private let host = FloatingPanelHost()
@@ -32,10 +33,11 @@ final class PaletteController: NSObject, NSWindowDelegate {
 
     var isOpen: Bool { panel != nil }
 
-    init(context: ModuleContext, registry: ModuleRegistry, actions: AppActions) {
+    init(context: ModuleContext, registry: ModuleRegistry, actions: AppActions, switchDemo: @escaping () -> Void) {
         self.context = context
         self.registry = registry
         self.actions = actions
+        self.switchDemo = switchDemo
         stage = StageModel(store: context.store, actions: actions, config: context.config)
     }
 
@@ -166,7 +168,32 @@ final class PaletteController: NSObject, NSWindowDelegate {
         case .jump(let agent): actions.jump(to: agent)
         case .focusProject(let project): actions.focusProject(project)
         case .nextInQueue: actions.jumpToNext()
+        case .quit: NSApp.terminate(nil)
+        case .switchDemo: switchDemo()
+        case .openConfig:
+            guard let url = context.config.url else { return }
+            if FileManager.default.fileExists(atPath: url.path) {
+                // With no app for JSON, show it in the Finder instead.
+                if !NSWorkspace.shared.open(url) { NSWorkspace.shared.activateFileViewerSelecting([url]) }
+                context.config.report(nil, for: "palette")
+            } else {
+                openFolder(url.deletingLastPathComponent())
+            }
+        case .openPluginsFolder:
+            if let folder = context.plugins?.directory { openFolder(folder) }
         case .newTask, .plugin, .gadgets: break
+        }
+    }
+
+    /// Opens a folder in the Finder, made first if missing. Folders may be made, files never. A
+    /// failure shows in the panel's footer, since the palette has closed.
+    private func openFolder(_ url: URL) {
+        do {
+            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+            let opened = NSWorkspace.shared.open(url)
+            context.config.report(opened ? nil : "palette: could not open \(url.path)", for: "palette")
+        } catch {
+            context.config.report("palette: could not make \(url.path) (\(error.localizedDescription))", for: "palette")
         }
     }
 

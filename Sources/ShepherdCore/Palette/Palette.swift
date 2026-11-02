@@ -10,6 +10,13 @@ public enum PaletteAction: Sendable, Hashable {
     case plugin(PluginActionRef)
     /// Shows the plugins' gadget cards.
     case gadgets
+    case quit
+    /// Opens a new Shepherd in or out of demo mode and quits this one, like the menu's demo item.
+    case switchDemo
+    /// Opens the config file, or its folder (made if missing) while there is no file.
+    case openConfig
+    /// Opens the plugins folder, made if missing.
+    case openPluginsFolder
 }
 
 /// A command a module offers in the palette. Modules contribute them, so the palette grows

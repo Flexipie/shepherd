@@ -132,7 +132,7 @@ As built:
   written; with no config file every source runs with defaults. A source left out of `sources` has no
   card, and the guide is read again when a panel opens while it shows (so installed hooks show).
   Its last card offers demo mode.
-- Demo mode (`Shepherd --demo`, or Try Demo in the status item's right-click menu, which opens a
+- Demo mode (`Shepherd --demo`, or Try Demo in the status item's right-click menu or the palette, which opens a
   new Shepherd with `--demo` and quits this one; Leave Demo goes back) replaces every source with
   `DemoHerd`'s made-up herd: `HerdrFake`'s `FakeHerd.demo` on `/tmp/shepherd-demo.sock` served by a
   real `HerdrSource` (no history, no herdr config, no terminal), two Claude Code reports in the
@@ -434,6 +434,10 @@ tabs. Each surface reports its tab to `Presence`, so a module reads only while i
   prompt otherwise; a success closes the palette, a failure stays on screen with the text kept.
   Choices are buttons with ⌘ digits, since plain digits are typing. Which keys move between
   pages is a pure `PaletteMode` in Core; Escape goes back to the list, and closes from there.
+  Shepherd's own commands come from modules too: `app` (Quit, and Open config file
+  unless in demo mode), `demo` (Try Demo or Leave Demo, whenever the menu offers it and `demo` is enabled, through
+  `ModuleContext.demoTitle`) and `plugins` (Open plugins folder). A missing config file opens its
+  folder instead; a missing folder is made first, a file never. A failure shows in the footer.
 - **Mac integration** (planned): a Services menu entry to send selected text to an agent, drag and
   drop onto the notch, and App Intents so Spotlight, Shortcuts and Focus filters can drive
   Shepherd.
@@ -572,7 +576,8 @@ observable state; the app reads them inside observation tracking, so a surface r
 what it shows changes. A panel section holds agent rows and project cards, each with its token
 lines already styled and the `PanelAction` it performs (jump to an agent, focus a project), or
 none when the source cannot. A section names its tab (`PanelSection.tab`); a gadget sets
-`.gadgets` and reads only while `Presence.isShowing(.gadgets)`. Built in: `status`, `notch`, `demo` (says the herd is made up, in demo mode only), `queue` (the needs-you queue, live
+`.gadgets` and reads only while `Presence.isShowing(.gadgets)`. Built in: `status`, `notch`, `demo` (says the herd is made up, in demo mode only, and the palette's demo switch), `app`
+(Shepherd's own palette commands), `queue` (the needs-you queue, live
 sources only), `context` (context sizes and final messages, read through `ModuleContext.contextReader` only
 while Agents or the palette shows), `sources` (the first-run guide: while the herd has no agents, one card per place agents
 can come from, from `ModuleContext.sourceGuide`, which the app fills at launch), `notifications`, `plugins` (plugin actions as commands, and plugin gadgets as cards on Gadgets) and `projects` (the cards; a source that is not live shows its last known state,
@@ -613,7 +618,8 @@ handling.
 `~/.config/shepherd/config.json` (or `SHEPHERD_CONFIG_PATH`), plain JSON, reloaded on save.
 Every key is optional and a missing file means defaults. As built:
 
-- `modules`: enabled module ids, in order.
+- `modules`: enabled module ids, in order. A list written before a module existed leaves it off
+  (such as `app`, with Quit and Open config file in the palette).
 - `layout`: what the menu bar panel and the notch bar show, without turning modules off.
   `agents` and `gadgets` list section (module) ids for that tab, in order; a section of that tab
   left out is hidden, and a tab with no list shows all of its sections in `modules` order. A list
