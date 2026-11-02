@@ -12,7 +12,8 @@ public final class AppModule: ShepherdModule {
     }
 
     public var commands: [PaletteCommand] {
-        let quit = PaletteCommand(id: "app.quit", title: "Quit", symbol: "power", keywords: ["exit"], action: .quit)
+        let quit = PaletteCommand(id: "app.quit", title: "Quit", symbol: "power", action: .quit,
+                                  onlyWhenTyped: true)
         guard context.config.url != nil else { return [quit] }
         return [PaletteCommand(id: "app.config", title: "Open config file", symbol: "doc.text", keywords: ["settings", "json"],
                                action: .openConfig), quit]

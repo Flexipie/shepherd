@@ -132,9 +132,9 @@ As built:
   written; with no config file every source runs with defaults. A source left out of `sources` has no
   card, and the guide is read again when a panel opens while it shows (so installed hooks show).
   Its last card offers demo mode.
-- Demo mode (`Shepherd --demo`, or Try Demo in the status item's right-click menu or the palette, which opens a
-  new Shepherd with `--demo` and quits this one; Leave Demo goes back) replaces every source with
-  `DemoHerd`'s made-up herd: `HerdrFake`'s `FakeHerd.demo` on `/tmp/shepherd-demo.sock` served by a
+- Demo mode (`Shepherd --demo`, or Try Demo in the status item's right-click menu or the palette,
+  which opens a new Shepherd with `--demo` and quits this one; Leave Demo goes back) replaces every
+  source with `DemoHerd`'s made-up herd: `HerdrFake`'s `FakeHerd.demo` on `/tmp/shepherd-demo.sock` served by a
   real `HerdrSource` (no history, no herdr config, no terminal), two Claude Code reports in the
   spool `/tmp/shepherd-demo` read by a real `ReportSource`, and two screen-read agents from a
   stand-in for tmux (`DemoScreenSource`, under tmux's source id, labelled inferred, never running
@@ -434,10 +434,12 @@ tabs. Each surface reports its tab to `Presence`, so a module reads only while i
   prompt otherwise; a success closes the palette, a failure stays on screen with the text kept.
   Choices are buttons with ⌘ digits, since plain digits are typing. Which keys move between
   pages is a pure `PaletteMode` in Core; Escape goes back to the list, and closes from there.
-  Shepherd's own commands come from modules too: `app` (Quit, and Open config file
-  unless in demo mode), `demo` (Try Demo or Leave Demo, whenever the menu offers it and `demo` is enabled, through
+Shepherd's own commands come from modules too: `app` (Quit, and Open config file unless in demo
+  mode), `demo` (Try Demo or Leave Demo, whenever the menu offers it and `demo` is enabled, through
   `ModuleContext.demoTitle`) and `plugins` (Open plugins folder). A missing config file opens its
-  folder instead; a missing folder is made first, a file never. A failure shows in the footer.
+  folder instead; a missing folder is made first, a file never. A failure shows in the footer. Quit
+  and the demo switch are `onlyWhenTyped`: left out of the list with no query, so Return on an
+  empty palette never picks one; they show once the query matches.
 - **Mac integration** (planned): a Services menu entry to send selected text to an agent, drag and
   drop onto the notch, and App Intents so Spotlight, Shortcuts and Focus filters can drive
   Shepherd.

@@ -318,4 +318,5 @@ Oldest first.
   palette commands, from a new `app` module and the `demo` and `plugins` modules. A missing config
   file opens its folder; a missing folder is made first, never a file. Demo mode offers neither
   open command, since it reads no config and runs no plugins. A failure to open shows in the
-  panel's footer.
+  panel's footer. Quit and the demo switch show only once the query matches them, never in the
+  empty list, so Return on an empty palette never quits or relaunches.

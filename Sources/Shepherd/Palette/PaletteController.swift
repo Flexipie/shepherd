@@ -171,29 +171,32 @@ final class PaletteController: NSObject, NSWindowDelegate {
         case .quit: NSApp.terminate(nil)
         case .switchDemo: switchDemo()
         case .openConfig:
-            guard let url = context.config.url else { return }
-            if FileManager.default.fileExists(atPath: url.path) {
-                // With no app for JSON, show it in the Finder instead.
-                if !NSWorkspace.shared.open(url) { NSWorkspace.shared.activateFileViewerSelecting([url]) }
-                context.config.report(nil, for: "palette")
-            } else {
-                openFolder(url.deletingLastPathComponent())
-            }
+            if let url = context.config.url { open(url, else: url.deletingLastPathComponent()) }
         case .openPluginsFolder:
-            if let folder = context.plugins?.directory { openFolder(folder) }
+            if let folder = context.plugins?.directory { open(nil, else: folder) }
         case .newTask, .plugin, .gadgets: break
         }
     }
 
-    /// Opens a folder in the Finder, made first if missing. Folders may be made, files never. A
-    /// failure shows in the panel's footer, since the palette has closed.
-    private func openFolder(_ url: URL) {
-        do {
-            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-            let opened = NSWorkspace.shared.open(url)
-            context.config.report(opened ? nil : "palette: could not open \(url.path)", for: "palette")
-        } catch {
-            context.config.report("palette: could not make \(url.path) (\(error.localizedDescription))", for: "palette")
+    /// Opens `file` when it exists, else `folder`, made first if missing. Folders may be made, files
+    /// never. The file system work runs off the main actor; a failure shows in the panel's footer,
+    /// since the palette has closed.
+    private func open(_ file: URL?, else folder: URL) {
+        Task {
+            let target = await Task.detached(priority: .userInitiated) { () -> Result<URL, any Error> in
+                if let file, FileManager.default.fileExists(atPath: file.path) { return .success(file) }
+                return Result { try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true); return folder }
+            }.value
+            switch target {
+            case .success(let url) where NSWorkspace.shared.open(url): context.config.report(nil, for: "palette")
+            case .success(let url) where url == file:
+                // With no app for the file, show it in the Finder instead.
+                NSWorkspace.shared.activateFileViewerSelecting([url])
+                context.config.report(nil, for: "palette")
+            case .success(let url): context.config.report("palette: could not open \(url.path)", for: "palette")
+            case .failure(let error):
+                context.config.report("palette: could not make \(folder.path) (\(error.localizedDescription))", for: "palette")
+            }
         }
     }
 

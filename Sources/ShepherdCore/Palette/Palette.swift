@@ -30,13 +30,18 @@ public struct PaletteCommand: Sendable, Equatable, Identifiable {
     /// More words the command is found by.
     public let keywords: [String]
     public let action: PaletteAction
+    /// Left out of the list with no query, so a command that changes what the app is doing (Quit,
+    /// the demo switch) is never the row Return picks by default.
+    public let onlyWhenTyped: Bool
 
-    public init(id: String, title: String, symbol: String, keywords: [String] = [], action: PaletteAction) {
+    public init(id: String, title: String, symbol: String, keywords: [String] = [], action: PaletteAction,
+                onlyWhenTyped: Bool = false) {
         self.id = id
         self.title = title
         self.symbol = symbol
         self.keywords = keywords
         self.action = action
+        self.onlyWhenTyped = onlyWhenTyped
     }
 }
 
@@ -67,6 +72,11 @@ public struct PaletteItem: Sendable, Equatable, Identifiable {
 
     /// The name shown in bold, which highlights refer to.
     public var title: String { searchText.first ?? "" }
+
+    /// A command shown only once the query matches it.
+    public var onlyWhenTyped: Bool {
+        if case .command(let command) = kind { command.onlyWhenTyped } else { false }
+    }
 
     /// An agent waiting on the user.
     public var needsYou: Bool {

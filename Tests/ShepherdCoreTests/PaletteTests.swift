@@ -184,6 +184,8 @@ import Testing
         }
         // Typing "shepherd" to find a repo never puts Quit first.
         #expect(PaletteSearch.results(items, query: "shepherd").isEmpty)
+        // Commands that change what the app is doing are never a default row.
+        #expect(ids(PaletteSearch.results(items, query: "")) == ["command/plugins.folder", "command/app.config"])
     }
 
     @Test func demoModeOffersLeaveDemoAndQuitOnly() {

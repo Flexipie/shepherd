@@ -1,12 +1,13 @@
 /// Ranks palette items for a query. Each word of the query must match one of an item's words
 /// (its title, project, status, kind or token values); the title counts most. With no query, the
-/// items keep their order: agents that need the user first, as the index builds them.
+/// items keep their order: agents that need the user first, as the index builds them, without the
+/// commands shown only when typed.
 public enum PaletteSearch {
     public static let limit = 50
 
     public static func results(_ items: [PaletteItem], query: String, limit: Int = PaletteSearch.limit) -> [PaletteResult] {
         let terms = query.split(whereSeparator: \.isWhitespace).map(String.init)
-        guard !terms.isEmpty else { return items.prefix(limit).map { PaletteResult(item: $0) } }
+        guard !terms.isEmpty else { return items.filter { !$0.onlyWhenTyped }.prefix(limit).map { PaletteResult(item: $0) } }
         let scored = items.enumerated().compactMap { index, item -> (PaletteResult, score: Int, index: Int)? in
             guard let (score, highlights) = match(terms, item) else { return nil }
             return (PaletteResult(item: item, highlights: highlights), score, index)

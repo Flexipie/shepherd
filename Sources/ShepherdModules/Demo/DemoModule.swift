@@ -22,6 +22,6 @@ public final class DemoModule: ShepherdModule {
 
     public var commands: [PaletteCommand] {
         guard let title = context.demoTitle() else { return [] }
-        return [PaletteCommand(id: "demo.switch", title: title, symbol: "theatermasks", action: .switchDemo)]
+        return [PaletteCommand(id: "demo.switch", title: title, symbol: "theatermasks", action: .switchDemo, onlyWhenTyped: true)]
     }
 }
