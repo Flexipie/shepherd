@@ -51,8 +51,8 @@ already do that. The palette (⌥Space) is the centre of the loop.
 - **The contributor.** Wants to add a module or a source in an afternoon without understanding
   the whole app.
 
-The author's own setup (Linear tickets, daisy reviews, PR badges) is one example of what a user
-plugs in, not the product. Features must make sense for someone with a completely different
+The author's own setup (Linear tickets, code review verdicts, PR badges) is one example of what a
+user plugs in, not the product. Features must make sense for someone with a completely different
 setup.
 
 ## What makes it good
