@@ -67,9 +67,15 @@ env -u TMUX TMUX_TMPDIR=/tmp/shepherd-dev/tmux SHEPHERD_SPOOL_DIR=/tmp/shepherd-
   tmux new -s dev
 ```
 
-Then run Shepherd as above with `TMUX_TMPDIR=/tmp/shepherd-dev/tmux` added and
-`"sources": ["herdr", "report", "tmux"]` in its config (the report source reads only the dev
-folder). The folder must exist first: without it, tmux quietly uses its usual one.
+Then run Shepherd as above with `TMUX_TMPDIR=/tmp/shepherd-dev/tmux` added, after giving it this
+config (the report source reads only the dev folder):
+
+```bash
+echo '{ "sources": ["herdr", "report", "tmux"], "hotkeys": { "next": null, "palette": null } }' \
+  >/tmp/shepherd-dev/config.json
+```
+
+The tmux folder must exist first: without it, tmux quietly uses its usual one.
 
 Do not use Try Demo in a dev build: Leave Demo relaunches the app without these variables, on your
 real config and agents.

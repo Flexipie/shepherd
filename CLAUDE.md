@@ -81,8 +81,9 @@ Point a dev run at the fake and away from your real files with environment varia
   to a tmux started with `env -u TMUX`. `docs/CONTRIBUTING.md` has the whole recipe.
 
 Snapshot references are compared strictly only on the OS build in
-`Tests/ShepherdUITests/__Snapshots__/RECORDED_ON`; after an OS update, re-record and look at the
-images before committing them.
+`Tests/ShepherdUITests/__Snapshots__/RECORDED_ON`. Re-record only on that build (the
+maintainer's, after an OS update) and look at the images before committing them; recording
+anywhere else rewrites every reference and `RECORDED_ON` (`docs/CONTRIBUTING.md`, "View snapshots").
 
 Check the UI against the fake before your own herdr: it lets you block, finish, add and remove
 agents and stop herdr without touching real work. Review a recorded fixture before committing it.
