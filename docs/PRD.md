@@ -318,7 +318,7 @@ so a module reads only while its tab shows (`Presence.isShowing(_:)`).
   has three states and morphs between them with a spring (Reduce Motion: the shape changes at once
   and the content crossfades):
   - **Ear**, when nothing is in the pill: a paw sticking out 40 pt to the left of the notch,
-    orange with a count when agents need you, dimmed when the state is not live.
+    a count when agents need you, orange while one is blocked, dimmed when the state is not live.
   - **Alert**, while a module offers a notch item: the pill below the notch with which agent, why,
     and how many others wait. Click jumps there.
   - **Expanded**, while hovered: the bar. A wide, short shape centred on the notch,

@@ -34,7 +34,7 @@ extension ShepherdModule {
 public struct StatusContribution: Sendable, Equatable {
     public enum Emphasis: Sendable, Equatable {
         case normal
-        /// Something needs the user.
+        /// Something is blocked on the user.
         case attention
         /// The shown state is not live (a source is down or its stream broke).
         case dimmed

@@ -12,10 +12,10 @@ they run.
 ### Added
 
 - **See your herd at a glance.** A paw in the menu bar and around the notch (a small floating pill
-  on a Mac without one). It turns orange with a count when agents need you; hover the notch for a
-  wide bar with the needs-you queue first (blocked, then finished, longest waiting first), then a
-  column per project with each agent's state and time in state. Worktrees of one repo share a
-  column.
+  on a Mac without one). It shows a count when agents need you, orange while one is blocked; hover
+  the notch for a wide bar with the needs-you queue first (blocked, then finished, longest waiting
+  first), then a column per project with each agent's state and time in state. Worktrees of one
+  repo share a column.
 - **Agents from any terminal.** Three sources: herdr, tmux and agent reports. tmux needs no setup:
   Claude Code and Codex panes are found by their process, and their state is read from the screen.
   For Claude Code, `shepherd-report install claude` (inside the app; the README shows how) adds

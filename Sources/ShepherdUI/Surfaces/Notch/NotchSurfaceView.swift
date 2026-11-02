@@ -3,7 +3,7 @@ import SwiftUI
 
 /// What the notch surface shows. One black shape morphs between them.
 public enum NotchSurfaceMode: Sendable, Equatable {
-    /// Quiet: the paw beside the notch, orange with a count when agents need you.
+    /// Quiet: the paw beside the notch, a count when agents need you, orange while one is blocked.
     case ear(StatusContribution)
     /// Someone is blocked or just finished: the pill below the notch.
     case alert(NotchItem)
