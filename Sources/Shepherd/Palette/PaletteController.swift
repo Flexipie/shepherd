@@ -23,7 +23,7 @@ final class PaletteController: NSObject, NSWindowDelegate {
     private let actions: AppActions
     private let switchDemo: () -> Void
     /// Reads the sources again for the Status page's cards.
-    private let explainSources: () -> Void
+    private let readSources: () -> Void
     private let stage: StageModel
     private let plugin = PalettePluginState()
     private let host = FloatingPanelHost()
@@ -38,12 +38,12 @@ final class PaletteController: NSObject, NSWindowDelegate {
     var isOpen: Bool { panel != nil }
 
     init(context: ModuleContext, registry: ModuleRegistry, actions: AppActions, switchDemo: @escaping () -> Void,
-         explainSources: @escaping () -> Void) {
+         readSources: @escaping () -> Void) {
         self.context = context
         self.registry = registry
         self.actions = actions
         self.switchDemo = switchDemo
-        self.explainSources = explainSources
+        self.readSources = readSources
         stage = StageModel(store: context.store, actions: actions, config: context.config)
     }
 
@@ -119,7 +119,7 @@ final class PaletteController: NSObject, NSWindowDelegate {
             return context.store.overallState.isLive ? nil : summary.statusLines.first.map { ($0, false) }
         }
         // Without the Status command (a `modules` list leaving out `app`) the first problem is all it can show.
-        guard items.contains(where: { $0.id == "command/\(AppModule.statusCommand)" }) else { return (first, true) }
+        guard items.contains(where: { $0.action == .status }) else { return (first, true) }
         return ("\(problems.count) \(problems.count == 1 ? "problem" : "problems"), see Status", true)
     }
 
@@ -184,7 +184,7 @@ final class PaletteController: NSObject, NSWindowDelegate {
         if case .plugin(let ref) = action { return run(ref) }
         if action == .status {
             plugin.page = .status
-            return explainSources()
+            return readSources()
         }
         if action == .gadgets {
             plugin.page = .gadgets

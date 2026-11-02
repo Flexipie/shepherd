@@ -63,7 +63,7 @@ final class AppController {
         notch = NotchSurfaceController(registry: registry, content: content, actions: actions, presence: presence)
         palette = PaletteController(context: context, registry: registry, actions: actions,
                                     switchDemo: { [weak self] in self?.relaunch() },
-                                    explainSources: { [weak self] in self?.fillGuide() })
+                                    readSources: { [weak self] in self?.fillGuide() })
         hotKeys = HotKeyCenter(config: config, bindings: [
             .init(name: "next", combo: \.nextHotkey) { [weak self] in
                 self?.closeSurfaces()
