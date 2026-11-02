@@ -295,3 +295,6 @@ Oldest first.
   Screen readings never raise the pill. The module reads the store's event stream, which drops
   nothing, rather than the last transitions, and each agent has one timer, so a repeat block
   starts its ladder over.
+- Return starts a new task (#85): in the new task form (the notch's "+" and the palette's "New
+  task"), Return in the prompt field now starts the task as Start does; Shift-Return or
+  Option-Return adds a line. It used to add a line, so only the Start button started the task.

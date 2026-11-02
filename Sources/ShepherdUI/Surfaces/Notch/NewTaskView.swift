@@ -1,3 +1,4 @@
+import AppKit
 import ShepherdCore
 import SwiftUI
 
@@ -56,6 +57,14 @@ struct NewTaskView: View {
                         .padding(.horizontal, 8)
                         .padding(.vertical, 6)
                         .background(RoundedRectangle(cornerRadius: 7).fill(Color.primary.opacity(0.08)))
+                        .onKeyPress(.return, phases: .down) { press in
+                            // While an input method is composing, Return confirms its candidate.
+                            let composing = (NSApp.keyWindow?.firstResponder as? NSTextView)?.hasMarkedText() ?? false
+                            guard !composing, press.modifiers.isDisjoint(with: [.shift, .option]) else { return .ignored }
+                            start()
+                            return .handled
+                        }
+                        .help("Return starts the task; Shift- or Option-Return adds a line")
                     HStack(spacing: 8) {
                         Button(stage.isStarting ? "Starting…" : "Start", action: start)
                             .buttonStyle(StageButtonStyle(fill: Color.accentColor.opacity(0.35)))
