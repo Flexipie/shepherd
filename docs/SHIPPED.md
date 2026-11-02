@@ -284,3 +284,7 @@ Oldest first.
   gadget section there is no tab bar. An old config naming `usage` or `system` in `modules` or
   `layout` loads without a problem (`BuiltinModules.retired`), and a `layout` list left empty by
   them counts as no list, so it hides no future gadget.
+- First-run Claude Code card, install command (#105): the card said to run `shepherd-report install
+  claude`, but that binary is inside the app and not on PATH, so pasting it gave "command not
+  found". The card now shows the full path of the `shepherd-report` beside the running app, shell
+  quoted, on a line of its own, and gadget card lines can be selected and copied.

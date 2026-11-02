@@ -150,7 +150,7 @@ public enum InstallCLI {
     }
 
     /// One shell word in single quotes, a `'` inside written as `'\''`.
-    static func shellQuoted(_ text: String) -> String {
+    public static func shellQuoted(_ text: String) -> String {
         "'" + text.replacingOccurrences(of: "'", with: "'\\''") + "'"
     }
 

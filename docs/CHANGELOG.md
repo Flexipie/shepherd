@@ -18,9 +18,9 @@ they run.
   repo share a column.
 - **Agents from any terminal.** Three sources: herdr, tmux and agent reports. tmux needs no setup:
   Claude Code and Codex panes are found by their process, and their state is read from the screen.
-  For Claude Code, `shepherd-report install claude` (inside the app; the README shows how) adds
-  hooks so it reports its exact state; in a tmux or herdr pane the report and the pane are one row
-  you can still read, answer and jump to. Any agent or script can report its
+  For Claude Code, `shepherd-report install claude` (inside the app; the first-run card shows its
+  full path) adds hooks so it reports its exact state; in a tmux or herdr pane the report and the
+  pane are one row you can still read, answer and jump to. Any agent or script can report its
   own with `shepherd-report report`. With no agents yet, the panel says where agents come from and
   what each source needs.
 - **Try it before your own agents.** Try Demo in the menu bar icon's right-click menu (or

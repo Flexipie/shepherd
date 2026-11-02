@@ -22,4 +22,10 @@ public enum ClaudeSetup: Sendable, Equatable {
               let parsed = try? SettingsJSON.parse(data) else { return .noHooks }
         return ClaudeHooks.isInstalled(in: parsed) ? .hooksInstalled : .noHooks
     }
+
+    /// The command that adds Shepherd's hooks, with `binary` as a full path: a `shepherd-report`
+    /// inside the app is not on PATH, so the bare name would not be found.
+    public static func installCommand(binary: String) -> String {
+        "\(InstallCLI.shellQuoted(binary)) install claude"
+    }
 }

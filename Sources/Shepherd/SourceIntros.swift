@@ -9,8 +9,10 @@ import TmuxSource
 @MainActor
 enum SourceIntros {
     /// `sources` is the config's source order; `tmuxInstalled` whether tmux was found for it;
+    /// `reportBinary` is the full path of the `shepherd-report` beside the app, which is not on PATH;
     /// `canTryDemo` whether the menu offers Try Demo, which then gets the last card.
-    static func make(sources: [String], tmuxInstalled: Bool, claude: ClaudeSetup, canTryDemo: Bool) -> [SourceIntro] {
+    static func make(sources: [String], tmuxInstalled: Bool, claude: ClaudeSetup, reportBinary: String,
+                     canTryDemo: Bool) -> [SourceIntro] {
         var intros: [SourceIntro] = []
         if sources.contains("tmux") {
             intros.append(tmuxInstalled
@@ -24,7 +26,8 @@ enum SourceIntros {
             intros.append(SourceIntro(
                 id: "claude", name: "Claude Code", found: claude == .hooksInstalled,
                 on: .init("reports on", "Each session reports its own exact status, in any terminal. In tmux or herdr it stays one row you can answer."),
-                off: .init("found", "For exact status in any terminal, tmux and herdr included, run shepherd-report install claude. It shows the change before writing it.")))
+                off: .init("found", "For exact status in any terminal, tmux and herdr included, run this in Terminal. It shows the change before writing it.\n"
+                           + ClaudeSetup.installCommand(binary: reportBinary))))
         }
         if sources.contains("herdr") {
             intros.append(SourceIntro(

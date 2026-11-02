@@ -33,6 +33,7 @@ struct GadgetCardView: View {
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                    .textSelection(.enabled)
             }
         }
         .opacity(card.isStale ? 0.6 : 1)
