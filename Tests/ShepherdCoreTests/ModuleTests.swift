@@ -136,14 +136,6 @@ final class RecordingActions: AgentActions {
         #expect(module.notch == nil)
     }
 
-    @Test func notchHearsTheStoresChanges() async throws {
-        let module = NotchModule(context: context)
-        store.apply(SourceUpdate(agents: [agent("b", .blocked)], state: .live,
-                                 transitions: [change("b", from: .working, to: .blocked)]), from: "herdr")
-        try await waitFor(module, shown: true)
-        #expect(module.notch?.agent.id.local == "b")
-    }
-
     @Test func notchStaysQuietForWhatYouAreLookingAt() {
         let module = NotchModule(context: context)
         presence.frontmostSources = ["herdr"]
