@@ -70,8 +70,14 @@ Point a dev run at the fake and away from your real files with environment varia
 - `HERDR_SOCKET_PATH=/tmp/shepherd-fake.sock`: the herdr socket.
 - `SHEPHERD_TRANSITION_LOG=<path>`: the transition log, so fake runs do not mix into real history.
 - `SHEPHERD_CONFIG_PATH=<path>`: Shepherd's config (default `~/.config/shepherd/config.json`).
+  Point it at a file with `{ "sources": ["herdr"], "hotkeys": { "next": null, "palette": null } }`:
+  with no file every source runs, so tmux and reports show the real agents, and the hotkeys clash
+  with a running Shepherd.
 - `HERDR_CONFIG_PATH=<path>`: herdr's config, read for sidebar token styling.
 - `SHEPHERD_PLUGINS_PATH=<path>`: the plugins folder (default `~/.config/shepherd/plugins`).
+- `SHEPHERD_SPOOL_DIR=<path>`: the agent report folder.
+- `TMUX_TMPDIR=<path>`: tmux's socket folder, for the tmux source; give the same existing folder
+  to a tmux started with `env -u TMUX`. `docs/CONTRIBUTING.md` has the whole recipe.
 
 Snapshot references are compared strictly only on the OS build in
 `Tests/ShepherdUITests/__Snapshots__/RECORDED_ON`; after an OS update, re-record and look at the
