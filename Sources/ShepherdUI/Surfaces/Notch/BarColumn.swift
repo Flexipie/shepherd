@@ -1,8 +1,9 @@
 import ShepherdCore
 
 /// A column of the notch bar. The needs-you queue comes first, pinned on the left; a section of
-/// project and repo cards gives one column per card; any other section is one column. So a new module's
-/// section just appears as another column, and the keyboard and the view agree on the grid.
+/// project or repo cards, or of gadget cards on Gadgets, gives one column per card; any other
+/// section is one column. So a new module's section just appears as another column, and the
+/// keyboard and the view agree on the grid.
 struct BarColumn: Sendable, Equatable, Identifiable {
     let id: String
     let section: PanelSection
@@ -22,6 +23,8 @@ struct BarColumn: Sendable, Equatable, Identifiable {
                 switch item {
                 case .project(let card): ("\(section.id)/\(card.project.id)", item)
                 case .repo(let card): ("\(section.id)/repo/\(card.key)", item)
+                // On Gadgets only: the first-run guide and the demo are gadget cards under one title.
+                case .gadget(let card) where section.tab == .gadgets: ("\(section.id)/gadget/\(card.id)", item)
                 default: nil
                 }
             }

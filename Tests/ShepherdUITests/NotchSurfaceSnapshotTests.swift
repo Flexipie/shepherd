@@ -135,6 +135,11 @@ import Testing
         try checkExpanded("notch-bar", SampleHerd.content, offersNewTask: true)
     }
 
+    /// Each plugin gadget is a column; a failing one is dimmed with its error.
+    @Test func expandedOnGadgets() throws {
+        try checkExpanded("notch-bar-gadgets", SampleHerd.contentWithPluginGadgets, tab: .gadgets)
+    }
+
     /// Worktrees of one repo share a column.
     @Test func expandedWithARepo() throws {
         try checkExpanded("notch-bar-repo", SampleHerd.contentWithRepo)

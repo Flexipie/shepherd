@@ -11,6 +11,8 @@ public enum PaletteMode: Sendable, Equatable {
     case actions
     /// What a plugin action printed, or why it failed.
     case result
+    /// The plugins' gadget cards.
+    case gadgets
 
     public enum Key: Sendable {
         case tab, right, left, escape
@@ -40,9 +42,9 @@ public enum PaletteMode: Sendable, Equatable {
         case (.prompt, .left): fieldEmpty ? .back : .pass
         case (.prompt, .right): .pass
         case (.prompt, .tab): .swallow
-        case (.prompt, .escape), (.newTask, .escape), (.actions, .escape), (.result, .escape): .back
+        case (.prompt, .escape), (.newTask, .escape), (.actions, .escape), (.result, .escape), (.gadgets, .escape): .back
         case (.actions, .left): fieldEmpty ? .back : .pass
-        case (.actions, .tab), (.result, .tab): .swallow
+        case (.actions, .tab), (.result, .tab), (.gadgets, _): .swallow
         case (.actions, _), (.result, _): .pass
         // The form's own fields take Tab and the arrows.
         case (.newTask, _): .pass

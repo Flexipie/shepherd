@@ -10,7 +10,8 @@ import SwiftUI
 /// Its prompt and new task pages are its own `StageModel`, which reads an agent's lines only
 /// while that agent's prompt shows. It closes on Escape from the list, a click outside, a Space
 /// change, losing key, or after an action or a successful send. While open it counts as a panel
-/// showing Agents, so agents' context sizes and last messages are read, but never Gadgets. Each
+/// showing Agents, so agents' context sizes and last messages are read, and as showing Gadgets
+/// only while its Gadgets page shows, so plugin gadgets run for it then. Each
 /// opening refreshes the plugins (their manifests and listed actions); ⌘K shows a selection's
 /// plugin actions, and an action's printed text stays on a result page.
 @MainActor
@@ -89,6 +90,7 @@ final class PaletteController: NSObject, NSWindowDelegate {
         let page: PalettePage = switch (plugin.page, stage.stage(row: { agent in Self.row(for: agent, in: items) })) {
         case (.actions(let target)?, _): .actions(actionsPage(for: target))
         case (.result(let result)?, _): .result(result)
+        case (.gadgets?, _): .gadgets(context.plugins.map(PluginsModule.cards) ?? [])
         case (nil, .agent(let agent)?): .prompt(agent)
         case (nil, .newTask(let form)?): .newTask(form)
         case (nil, nil): .list
@@ -139,7 +141,14 @@ final class PaletteController: NSObject, NSWindowDelegate {
         case .prompt(let agent): stage.open(agent)
         case .actions(let target): plugin.page = .actions(target)
         case .back:
-            if plugin.page != nil { plugin.page = nil } else { stage.close() }
+            if plugin.page == .gadgets {
+                plugin.page = nil
+                context.presence.setPanel("palette", showing: .agents)
+            } else if plugin.page != nil {
+                plugin.page = nil
+            } else {
+                stage.close()
+            }
         case .stage(.startTask(let task)): stage.start(task)
         case .stage(let action): stage.send(action) { [weak self] in self?.close() }
         }
@@ -148,12 +157,16 @@ final class PaletteController: NSObject, NSWindowDelegate {
     private func perform(_ action: PaletteAction) {
         if case .newTask(let project) = action { return stage.openNewTask(in: project) }
         if case .plugin(let ref) = action { return run(ref) }
+        if action == .gadgets {
+            plugin.page = .gadgets
+            return context.presence.setPanel("palette", showing: .gadgets)
+        }
         close()
         switch action {
         case .jump(let agent): actions.jump(to: agent)
         case .focusProject(let project): actions.focusProject(project)
         case .nextInQueue: actions.jumpToNext()
-        case .newTask, .plugin: break
+        case .newTask, .plugin, .gadgets: break
         }
     }
 
@@ -180,12 +193,13 @@ final class PaletteController: NSObject, NSWindowDelegate {
         let mode: PaletteMode = switch (plugin.page, stage.mode) {
         case (.actions?, _): .actions
         case (.result?, _): .result
+        case (.gadgets?, _): .gadgets
         case (nil, .agent?): .prompt
         case (nil, .newTask?): .newTask
         case (nil, nil): .list
         }
         switch mode.handle(.escape, canPromptSelection: false, fieldEmpty: true) {
-        case .back: stage.close()
+        case .back: handle(.back)
         case .close: close()
         case .prompt, .swallow, .pass: break
         }
@@ -219,6 +233,7 @@ final class PalettePluginState {
     enum Page: Equatable {
         case actions(PluginTarget)
         case result(PluginResultPage)
+        case gadgets
     }
 
     var page: Page?

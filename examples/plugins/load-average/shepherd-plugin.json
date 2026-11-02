@@ -1,0 +1,5 @@
+{
+  "id": "load-average",
+  "name": "Load average",
+  "gadget": { "title": "Load average", "command": ["sh", "load.sh"], "every": 5 }
+}

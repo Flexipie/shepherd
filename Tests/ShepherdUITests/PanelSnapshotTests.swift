@@ -143,7 +143,7 @@ import Testing
         #expect(agents == PanelTarget.all(in: SampleHerd.content.sections))
         // Gadget cards are not selectable, so Gadgets has nothing to move through.
         #expect(PanelTarget.all(in: content.sections(on: .gadgets)).isEmpty)
-        #expect(BarColumn.layout(content.sections(on: .gadgets)).map(\.id) == ["deploys"])
+        #expect(BarColumn.layout(content.sections(on: .gadgets)).map(\.id) == ["deploys/gadget/deploys"])
     }
 
     @Test func commandDigitsPickTabs() {

@@ -298,3 +298,11 @@ Oldest first.
 - Return starts a new task (#85): in the new task form (the notch's "+" and the palette's "New
   task"), Return in the prompt field now starts the task as Start does; Shift-Return or
   Option-Return adds a line. It used to add a line, so only the Start button started the task.
+- Plugin gadgets (#94): a plugin's `gadget` (`command`, `every`, optional `title`) prints a card
+  as JSON (`title`, `detail`, `meters` of `label`, `fraction` and `text`, `lines`), drawn as a
+  `GadgetCard` on the Gadgets tab of the notch bar (one column per card) and the menu bar panel,
+  and on a "Gadgets" page in the palette for Macs without a notch. Gadgets run only while one of
+  those shows, every `every` seconds, with the 10 s timeout; a failure is the card's last line,
+  dimmed, and in the footer. With no gadget plugin there is no tab and no command. Manifests are
+  now also read at launch and when a panel opens, so plugin events no longer wait for the first
+  palette opening. `examples/plugins/load-average` is the example.

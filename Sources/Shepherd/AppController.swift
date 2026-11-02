@@ -82,6 +82,8 @@ final class AppController {
                 addSources(history: history)
                 explainSources()
             }
+            // Manifests before events, so events run and the Gadgets tab shows before the palette first opens.
+            await context.plugins?.load()
             context.plugins?.startEvents()
             store.start()
             actions.updatePresence()

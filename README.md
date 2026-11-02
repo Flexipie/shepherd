@@ -154,8 +154,8 @@ check, no account.
   task, and Claude Code's `settings.json` through `shepherd-report install`, after showing the
   diff, with a backup.
 - **Plugins** are your own code and run with your permissions: when the palette opens (to list
-  their actions), when you pick an action, and on the events they ask for. Only add ones you have
-  read.
+  their actions), when you pick an action, on the events they ask for, and every `every`
+  seconds while their gadget shows. Only add ones you have read.
 
 ## Plugins
 
@@ -174,9 +174,33 @@ gets the target as environment variables (`SHEPHERD_CWD`, `SHEPHERD_PROJECT_PATH
 `SHEPHERD_AGENT_ID`, `SHEPHERD_TOKENS` and more) and can print text, which the palette shows, or
 JSON such as `{"tokens": {"pr": "#12"}}`, which sets tokens on that row for any agent. A plugin
 can also run on agent events (`agent.blocked`, `agent.finished` and others), for states that herdr
-or a report gives; a screen reading never fires one. See
-`examples/plugins/` (every herdr plugin action in the palette, and a diff stat) and "Plugins" in
-`docs/PRD.md`.
+or a report gives; a screen reading never fires one.
+
+A plugin can also add a gadget: a card on the Gadgets tab of the notch bar and the menu bar panel,
+and on the palette's "Gadgets" page. Its command runs every `every` seconds, only while one of
+those shows, and prints the card as JSON. This one shows the load average:
+
+```json
+{
+  "id": "load-average",
+  "gadget": { "title": "Load average", "command": ["sh", "load.sh"], "every": 5 }
+}
+```
+
+```sh
+#!/bin/sh
+cores=$(sysctl -n hw.ncpu)
+set -- $(sysctl -n vm.loadavg | tr -d '{}')
+awk -v cores="$cores" -v one="$1" 'BEGIN {
+  printf "{\"title\": \"Load average\", \"detail\": \"%d cores\", ", cores
+  printf "\"meters\": [{\"label\": \"1 min\", \"fraction\": %.3f, \"text\": \"%s\"}]}\n", one / cores, one
+}'
+```
+
+A meter is `{"label": ..., "fraction": 0 to 1, "text": ...}` (the text defaults to the percent),
+and `"lines"` adds short lines under the meters. A failed run shows on its card. With no gadget
+plugin there is no Gadgets tab. See `examples/plugins/` (every herdr plugin action in the palette,
+a diff stat and the load average) and "Plugins" in `docs/PRD.md`.
 
 ## Config
 
@@ -222,7 +246,8 @@ can be left out:
   kinds on one process are reported. Pattern changes apply on save.
 - `layout`: choose and order what the panel and the bar show, without turning modules off.
   `agents` and `gadgets` list the sections of that tab in order (`sources` (the first-run guide),
-  `queue` and `projects` on Agents; none are built in on Gadgets); one you leave out is hidden.
+  `queue` and `projects` on Agents; `plugins`, the plugin gadgets, on Gadgets); one you leave out
+  is hidden.
   `projects` names the project or repo columns to show first, in that order (a project or its
   repo's name); the rest follow.
 - `tokens`: per section, lines of tokens in herdr's sidebar syntax (`fg`, `bold`, `dim`, and
