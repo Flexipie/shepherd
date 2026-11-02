@@ -627,7 +627,7 @@ handling.
 Every key is optional and a missing file means defaults. As built:
 
 - `modules`: enabled module ids, in order. A list written before a module existed leaves it off
-  (such as `app`, with Quit and Open config file in the palette).
+  (such as `app`, with Status, Quit and Open config file in the palette).
 - `layout`: what the menu bar panel and the notch bar show, without turning modules off.
   `agents` and `gadgets` list section (module) ids for that tab, in order; a section of that tab
   left out is hidden, and a tab with no list shows all of its sections in `modules` order. A list
