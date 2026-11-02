@@ -76,6 +76,7 @@ public struct PaletteView: View {
     let content: PaletteContent
     let clock: PanelClock
     let maxListHeight: CGFloat?
+    let maxWidth: CGFloat?
     let onEvent: (PaletteEvent) -> Void
 
     @State private var query: String
@@ -92,17 +93,19 @@ public struct PaletteView: View {
     /// The lines box's height in the pane beside the list.
     static let sideLinesHeight: CGFloat = 230
 
-    /// The palette's width on its list page, with the preview; other pages, and the list over only
-    /// commands (the first-run guide's), are `width` wide.
+    /// The palette's width on its list page, with the preview; other pages, and the list without a
+    /// preview, are `width` wide.
     static let listWidth = width + sideWidth
 
-    /// `maxListHeight` makes the results scroll past that height; nil lets the view grow.
-    public init(content: PaletteContent, clock: PanelClock = .live, maxListHeight: CGFloat? = nil,
+    /// `maxListHeight` makes the results scroll past that height; nil lets the view grow. Narrower
+    /// than `listWidth`, `maxWidth` leaves the preview out.
+    public init(content: PaletteContent, clock: PanelClock = .live, maxListHeight: CGFloat? = nil, maxWidth: CGFloat? = nil,
                 query: String = "", selection: PaletteItem.ID? = nil,
                 draft: String = "", onEvent: @escaping (PaletteEvent) -> Void) {
         self.content = content
         self.clock = clock
         self.maxListHeight = maxListHeight
+        self.maxWidth = maxWidth
         self.onEvent = onEvent
         _query = State(initialValue: query)
         _selection = State(initialValue: selection)
@@ -111,7 +114,7 @@ public struct PaletteView: View {
 
     public var body: some View {
         Clocked(clock: clock) { now in page(now: now) }
-        .frame(width: content.page == .list && content.guide == nil ? Self.listWidth : Self.width)
+        .frame(width: content.page == .list && showsPreview ? Self.listWidth : Self.width)
     }
 
     private func page(now: Date) -> some View {
@@ -143,6 +146,11 @@ public struct PaletteView: View {
         PaletteSearch.results(content.items, query: query)
     }
 
+    /// Not over only commands (the first-run guide's), nor on a screen too narrow for it.
+    private var showsPreview: Bool {
+        content.guide == nil && (maxWidth ?? .infinity) >= Self.listWidth
+    }
+
     private var showsGuide: Bool {
         content.guide != nil && query.trimmingCharacters(in: .whitespaces).isEmpty
     }
@@ -159,12 +167,12 @@ public struct PaletteView: View {
         let results = results
         let selected = selected(in: results)
         let item = results.first { $0.id == selected }?.item
-        let agent: AgentID? = if case .agent(let row)? = item?.kind { row.agent.id } else { nil }
+        // Read only for a preview that shows.
+        let agent: AgentID? = if showsPreview, case .agent(let row)? = item?.kind { row.agent.id } else { nil }
         return VStack(alignment: .leading, spacing: 0) {
             field(results, selected: selected)
             Divider().padding(.horizontal, 10)
-            if content.guide != nil {
-                // Only commands, nothing to preview.
+            if !showsPreview {
                 resultList(results, selected: selected, now: now)
             } else {
                 // As tall as an agent's preview whatever is highlighted, so the palette keeps its height.

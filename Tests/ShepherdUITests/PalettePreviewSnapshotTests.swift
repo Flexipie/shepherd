@@ -57,4 +57,11 @@ import Testing
     @Test func project() throws {
         try check("project", highlight: "project/\(SampleHerd.api.id)", preview: nil)
     }
+
+    /// A screen narrower than the palette with its preview: the list alone, as wide as before.
+    @Test func narrowScreen() throws {
+        try Snapshot.check("palette-preview-narrow", width: PaletteView.width) {
+            PaletteView(content: PaletteContent(items: Self.items), clock: .fixed(SampleHerd.now), maxWidth: 800) { _ in }
+        }
+    }
 }

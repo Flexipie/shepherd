@@ -158,7 +158,8 @@ final class PaletteController: NSObject, NSWindowDelegate {
     }
 
     private func view(_ content: PaletteContent) -> PaletteView {
-        PaletteView(content: content, maxListHeight: maxListHeight) { [weak self] event in
+        let maxWidth = ((screen ?? NSScreen.main)?.visibleFrame.width).map { $0 - 16 }
+        return PaletteView(content: content, maxListHeight: maxListHeight, maxWidth: maxWidth) { [weak self] event in
             self?.handle(event)
         }
     }

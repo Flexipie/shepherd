@@ -430,7 +430,8 @@ on both tabs. Each surface reports its tab to `Presence`, so a module reads only
   page shows (the "Gadgets" command, offered while a plugin has a gadget), so plugin gadgets run
   for it then and not on opening. The highlighted result is previewed in a pane right of the
   list: an agent's last lines (the approval text while it is blocked) or its final message once
-  finished, a project's agents and tokens, nothing for a command. An `AgentScreenReader` (Core)
+  finished, a project's agents and tokens, nothing for a command; on a screen too narrow for it,
+  and over the first-run guide, it is left out. An `AgentScreenReader` (Core)
   reads the preview 150 ms after the highlight stops on an agent, then again on a status change,
   and stops when the highlight moves, the list gives way to another page or the palette closes, so
   arrowing through the list reads only where it stops. Tab (or →) on an agent whose source can
