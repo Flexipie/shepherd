@@ -194,12 +194,7 @@ public final class TmuxSource: AgentSource {
     /// the same agent can say done before the screen settles.
     public func prompt(_ agent: AgentID, _ text: String) async throws {
         if tracker.shown(agent.local) != .idle {
-            guard let observation = observations[agent.local] else { throw AgentSourceError.failed("the agent is not idle") }
-            let client = TmuxClient(binary: binary, socket: observation.socket)
-            let (screens, pane, kind) = (screens, observation.paneID, observation.kind)
-            // Patterns come from config, so they are matched off the main actor too.
-            let status = try await tmux { screens.status(kind: kind, screen: try client.screen(pane)) }
-            guard status == .idle else {
+            guard let observation = observations[agent.local], await screenStatus(observation) == .idle else {
                 throw AgentSourceError.failed("the agent is not idle")
             }
         }
@@ -506,15 +501,7 @@ public final class TmuxSource: AgentSource {
 
     private func readScreen(_ key: String) async {
         guard let observation = observations[key] else { return }
-        let client = TmuxClient(binary: binary, socket: observation.socket)
-        let pane = observation.paneID
-        let kind = observation.kind
-        let screens = screens
-        // Patterns come from config, so they are matched off the main actor too.
-        let status = await Task.detached(priority: .utility) {
-            (try? client.screen(pane)).map { screens.status(kind: kind, screen: $0) }
-        }.value
-        guard let status else {
+        guard let status = await screenStatus(observation) else {
             // The pane or its server is gone; a listing says which.
             scheduleList(after: Self.listDelay)
             return
@@ -524,6 +511,18 @@ public final class TmuxSource: AgentSource {
         observations[key]?.status = status
         observations[key]?.workingSeen = status == .working ? now : nil
         publish(at: now)
+    }
+
+    /// What the pane's screen shows now, or nil when the pane or its server is gone.
+    private func screenStatus(_ observation: PaneObservation) async -> HerdStatus? {
+        let client = TmuxClient(binary: binary, socket: observation.socket)
+        let pane = observation.paneID
+        let kind = observation.kind
+        let screens = screens
+        // Patterns come from config, so they are matched off the main actor too.
+        return await Task.detached(priority: .utility) {
+            (try? client.screen(pane)).map { screens.status(kind: kind, screen: $0) }
+        }.value
     }
 
     // MARK: Publishing

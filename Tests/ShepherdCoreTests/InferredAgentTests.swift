@@ -128,7 +128,6 @@ import Testing
         #expect(store.agents.first?.isInferred == true)
     }
 
-    // A hooked Claude Code in herdr is herdr's one row: herdr's state, the report's words where herdr has none.
     // Claude Code runs no hook when an approval is answered No, so its report stays blocked: the
     // screen settling on idle afterwards takes the row out of needs-you, told once (#88).
     @Test func aBlockedReportTheScreenMovedOnFromGivesWay() async {
@@ -182,6 +181,7 @@ import Testing
         #expect(store.agents.map(\.status) == [.done])
     }
 
+    // A hooked Claude Code in herdr is herdr's one row: herdr's state, the report's words where herdr has none.
     @Test func aReportOfAHerdrAgentBySessionIsOneRow() {
         let store = HerdStore()
         let herdr = StubSource("herdr")

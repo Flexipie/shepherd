@@ -105,9 +105,10 @@ As built:
   question. A report the screen has moved on from gives way: Claude Code runs no hook on an
   interrupt (Esc, or No at an approval), so once the screen settles on idle or working after the
   report's state began, or the report went quiet, the screen's state shows (a done report over an
-  idle screen stays done). The row switching sides is told as one change. Its transitions are told once, under the row's id: the side that gives the state
-  counts, the report going is not the row's, and the report appearing is the row starting
-  when the report gives the row's state. A project only a folded-in agent
+  idle screen stays done). The row switching sides is told as one change. Its transitions are
+  told once, under the row's id: the side that gives the state counts, the report going is not
+  the row's, and the report appearing is the row starting when the report gives the row's
+  state. A project only a folded-in agent
   used is dropped. `HerdProject.repo` (`HerdRepo`: a key, a name, whether it is a linked checkout)
   says which git repo a project is a checkout of; herdr fills it from the workspace's
   `worktree`, and tmux from `GitCheckout` (the `.git` entries on disk, with the common git dir
