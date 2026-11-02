@@ -128,7 +128,7 @@ No model in v1. Every idea here works with rules, search or the agent's own repo
 - **A badge on the Gadgets tab.** A dot or a figure on the tab when a gadget's meter is near its
   limit, so it is noticed without opening Gadgets. It would need a cheap signal that does not run
   while the tab is hidden, such as the last card's numbers.
-- **More gadgets.** Built-in usage and system gadgets shipped, then gave way to plugin gadgets.
+- **More gadgets.** Built-in usage and system gadgets shipped, then were removed for plugin gadgets (#94).
   Ideas for plugins: plan usage, CPU and memory, a timer, a clipboard shelf, a scratch note. Each
   must not dilute "your herd at a glance".
 

@@ -26,19 +26,19 @@ import Testing
         }
     }
 
-    let sections = [section("queue"), section("usage", .gadgets), section("system", .gadgets), section("projects")]
+    let sections = [section("queue"), section("deploys", .gadgets), section("load", .gadgets), section("projects")]
 
     @Test func leftOutKeepsEverySectionInModuleOrder() throws {
         let (layout, problems) = try read("{}")
         #expect(layout == PanelLayout())
         #expect(problems.isEmpty)
-        #expect(layout.arrange(sections).map(\.id) == ["queue", "usage", "system", "projects"])
+        #expect(layout.arrange(sections).map(\.id) == ["queue", "deploys", "load", "projects"])
         #expect(names(layout.orderProjects([card("b"), card("a")])) == ["b", "a"])
     }
 
     @Test func badPartsAreReportedAndKeepTheirDefaults() throws {
-        let (layout, problems) = try read(#"{"layout": {"agents": "queue", "gadgets": ["usage"], "projects": [1], "tabs": []}}"#)
-        #expect(layout == PanelLayout(tabs: [.gadgets: ["usage"]]))
+        let (layout, problems) = try read(#"{"layout": {"agents": "queue", "gadgets": ["deploys"], "projects": [1], "tabs": []}}"#)
+        #expect(layout == PanelLayout(tabs: [.gadgets: ["deploys"]]))
         #expect(problems == [
             "config: unknown key \"layout.tabs\"",
             "config: layout.agents must be a list of section ids",

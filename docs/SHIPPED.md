@@ -278,7 +278,7 @@ Oldest first.
   the paw and turns the ear orange; finished agents still count, next to a plain outline paw. The
   accessibility label says which ("1 blocked, 2 finished").
 - Built-in Usage and This Mac gadgets removed (#95): Shepherd ships no gadgets of its own, they
-  come from plugins (#94), so the `usage` and `system` modules, the `OpenUsageSource` and
+  will come from plugins (#94), so the `usage` and `system` modules, the `OpenUsageSource` and
   `SystemSource` targets and `SHEPHERD_OPENUSAGE_URL` are gone, and Shepherd makes no network
   calls at all. `GadgetCard` (its meter is now `GadgetMeter`) and the Gadgets tab stay; with no
   gadget section there is no tab bar. An old config naming `usage` or `system` in `modules` or

@@ -291,9 +291,8 @@ This is the herdr source. herdr speaks newline-delimited JSON over a Unix socket
 Every surface is optional and degrades on its own.
 
 The menu bar panel and the notch bar have two tabs at the top (`PanelTab`): **Agents**, the
-needs-you queue and the project cards, and **Gadgets**, for gadget cards (Shepherd ships none of its own; they come from plugins, see
-"Plugins"). Each
-section says its tab (`PanelSection.tab`, Agents by default), so a new gadget needs no list. A
+needs-you queue and the project cards, and **Gadgets**, for gadget cards (Shepherd ships none of
+its own; plugin gadgets, planned in "Plugins", will fill it). Each section says its tab (`PanelSection.tab`, Agents by default), so a new gadget needs no list. A
 surface draws the tab bar, then only the current tab's sections, and its keyboard navigation
 covers only those. Each opening starts on Agents; the tab is not saved. ⌘1 and ⌘2 switch tabs
 while the surface has the keyboard. With no section off Agents (every gadget turned off, or
