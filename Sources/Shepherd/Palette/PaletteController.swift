@@ -8,10 +8,11 @@ import SwiftUI
 /// Opens and closes the palette: centred in the upper third of the screen under the mouse, over
 /// any app, without activating Shepherd. A fresh view each opening, so the query starts empty.
 /// Its prompt and new task pages are its own `StageModel`, which reads an agent's lines only
-/// while that agent's prompt shows. It closes on Escape from the list, a click outside, a Space
-/// change, losing key, or after an action or a successful send. While open it counts as a panel
-/// showing Agents, so agents' context sizes and last messages are read, and as showing Gadgets
-/// only while its Gadgets page shows, so plugin gadgets run for it then. Each
+/// while that agent's prompt shows. The list previews the highlighted agent, read a moment after
+/// the highlight stops on it and only while the list shows. It closes on Escape from the list, a
+/// click outside, a Space change, losing key, or after an action or a successful send. While open
+/// it counts as a panel showing Agents, so agents' context sizes and last messages are read, and
+/// as showing Gadgets only while its Gadgets page shows, so plugin gadgets run for it then. Each
 /// opening refreshes the plugins (their manifests and listed actions); ⌘K shows a selection's
 /// plugin actions, and an action's printed text stays on a result page. With no agents yet it shows
 /// the first-run guide; its Status page shows the herd's status lines and config problems, and a
@@ -25,6 +26,7 @@ final class PaletteController: NSObject, NSWindowDelegate {
     /// Reads the sources again for the Status page's cards.
     private let readSources: () -> Void
     private let stage: StageModel
+    private let preview: AgentScreenReader
     private let plugin = PalettePluginState()
     private let host = FloatingPanelHost()
     private var panel: ShepherdPanel?
@@ -46,6 +48,8 @@ final class PaletteController: NSObject, NSWindowDelegate {
         self.switchDemo = switchDemo
         self.readSources = readSources
         stage = StageModel(store: context.store, actions: actions, config: context.config)
+        preview = AgentScreenReader(store: context.store, actions: actions, lineCount: StageModel.lineCount,
+                                    debounce: .milliseconds(150))
     }
 
     func toggle() {
@@ -81,6 +85,7 @@ final class PaletteController: NSObject, NSWindowDelegate {
     func close() {
         guard let panel else { return }
         context.presence.setPanel("palette", showing: nil)
+        preview.close()
         stage.close()
         plugin.page = nil
         host.stopMonitoring()
@@ -112,8 +117,11 @@ final class PaletteController: NSObject, NSWindowDelegate {
         let notice = page.mode == .status ? nil : notice(summary, items: items)
         // Only over commands: live projects without agents keep the list as it was.
         let onlyCommands = items.allSatisfy { if case .command = $0.kind { true } else { false } }
+        let shown = preview.agent.map {
+            PalettePreview(agent: $0, lines: preview.lines, canRead: preview.canRead($0), error: preview.error)
+        }
         return PaletteContent(items: items, notice: notice?.text, noticeIsProblem: notice?.isProblem == true,
-                              guide: onlyCommands ? sources?.panel : nil, page: page)
+                              guide: onlyCommands ? sources?.panel : nil, page: page, preview: shown)
     }
 
     /// The number of problems and where to read them, else why the herd is not live, else that the
@@ -182,6 +190,7 @@ final class PaletteController: NSObject, NSWindowDelegate {
             }
         case .stage(.startTask(let task)): stage.start(task)
         case .stage(let action): stage.send(action) { [weak self] in self?.close() }
+        case .highlight(let agent): preview.show(agent)
         }
     }
 
@@ -279,7 +288,7 @@ final class PaletteController: NSObject, NSWindowDelegate {
     private func layout() {
         guard let panel, let hosting, let screen else { return }
         let visible = screen.visibleFrame
-        let width = PaletteView.width
+        let width = hosting.fittingSize.width
         let height = min(hosting.fittingSize.height, top - visible.minY - 8)
         let x = visible.midX - width / 2
         panel.setFrame(NSRect(x: x, y: top - height, width: width, height: height), display: true)

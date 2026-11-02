@@ -12,14 +12,17 @@ public struct PaletteContent: Sendable, Equatable {
     /// The first-run guide, shown above the commands while nothing is typed; nil once agents or projects show.
     public var guide: PanelSection?
     public var page: PalettePage
+    /// The highlighted agent's lines, once read.
+    public var preview: PalettePreview?
 
     public init(items: [PaletteItem], notice: String? = nil, noticeIsProblem: Bool = false, guide: PanelSection? = nil,
-                page: PalettePage = .list) {
+                page: PalettePage = .list, preview: PalettePreview? = nil) {
         self.items = items
         self.notice = notice
         self.noticeIsProblem = noticeIsProblem
         self.guide = guide
         self.page = page
+        self.preview = preview
     }
 }
 
@@ -55,6 +58,9 @@ public enum PaletteEvent: Sendable, Equatable {
     case prompt(AgentID)
     /// Show the plugin actions for this agent or project.
     case actions(PluginTarget)
+    /// The list highlights this agent, or no agent (or the list went away), so the app reads
+    /// only the highlighted agent's lines.
+    case highlight(AgentID?)
     /// Back to the list.
     case back
     /// Send to the prompted agent, or start the task.
@@ -64,7 +70,8 @@ public enum PaletteEvent: Sendable, Equatable {
 /// The palette: a search field over every agent, project and command. Typing filters, up and
 /// down move the selection, Return chooses it, Tab (or right) prompts the selected agent, ⌘K
 /// shows the selected agent's or project's plugin actions, hovering selects and clicking chooses.
-/// The query is kept while another page shows.
+/// The highlighted result is previewed beside the list. The query is kept while another
+/// page shows.
 public struct PaletteView: View {
     let content: PaletteContent
     let clock: PanelClock
@@ -80,10 +87,18 @@ public struct PaletteView: View {
     @FocusState private var fieldFocused: Bool
 
     public nonisolated static let width: CGFloat = 640
+    /// The preview pane's width beside the list.
+    static let sideWidth: CGFloat = 360
+    /// The lines box's height in the pane beside the list.
+    static let sideLinesHeight: CGFloat = 230
+
+    /// The palette's width on its list page, with the preview; other pages are `width` wide.
+    static let listWidth = width + sideWidth
 
     /// `maxListHeight` makes the results scroll past that height; nil lets the view grow.
-    public init(content: PaletteContent, clock: PanelClock = .live, maxListHeight: CGFloat? = nil, query: String = "",
-                selection: PaletteItem.ID? = nil, draft: String = "", onEvent: @escaping (PaletteEvent) -> Void) {
+    public init(content: PaletteContent, clock: PanelClock = .live, maxListHeight: CGFloat? = nil,
+                query: String = "", selection: PaletteItem.ID? = nil,
+                draft: String = "", onEvent: @escaping (PaletteEvent) -> Void) {
         self.content = content
         self.clock = clock
         self.maxListHeight = maxListHeight
@@ -95,7 +110,7 @@ public struct PaletteView: View {
 
     public var body: some View {
         Clocked(clock: clock) { now in page(now: now) }
-        .frame(width: Self.width)
+        .frame(width: content.page == .list ? Self.listWidth : Self.width)
     }
 
     private func page(now: Date) -> some View {
@@ -142,30 +157,49 @@ public struct PaletteView: View {
     private func palette(now: Date) -> some View {
         let results = results
         let selected = selected(in: results)
+        let item = results.first { $0.id == selected }?.item
+        let agent: AgentID? = if case .agent(let row)? = item?.kind { row.agent.id } else { nil }
         return VStack(alignment: .leading, spacing: 0) {
             field(results, selected: selected)
             Divider().padding(.horizontal, 10)
-            if results.isEmpty && !showsGuide {
-                Text(query.trimmingCharacters(in: .whitespaces).isEmpty ? "Nothing to show yet" : "No matches")
-                    .font(.system(size: 13))
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 22)
-            } else if let maxListHeight {
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        list(results, selected: selected, now: now)
-                            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { listHeight = $0 }
-                    }
-                    .scrollBounceBehavior(.basedOnSize)
-                    .frame(height: min(listHeight, maxListHeight))
-                    .onChange(of: selected) { _, id in
-                        if let id { proxy.scrollTo(id) }
-                    }
-                }
-            } else {
-                list(results, selected: selected, now: now)
+            // As tall as an agent's preview whatever is highlighted, so the palette keeps its height.
+            HStack(alignment: .top, spacing: 0) {
+                resultList(results, selected: selected, now: now).frame(width: Self.width)
+                Divider().padding(.vertical, 10)
+                PalettePreviewPane(item: item, items: content.items, preview: content.preview, now: now,
+                                   height: Self.sideLinesHeight)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .frame(width: Self.sideWidth - 1, alignment: .topLeading)
             }
+            .frame(minHeight: Self.sideLinesHeight + 50, alignment: .top)
+        }
+        .onChange(of: agent, initial: true) { _, agent in onEvent(.highlight(agent)) }
+        .onDisappear { onEvent(.highlight(nil)) }
+    }
+
+    @ViewBuilder
+    private func resultList(_ results: [PaletteResult], selected: PaletteItem.ID?, now: Date) -> some View {
+        if results.isEmpty && !showsGuide {
+            Text(query.trimmingCharacters(in: .whitespaces).isEmpty ? "Nothing to show yet" : "No matches")
+                .font(.system(size: 13))
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 22)
+        } else if let maxListHeight {
+            ScrollViewReader { proxy in
+                ScrollView {
+                    list(results, selected: selected, now: now)
+                        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { listHeight = $0 }
+                }
+                .scrollBounceBehavior(.basedOnSize)
+                .frame(height: min(listHeight, maxListHeight))
+                .onChange(of: selected) { _, id in
+                    if let id { proxy.scrollTo(id) }
+                }
+            }
+        } else {
+            list(results, selected: selected, now: now)
         }
     }
 

@@ -7,14 +7,14 @@ import Testing
 @MainActor
 @Suite struct PaletteSnapshotTests {
     @Test func emptyQuery() throws {
-        try Snapshot.check("palette", width: PaletteView.width) {
+        try Snapshot.check("palette", width: PaletteView.listWidth) {
             PaletteView(content: SamplePalette.content, clock: .fixed(SampleHerd.now)) { _ in }
         }
     }
 
     /// Matched characters bold in an agent, a project and a command.
     @Test func withQuery() throws {
-        try Snapshot.check("palette-query", width: PaletteView.width) {
+        try Snapshot.check("palette-query", width: PaletteView.listWidth) {
             PaletteView(content: SamplePalette.content, clock: .fixed(SampleHerd.now), query: "e") { _ in }
         }
     }
@@ -99,7 +99,7 @@ import Testing
     }
 
     @Test func noMatches() throws {
-        try Snapshot.check("palette-empty", width: PaletteView.width) {
+        try Snapshot.check("palette-empty", width: PaletteView.listWidth) {
             PaletteView(content: PaletteContent(items: [], notice: "Not connected: herdr is not running. Retrying."),
                         clock: .fixed(SampleHerd.now), query: "zzz") { _ in }
         }

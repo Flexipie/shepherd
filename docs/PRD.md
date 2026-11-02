@@ -428,10 +428,15 @@ on both tabs. Each surface reports its tab to `Presence`, so a module reads only
   change, losing key or after an action, and is built fresh on every opening. While open it counts
   as a panel showing Agents (so `context` reads), and as showing Gadgets only while its Gadgets
   page shows (the "Gadgets" command, offered while a plugin has a gadget), so plugin gadgets run
-  for it then and not on opening. Tab (or →) on an agent whose
-  source can take text opens its prompt page, and the "New task" commands (from `projects`)
-  open the new task form; both are a second `StageModel`, so the palette reads an agent's last
-  lines only while its prompt shows (on entering and on a status change) and a started task
+  for it then and not on opening. The highlighted result is previewed in a pane right of the
+  list: an agent's last lines (the approval text while it is blocked) or its final message once
+  finished, a project's agents and tokens, nothing for a command. An `AgentScreenReader` (Core)
+  reads the preview 150 ms after the highlight stops on an agent, then again on a status change,
+  and stops when the highlight moves, the list gives way to another page or the palette closes, so
+  arrowing through the list reads only where it stops. Tab (or →) on an agent whose source can
+  take text opens its prompt page, and the "New task" commands (from `projects`) open the new task
+  form; both are a second `StageModel` (whose reader has no delay), so the palette reads an
+  agent's last lines only while its prompt shows (on entering and on a status change) and a started task
   turns into the new agent's prompt. Return sends a reply while the agent is blocked and a
   prompt otherwise; a success closes the palette, a failure stays on screen with the text kept.
   Choices are buttons with ⌘ digits, since plain digits are typing. Which keys move between
