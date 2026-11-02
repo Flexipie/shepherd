@@ -69,13 +69,18 @@ public final class NotchModule: ShepherdModule {
         timers[agent]?.cancel()
         shown.insert(agent)
         timers[agent] = Task { [weak self] in
+            // A sleep that ended just before a cancel still returns, so check after each one.
+            func wait(_ duration: Duration) async throws {
+                try await Task.sleep(for: duration)
+                try Task.checkCancellation()
+            }
             do {
-                try await Task.sleep(for: Self.briefDuration)
+                try await wait(Self.briefDuration)
                 self?.shown.remove(agent)
                 guard let again else { return }
-                try await Task.sleep(for: max(.zero, again - Self.briefDuration))
+                try await wait(max(.zero, again - Self.briefDuration))
                 self?.shown.insert(agent)
-                try await Task.sleep(for: Self.briefDuration)
+                try await wait(Self.briefDuration)
                 self?.shown.remove(agent)
             } catch {
                 // Cancelled: whoever cancelled owns `shown` now.

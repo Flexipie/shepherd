@@ -48,7 +48,8 @@ import Testing
         let (config, problems) = try read(#"{"notch": {"escalateAfter": -5, "size": 2}}"#)
         #expect(config.notchEscalateAfter == 300)
         #expect(problems == ["config: unknown key \"notch.size\"",
-                             "config: notch.escalateAfter must be a number of seconds, 0 or more"])
+                             "config: notch.escalateAfter must be a number of seconds from 0 to 86400"])
+        #expect(try read(#"{"notch": {"escalateAfter": 1e25}}"#).config.notchEscalateAfter == 300)
         #expect(try read(#"{"notch": 60}"#).problems == ["config: notch must be an object"])
     }
 

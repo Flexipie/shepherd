@@ -243,7 +243,7 @@ can be left out:
   system notifications itself, `ui.toast.delivery` "system" or "terminal"). macOS asks for
   permission the first time; if it is off in System Settings, the bar's footer says so.
 - `notch.escalateAfter`: seconds an agent stays blocked before the notch pill shows it once more
-  (default 300); `0` shows it only when it blocks.
+  (default 300, at most 86400); `0` shows it only when it blocks.
 - `plugins.disabled`: plugin ids to leave off. Every plugin in the plugins folder is on otherwise.
 
 A mistake never breaks the app: the panel footer says what is wrong, and a file that is not valid

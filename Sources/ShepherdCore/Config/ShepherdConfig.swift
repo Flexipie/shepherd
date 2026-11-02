@@ -27,6 +27,7 @@ public struct ShepherdConfig: Sendable, Equatable {
     /// Which sections each tab shows and in what order, and which project columns come first.
     public var layout: PanelLayout
     /// Seconds an agent stays blocked before the notch pill shows it once more; 0 turns that off.
+    /// At most a day, so the timer's `Duration` cannot overflow.
     public var notchEscalateAfter: Double = 300
 
     public enum Notifications: String, Sendable, Equatable, CaseIterable {
@@ -195,8 +196,8 @@ public struct ShepherdConfig: Sendable, Equatable {
                 }
                 switch keys["escalateAfter"] {
                 case nil: break
-                case .number(let seconds)? where seconds >= 0: config.notchEscalateAfter = seconds
-                case _?: problems.append("config: notch.escalateAfter must be a number of seconds, 0 or more")
+                case .number(let seconds)? where (0...86_400).contains(seconds): config.notchEscalateAfter = seconds
+                case _?: problems.append("config: notch.escalateAfter must be a number of seconds from 0 to 86400")
                 }
             } else {
                 problems.append("config: notch must be an object")
