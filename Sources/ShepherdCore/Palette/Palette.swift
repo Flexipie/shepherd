@@ -8,6 +8,8 @@ public enum PaletteAction: Sendable, Hashable {
     case newTask(ProjectID?)
     /// Runs a plugin's action.
     case plugin(PluginActionRef)
+    /// Shows the plugins' gadget cards.
+    case gadgets
 }
 
 /// A command a module offers in the palette. Modules contribute them, so the palette grows

@@ -16,13 +16,14 @@ public struct PaletteContent: Sendable, Equatable {
 }
 
 /// The palette's page: the list, a prompt for one agent, the new task form, an agent's or
-/// project's plugin actions, or a plugin action's result.
+/// project's plugin actions, a plugin action's result, or the plugins' gadgets.
 public enum PalettePage: Sendable, Equatable {
     case list
     case prompt(AgentStage)
     case newTask(NewTaskStage)
     case actions(PluginActionsPage)
     case result(PluginResultPage)
+    case gadgets([GadgetCard])
 
     public var mode: PaletteMode {
         switch self {
@@ -31,6 +32,7 @@ public enum PalettePage: Sendable, Equatable {
         case .newTask: .newTask
         case .actions: .actions
         case .result: .result
+        case .gadgets: .gadgets
         }
     }
 }
@@ -102,6 +104,8 @@ public struct PaletteView: View {
                 PaletteActionsPageView(page: page, now: now, maxListHeight: maxListHeight, onEvent: onEvent)
             case .result(let page):
                 PaletteResultPageView(page: page, maxHeight: maxListHeight)
+            case .gadgets(let cards):
+                PaletteGadgetsPageView(cards: cards, now: now, maxHeight: maxListHeight)
             }
             footer
         }
@@ -227,7 +231,7 @@ public struct PaletteView: View {
                 .compactMap { $0 }.joined(separator: " · ")
         case .newTask: "esc back"
         case .actions: "↩ run · esc back"
-        case .result: "esc back"
+        case .result, .gadgets: "esc back"
         }
     }
 

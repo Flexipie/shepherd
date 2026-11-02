@@ -151,3 +151,40 @@ struct PaletteResultPageView: View {
         .accessibilityElement(children: .combine)
     }
 }
+
+/// The plugins' gadget cards, for Macs without a notch and palette-only users. Escape goes back.
+struct PaletteGadgetsPageView: View {
+    let cards: [GadgetCard]
+    let now: Date
+    let maxHeight: CGFloat?
+
+    @State private var cardsHeight: CGFloat = 0
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Gadgets", systemImage: "square.grid.2x2")
+                .font(.system(size: 15, weight: .semibold))
+            if cards.isEmpty {
+                Text("Running…")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+            } else {
+                let list = VStack(spacing: 8) {
+                    ForEach(cards) { GadgetCardView(card: $0, now: now) }
+                }
+                if let maxHeight {
+                    ScrollView {
+                        list.onGeometryChange(for: CGFloat.self) { $0.size.height } action: { cardsHeight = $0 }
+                    }
+                    .scrollBounceBehavior(.basedOnSize)
+                    .frame(height: min(cardsHeight, maxHeight))
+                } else {
+                    list
+                }
+            }
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}

@@ -1,9 +1,9 @@
 import Foundation
 import Observation
 
-/// The user's plugins: loads them from their folder, runs their actions and keeps the tokens they
-/// set. Plugins are read when a surface asks (the palette opening), not watched, so nothing runs
-/// at idle. Problems go to the config footer under `plugins`.
+/// The user's plugins: loads them from their folder, runs their actions and gadgets and keeps the
+/// tokens they set. Plugins are read at launch and when a surface asks (a panel opening), not
+/// watched, so nothing runs at idle. Problems go to the config footer under `plugins`.
 @MainActor
 @Observable
 public final class PluginHost {
@@ -12,6 +12,9 @@ public final class PluginHost {
     public private(set) var listed: [String: [PluginAction]] = [:]
     /// Tokens plugins set, by target, then by plugin.
     private(set) var tokens: [PluginTarget: [String: [String: String]]] = [:]
+    /// Each gadget's last good card, and why its last run failed, by plugin.
+    private(set) var gadgetCards: [String: GadgetCard] = [:]
+    private(set) var gadgetFailures: [String: String] = [:]
 
     public let directory: URL
     @ObservationIgnored private let runner: any PluginRunner
@@ -27,6 +30,8 @@ public final class PluginHost {
     @ObservationIgnored private var running: Set<EventKey> = []
     @ObservationIgnored private var queued: [EventKey: PluginEventOccurrence] = [:]
     @ObservationIgnored private var eventProblems: [String: String] = [:]
+    /// Plugins whose gadget is running; a run is never cancelled, so the next waits for it.
+    @ObservationIgnored private var gadgetRuns: Set<String> = []
 
     public static let actionTimeout: Duration = .seconds(30)
     public static let listTimeout: Duration = .seconds(10)
@@ -34,6 +39,7 @@ public final class PluginHost {
     public static let eventTimeout: Duration = .seconds(10)
     /// A plugin's command for an agent and event runs at most once in this window.
     public static let eventDebounce: Duration = .seconds(5)
+    public static let gadgetTimeout: Duration = .seconds(10)
 
     public init(directory: URL = PluginHost.defaultDirectory(), runner: any PluginRunner, store: HerdStore, config: ConfigStore) {
         self.directory = directory
@@ -63,7 +69,8 @@ public final class PluginHost {
         refreshing = nil
     }
 
-    func load() async {
+    /// Reads every plugin's manifest again, without running anything.
+    public func load() async {
         let directory = directory
         let (loaded, problems) = await Task.detached { Self.read(directory) }.value
         let disabled = Set(config.config.disabledPlugins)
@@ -72,6 +79,8 @@ public final class PluginHost {
         let ids = Set(enabled.map(\.id))
         listed = listed.filter { ids.contains($0.key) }
         eventProblems = eventProblems.filter { ids.contains($0.key) }
+        gadgetCards = gadgetCards.filter { ids.contains($0.key) }
+        gadgetFailures = gadgetFailures.filter { ids.contains($0.key) }
         tokens = tokens.compactMapValues { byPlugin in
             let kept = byPlugin.filter { ids.contains($0.key) }
             return kept.isEmpty ? nil : kept
@@ -137,6 +146,7 @@ public final class PluginHost {
     private func report() {
         let all = loadProblems + listProblems.keys.sorted().compactMap { listProblems[$0] }
             + eventProblems.keys.sorted().compactMap { eventProblems[$0] }
+            + gadgetFailures.keys.sorted().compactMap { id in gadgetFailures[id].map { "plugin \(id): gadget \($0)" } }
         config.report(all.isEmpty ? nil : all.joined(separator: "; "), for: "plugins")
     }
 
@@ -209,6 +219,54 @@ public final class PluginHost {
             running.remove(key)
             if let next = queued.removeValue(forKey: key), let plugin = plugins.first(where: { $0.id == key.plugin }) {
                 run(key, next, plugin)
+            }
+        }
+    }
+
+    // MARK: Gadgets
+
+    /// The plugins with a gadget, in folder order.
+    public var gadgetPlugins: [Plugin] { plugins.filter { $0.manifest.gadget != nil } }
+
+    /// The plugin's card: the last good one, or its title alone, with the last failure as its
+    /// last line and dimmed. nil before its first run.
+    public func gadgetCard(for plugin: Plugin) -> GadgetCard? {
+        guard let failure = gadgetFailures[plugin.id] else { return gadgetCards[plugin.id] }
+        let card = gadgetCards[plugin.id] ?? GadgetCard(id: plugin.id, title: plugin.manifest.gadget?.title ?? plugin.manifest.name)
+        return GadgetCard(id: card.id, title: card.title, detail: card.detail, meters: card.meters, lines: card.lines + [failure.capitalizedFirst],
+                          isStale: true)
+    }
+
+    /// Runs the plugin's gadget, unless its last run is still going. A failure goes on its card
+    /// and to the footer under `plugins`. A result for a plugin that changed or went away while
+    /// it ran is dropped. Returns the run, for tests.
+    @discardableResult
+    public func runGadget(_ plugin: Plugin) -> Task<Void, Never>? {
+        guard let gadget = plugin.manifest.gadget, gadgetRuns.insert(plugin.id).inserted else { return nil }
+        let runner = runner
+        let title = gadget.title ?? plugin.manifest.name
+        return Task {
+            var card: GadgetCard?
+            var failure: String?
+            do {
+                let result = try await runner.run(gadget.command, in: plugin.folder, environment: ["SHEPHERD_PLUGIN_ROOT": plugin.folder.path],
+                                                  timeout: Self.gadgetTimeout)
+                if result.status == 0 {
+                    card = try PluginGadget.card(from: result.stdout, id: plugin.id, title: title)
+                } else {
+                    failure = Self.failure(result)
+                }
+            } catch let problem as ConfigProblem {
+                failure = problem.message
+            } catch {
+                failure = "\(error)"
+            }
+            gadgetRuns.remove(plugin.id)
+            guard plugins.contains(plugin) else { return }
+            if let card { gadgetCards[plugin.id] = card }
+            if gadgetFailures[plugin.id] != failure {
+                gadgetFailures[plugin.id] = failure
+                report()
             }
         }
     }
