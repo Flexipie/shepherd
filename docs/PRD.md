@@ -491,7 +491,7 @@ plugin tokens (`PluginHost` in Core, `ProcessPluginRunner` in the `ShellPlugins`
   ready to land card. `listActions` prints more actions (`{"actions": [...]}`, same shape) at
   runtime, for plugins whose actions are not known in advance; a manifest action with the same
   id wins. A failed listing keeps the last good actions.
-- **When plugins run.** Manifests are read at launch and whenever a panel opens (while the
+- **When plugins run.** Manifests are read at launch and whenever the palette or the notch bar opens (while the
   `plugins` module is on), and
   `listActions` run each time the palette opens (off the main actor; a refresh already on its
   way is shared), not watched, so nothing runs at idle. Removing a plugin drops its actions,
