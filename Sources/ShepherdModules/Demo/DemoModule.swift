@@ -1,6 +1,6 @@
 import ShepherdCore
 
-/// Says, at the top of the notch bar, that the herd is demo mode's made-up one and how to leave it.
+/// Says, in a column of the notch bar, that the herd is demo mode's made-up one and how to leave it.
 /// Outside demo mode it has no section. Its command, Try Demo or Leave Demo, is the menu's demo item.
 @MainActor
 public final class DemoModule: ShepherdModule {

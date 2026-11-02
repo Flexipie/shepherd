@@ -454,8 +454,8 @@ Shepherd's own commands come from modules too: `app` (Quit, and Open config file
 Plugin actions (see "Plugins") are the first kind of user-defined action. One action model feeds every surface. An action has an id, a title, a context (global, workspace,
 agent) and a target: a herdr request, a herdr plugin action, or a shell command, with placeholders
 such as `{workspace_id}`, `{pane_id}`, `{cwd}`, `{token.pr}`. Modules and config both contribute
-actions, and herdr plugin actions are listed automatically through `plugin.action.list`. The panel
-cards, the notch, notification buttons, the palette and (later) App Intents all render the same
+actions, and herdr plugin actions are listed automatically through `plugin.action.list`. The notch
+bar's cards, notification buttons, the palette and (later) App Intents all render the same
 list, so a new action shows up everywhere without extra code.
 
 ## Plugins
@@ -683,7 +683,7 @@ source's own (for herdr, `ui.sidebar.spaces.rows` for projects and `ui.sidebar.a
 agents, read from `HERDR_CONFIG_PATH` or `~/.config/herdr/config.toml` by a small TOML reader and
 re-read on change), else every token on one line, sorted, unstyled. A layout replaces, it does
 not merge. herdr's colours are picked for dark terminals, so in light mode a colour below 4.5:1
-against the panel is darkened until it reads. `rows_by_agent` is not read yet.
+against the bar or the palette is darkened until it reads. `rows_by_agent` is not read yet.
 
 ## Testing
 
