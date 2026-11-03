@@ -165,11 +165,12 @@ private struct StageButton: View {
             .background(RoundedRectangle(cornerRadius: NotchStyle.rowRadius).fill(background))
             .opacity(isEnabled ? 1 : 0.45)
             .contentShape(Rectangle())
-            .onHover { isHovered = isMonochrome && isEnabled && $0 }
+            .onHover { isHovered = $0 }
     }
 
     private var background: Color {
         let pressed = configuration.isPressed
+        let isHovered = isHovered && isMonochrome && isEnabled
         if prominent { return Color.white.opacity(pressed ? 0.8 : isHovered ? 0.9 : 1) }
         return fill ?? Color.primary.opacity(pressed ? 0.18 : isHovered ? 0.14 : 0.1)
     }

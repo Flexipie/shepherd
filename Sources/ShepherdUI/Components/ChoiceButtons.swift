@@ -9,7 +9,7 @@ struct ChoiceButtons: View {
     let onKeys: ([String]) -> Void
     @Environment(\.isMonochrome) private var isMonochrome
 
-    private var selectedFill: Color { isMonochrome ? NotchStyle.selected : Color.accentColor.opacity(0.22) }
+    private var selectedFill: Color { isMonochrome ? NotchStyle.chosen : Color.accentColor.opacity(0.22) }
 
     var body: some View {
         ForEach(choices, id: \.key) { choice in

@@ -6,6 +6,8 @@ import SwiftUI
 /// (the card fill, the new task form's spacing and fields) are the values it always had.
 enum NotchStyle {
     static let selected = Color.primary.opacity(0.12)
+    /// A selected choice, which must stand out from buttons that already rest at 10%.
+    static let chosen = Color.primary.opacity(0.26)
     static let card = Color.primary.opacity(0.045)
     static let track = Color.primary.opacity(0.1)
     static let field = Color.primary.opacity(0.07)

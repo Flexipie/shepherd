@@ -313,7 +313,8 @@ on both tabs. Each surface reports its tab to `Presence`, so a module reads only
   concave top corners like the hardware notch, so it reads as part of it in either appearance. It
   has three states and morphs between them with a spring (Reduce Motion: the shape changes at once
   and the content crossfades). It is monochrome like the hardware: white and grey tiers on black
-  from `NotchStyle`, with orange the one colour, for "needs you" and a meter near its limit. The
+  from `NotchStyle`, with orange the one colour, for "needs you" and a meter near its limit
+(herdr's token colours stay, being the user's own config). The
   bar sets `isMonochrome`, so the rows, cards and meters it shares with the palette drop the accent
   colour there only. Switching tabs and opening a stage slide and fade the way they travel, the
   tab pill slides, and meters animate on change (Reduce Motion: fades only); nothing runs at idle.
