@@ -43,6 +43,14 @@ final class NotchSurfacePanel: NotchPanel {
 
     override var canBecomeKey: Bool { true }
 
+    /// Moves the window to cover `frame` and keeps `view` at `rect` on screen. AppKit snaps a
+    /// window's frame to whole points, so the frame is rounded outward first and the view is
+    /// placed against the frame the window got.
+    func setFrame(_ frame: NSRect, keeping view: NSView, at rect: NSRect) {
+        setFrame(frame.integral, display: false)
+        view.setFrameOrigin(NSPoint(x: rect.minX - self.frame.minX, y: rect.minY - self.frame.minY))
+    }
+
     override func cancelOperation(_ sender: Any?) {
         onCancel?()
     }
