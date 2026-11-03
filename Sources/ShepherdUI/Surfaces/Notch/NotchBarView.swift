@@ -223,7 +223,7 @@ public struct NotchBarView: View {
 
     /// Room the stage needs around its lines: its header (with a line of tokens) and a two-line
     /// error.
-    static let stageChrome: CGFloat = 88
+    static let stageChrome: CGFloat = 92
 
     private var newTaskButton: Bool { offersNewTask && onStage != nil && content.shownTab(tab) == .agents }
 

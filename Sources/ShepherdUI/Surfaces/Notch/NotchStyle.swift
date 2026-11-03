@@ -2,7 +2,8 @@ import SwiftUI
 
 /// The notch's look in one place: white and grey tiers on black like the hardware notch, orange
 /// the one colour (it means "needs you"). Tiers are `primary`, so they are white in the notch,
-/// which is always dark. Not a theme: the palette keeps its own look.
+/// which is always dark. Not a theme: the palette keeps its own look, and the few tokens it shares
+/// (the card fill, the new task form's spacing and fields) are the values it always had.
 enum NotchStyle {
     // Fills.
     static let selected = Color.primary.opacity(0.12)
