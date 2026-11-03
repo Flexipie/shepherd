@@ -114,6 +114,7 @@ These keep the app small, fast and easy to change. A PR that breaks one will be 
 - Anything that writes a user's files gets a test at the edge, including the backup and that only
   Shepherd's own entries change.
 - A view gets a snapshot test in `ShepherdUITests`, light and dark.
+- Window placement and other AppKit glue in the app goes in `ShepherdTests`.
 
 ### View snapshots
 

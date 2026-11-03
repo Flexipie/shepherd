@@ -224,9 +224,7 @@ final class NotchSurfaceController: NSObject, NSWindowDelegate {
     /// Moves the window and keeps the canvas where it was on screen, then retargets hovering.
     private func setWindowFrame(_ frame: NSRect) {
         guard let panel, let hosting, let geometry, let metrics = geometry.metrics else { return }
-        let canvas = geometry.screenRect(metrics.canvas)
-        panel.setFrame(frame, display: false)
-        hosting.setFrameOrigin(NSPoint(x: canvas.minX - frame.minX, y: canvas.minY - frame.minY))
+        panel.setFrame(frame, keeping: hosting, at: geometry.screenRect(metrics.canvas))
         if let hover = hoverFrame() {
             hosting.hoverRect = hosting.convert(panel.convertFromScreen(hover), from: nil)
         }

@@ -58,6 +58,7 @@ let package = Package(
         .testTarget(name: "TmuxKitTests", dependencies: ["TmuxKit", "TmuxTestSupport"]),
         .testTarget(name: "TmuxSourceTests", dependencies: ["TmuxSource", "TmuxKit", "TmuxTestSupport", "ReportKit", "ReportSource", "ShepherdCore"]),
         .testTarget(name: "ShepherdCoreTests", dependencies: ["ShepherdCore", "ShepherdModules"]),
+        .testTarget(name: "ShepherdTests", dependencies: ["Shepherd"]),
         .testTarget(name: "ShepherdUITests", dependencies: ["ShepherdUI", "ShepherdCore"], exclude: ["__Snapshots__"]),
     ]
 )
