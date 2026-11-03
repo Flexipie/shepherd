@@ -348,3 +348,7 @@ Oldest first.
   after the highlight stops and again on a status change, never for an agent passed over and
   never while the list is not showing. The notch stage, the palette's prompt page and the preview
   each read through an `AgentScreenReader` in Core.
+- Notch bar flush with the top of the screen (#124): AppKit snaps a window's frame to whole points,
+  so an open bar with a fractional measured height left a 1-pixel line of wallpaper above it. The
+  panel now rounds its frame outward and places the canvas against the frame it got. The app
+  target has its first test target, `ShepherdTests`.
