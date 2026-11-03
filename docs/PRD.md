@@ -312,7 +312,11 @@ on both tabs. Each surface reports its tab to `Presence`, so a module reads only
 - **Notch surface.** One black shape around the notch, flush with the top of the screen, with
   concave top corners like the hardware notch, so it reads as part of it in either appearance. It
   has three states and morphs between them with a spring (Reduce Motion: the shape changes at once
-  and the content crossfades):
+  and the content crossfades). It is monochrome like the hardware: white and grey tiers on black
+  from `NotchStyle`, with orange the one colour, for "needs you" and a meter near its limit. The
+  bar sets `isMonochrome`, so the rows, cards and meters it shares with the palette drop the accent
+  colour there only. Switching tabs and opening a stage slide and fade the way they travel, the
+  tab pill slides, and meters animate on change (Reduce Motion: fades only); nothing runs at idle.
   - **Ear**, when nothing is in the pill: a paw sticking out 40 pt to the left of the notch,
     a count when agents need you, orange while one is blocked, dimmed when the state is not live.
   - **Alert**, while a module offers a notch item: the pill below the notch with which agent, why,
