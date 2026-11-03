@@ -4,6 +4,7 @@ import SwiftUI
 import Testing
 @testable import ShepherdUI
 
+/// Rows and cards as the notch bar draws them (`isMonochrome`); the palette's own snapshots keep its look.
 @MainActor
 @Suite struct PanelSnapshotTests {
     @Test func queueRows() throws {
@@ -13,6 +14,7 @@ import Testing
                 AgentRow(row: SampleHerd.row(SampleHerd.finished), now: SampleHerd.now, showsProject: true)
             }
             .padding(8)
+            .environment(\.isMonochrome, true)
         }
     }
 
@@ -29,6 +31,7 @@ import Testing
                     .frame(width: 230)
             }
             .padding(8)
+            .environment(\.isMonochrome, true)
         }
     }
 
@@ -47,6 +50,7 @@ import Testing
                     .frame(width: 230)
             }
             .padding(8)
+            .environment(\.isMonochrome, true)
         }
     }
 
@@ -59,6 +63,7 @@ import Testing
                 AgentRow(row: SampleHerd.row(SampleHerd.finished), now: SampleHerd.now, showsProject: true, onJump: {})
             }
             .padding(8)
+            .environment(\.isMonochrome, true)
         }
     }
 
@@ -68,6 +73,7 @@ import Testing
         try Snapshot.check("project-card", width: 340) {
             ProjectCard(card: SampleHerd.webCard, now: SampleHerd.now, rows: rows)
                 .padding(8)
+                .environment(\.isMonochrome, true)
         }
     }
 
@@ -76,6 +82,7 @@ import Testing
         try Snapshot.check("repo-card", width: 340) {
             RepoCard(card: SampleHerd.shopCard, now: SampleHerd.now, rows: rows)
                 .padding(8)
+                .environment(\.isMonochrome, true)
         }
     }
 
@@ -84,6 +91,7 @@ import Testing
             ProjectCard(card: SampleHerd.card(SampleHerd.api, [SampleHerd.blockedCodex], live: false), now: SampleHerd.now,
                         rows: rows)
                 .padding(8)
+                .environment(\.isMonochrome, true)
         }
     }
 

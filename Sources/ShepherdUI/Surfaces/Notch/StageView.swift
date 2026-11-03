@@ -19,9 +19,9 @@ struct StageView: View {
     static let controlsWidth: CGFloat = 270
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: NotchStyle.medium) {
             header
-            HStack(alignment: .top, spacing: 10) {
+            HStack(alignment: .top, spacing: NotchStyle.medium) {
                 lines
                 controls.frame(width: Self.controlsWidth, alignment: .topLeading)
             }
@@ -31,7 +31,7 @@ struct StageView: View {
                 } icon: {
                     Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
                 }
-                .font(.system(size: 11))
+                .font(.system(size: NotchStyle.body))
             }
         }
     }
@@ -67,8 +67,8 @@ struct StageView: View {
     @ViewBuilder
     private var terminalLines: some View {
         let text = Text(stage.lines.map { $0.joined(separator: "\n") } ?? "Reading…")
-            .font(.system(size: 10.5, design: .monospaced))
-            .foregroundStyle(stage.lines == nil ? .secondary : .primary)
+            .font(.system(size: NotchStyle.caption, design: .monospaced))
+            .foregroundStyle(stage.lines == nil ? NotchStyle.secondary : Color.primary)
             .frame(maxWidth: .infinity, alignment: .topLeading)
             .padding(8)
         Group {
@@ -80,12 +80,12 @@ struct StageView: View {
                 text
             }
         }
-        .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.06)))
+        .background(RoundedRectangle(cornerRadius: NotchStyle.rowRadius).fill(NotchStyle.field))
         .accessibilityLabel("Last lines")
     }
 
     private var controls: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: NotchStyle.small) {
             if stage.canSendKeys {
                 if stage.choices.isEmpty {
                     HStack(spacing: 6) {
@@ -102,8 +102,8 @@ struct StageView: View {
             }
             if !stage.canSendKeys && !stage.canReply {
                 Text("Nothing can be sent to this agent")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: NotchStyle.body))
+                    .foregroundStyle(NotchStyle.secondary)
                     .padding(.horizontal, 4)
             }
         }
@@ -115,15 +115,16 @@ struct StageView: View {
         HStack(spacing: 8) {
             Image(systemName: stage.prompts ? "text.bubble" : "arrowshape.turn.up.left")
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(NotchStyle.secondary)
             TextField(stage.prompts ? "Prompt \(stage.row.agent.name)…" : "Reply to \(stage.row.agent.name)…", text: $draft)
                 .textFieldStyle(.plain)
-                .font(.system(size: 13))
+                .font(.system(size: NotchStyle.title))
                 .onSubmit(send)
+            KeyHint("Return")
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
-        .background(RoundedRectangle(cornerRadius: 10).fill(Color.primary.opacity(0.07)))
+        .background(RoundedRectangle(cornerRadius: NotchStyle.cardRadius).fill(NotchStyle.field))
     }
 
     private func send() {
@@ -134,19 +135,27 @@ struct StageView: View {
     }
 }
 
-/// A small flat button for the stage, readable on the notch's black.
+/// A small flat button for the stage, readable on the notch's black. `prominent` is the one
+/// solid button of a form: white with black text.
 struct StageButtonStyle: ButtonStyle {
     var fill: Color?
+    var prominent = false
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.isMonochrome) private var isMonochrome
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 12, weight: .medium))
+            .font(.system(size: isMonochrome ? NotchStyle.body : 12, weight: prominent ? .semibold : .medium))
+            .foregroundStyle(prominent ? AnyShapeStyle(Color.black) : AnyShapeStyle(.foreground))
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(RoundedRectangle(cornerRadius: 7)
-                .fill(fill ?? Color.primary.opacity(configuration.isPressed ? 0.18 : 0.1)))
+            .background(RoundedRectangle(cornerRadius: NotchStyle.rowRadius).fill(background(pressed: configuration.isPressed)))
             .opacity(isEnabled ? 1 : 0.45)
             .contentShape(Rectangle())
+    }
+
+    private func background(pressed: Bool) -> Color {
+        if prominent { return Color.white.opacity(pressed ? 0.8 : 1) }
+        return fill ?? Color.primary.opacity(pressed ? 0.18 : 0.1)
     }
 }

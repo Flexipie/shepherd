@@ -126,7 +126,7 @@ public struct NotchSurfaceView: View {
         } label: {
             VStack(spacing: 0) {
                 Color.clear.frame(height: metrics.notchHeight)
-                NotchPillRow(item: item, primary: .white, secondary: Color.white.opacity(0.65), hovering: hovering)
+                NotchPillRow(item: item, primary: .white, secondary: Color.white.opacity(0.65), done: .white, hovering: hovering)
                     .padding(.horizontal, 18)
                     .frame(height: NotchPillView.contentHeight)
             }

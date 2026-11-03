@@ -35,18 +35,20 @@ public struct NotchPillView: View {
 }
 
 /// The pill's content: an icon for the reason, the agent and its project, "+N" for the others,
-/// and an arrow that brightens on hover.
+/// and an arrow that brightens on hover. `done` colours a finished agent's icon: white on the
+/// notch, where orange is the one colour.
 struct NotchPillRow: View {
     let item: NotchItem
     let primary: Color
     let secondary: Color
+    var done = Color.green
     let hovering: Bool
 
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: item.reason == .blocked ? "exclamationmark.circle.fill" : "checkmark.circle.fill")
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(item.reason == .blocked ? Color.orange : Color.green)
+                .foregroundStyle(item.reason == .blocked ? Color.orange : done)
             VStack(alignment: .leading, spacing: 1) {
                 Text(item.title)
                     .font(.system(size: 13, weight: .semibold))

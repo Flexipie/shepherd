@@ -7,6 +7,7 @@ struct ChoiceButtons: View {
     let choices: [AgentChoice]
     var commandDigits = false
     let onKeys: ([String]) -> Void
+    @Environment(\.isMonochrome) private var isMonochrome
 
     var body: some View {
         ForEach(choices, id: \.key) { choice in
@@ -34,7 +35,7 @@ struct ChoiceButtons: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .buttonStyle(StageButtonStyle(fill: choice.isSelected ? Color.accentColor.opacity(0.22) : nil))
+        .buttonStyle(StageButtonStyle(fill: choice.isSelected ? isMonochrome ? NotchStyle.selected : Color.accentColor.opacity(0.22) : nil))
         .help(shortcut == nil ? "Press \(choice.key)" : "Press ⌘\(choice.key)")
         if let shortcut {
             base.keyboardShortcut(shortcut, modifiers: .command)

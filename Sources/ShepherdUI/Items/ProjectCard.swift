@@ -38,6 +38,7 @@ struct ProjectHeader: View {
     let card: PanelProjectCard
     var compact = false
     let rows: RowContext
+    @Environment(\.isMonochrome) private var isMonochrome
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
@@ -53,7 +54,7 @@ struct ProjectHeader: View {
                         .font(.system(size: compact ? 12 : 13, weight: compact ? .medium : .semibold))
                         .lineLimit(1)
                     if card.project.isFocusedInSource {
-                        Circle().fill(Color.accentColor).frame(width: 5, height: 5).accessibilityHidden(true)
+                        Circle().fill(isMonochrome ? Color.primary : Color.accentColor).frame(width: 5, height: 5).accessibilityHidden(true)
                     }
                 }
                 TokenLines(lines: card.tokens, isLive: card.isLive)

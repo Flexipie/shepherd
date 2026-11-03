@@ -37,9 +37,9 @@ public struct NotchBarView: View {
 
     public nonisolated static let queueWidth: CGFloat = 300
     public nonisolated static let columnWidth: CGFloat = 230
-    static let spacing: CGFloat = 8
+    static let spacing = NotchStyle.medium
     /// The room between the bar's edges and its columns.
-    static let inset: CGFloat = 10
+    static let inset = NotchStyle.large
 
     /// `notch` is the camera's size, centred at the top: the bar's first row is the band beside it.
     /// `maxHeight` makes each column scroll past that height; nil lets the columns grow (and, for
@@ -80,6 +80,7 @@ public struct NotchBarView: View {
         }
         .onKeyPress(.return, phases: .down) { press in choose(command: press.modifiers.contains(.command)) }
         .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: content)
+        .environment(\.isMonochrome, true)
     }
 
     private var columns: [BarColumn] { BarColumn.layout(content.sections(on: tab)) }
@@ -110,7 +111,7 @@ public struct NotchBarView: View {
             }
             .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, Self.inset)
-            .padding(.vertical, 8)
+            .padding(.vertical, NotchStyle.medium)
         }
     }
 
@@ -222,7 +223,7 @@ public struct NotchBarView: View {
     private var strip: some View {
         HStack(spacing: 0) {
             // An HStack, not a Group: its frame holds the left half even when it is empty.
-            HStack(spacing: 10) {
+            HStack(spacing: NotchStyle.medium) {
                 if content.hasTabs {
                     PanelTabBar(selected: content.shownTab(tab), onTab: onTab)
                 }
@@ -237,10 +238,10 @@ public struct NotchBarView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             Color.clear.frame(width: notch.width + 2 * Self.spacing)
-            HStack(spacing: 10) {
+            HStack(spacing: NotchStyle.medium) {
                 if !content.statusLines.isEmpty {
                     Text(content.statusLines.joined(separator: " · "))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(NotchStyle.secondary)
                         .help(content.statusLines.joined(separator: "\n"))
                 }
                 if newTaskButton {
@@ -249,7 +250,7 @@ public struct NotchBarView: View {
             }
             .frame(maxWidth: .infinity, alignment: .trailing)
         }
-        .font(.system(size: 11))
+        .font(.system(size: NotchStyle.body))
         .lineLimit(1)
         .padding(.horizontal, 18)
         .frame(height: notch.height)
