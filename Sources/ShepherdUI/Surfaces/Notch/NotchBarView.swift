@@ -80,6 +80,8 @@ public struct NotchBarView: View {
         }
         .onKeyPress(.return, phases: .down) { press in choose(command: press.modifiers.contains(.command)) }
         .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: content)
+        .animation(reduceMotion ? NotchStyle.fade : NotchStyle.slide, value: tab)
+        .animation(reduceMotion ? NotchStyle.fade : NotchStyle.slide, value: stageKey)
         .environment(\.isMonochrome, true)
     }
 
@@ -89,29 +91,54 @@ public struct NotchBarView: View {
         let columns = self.columns
         let pinned = columns.first.flatMap { $0.isQueue ? $0 : nil }
         let rest = pinned == nil ? columns : Array(columns.dropFirst())
+        let shown = content.shownTab(tab)
         return VStack(alignment: .leading, spacing: 0) {
             strip
-            HStack(alignment: .top, spacing: Self.spacing) {
-                if let pinned {
-                    column(pinned, now: now, cardWidth: Self.columnWidth)
+            // A ZStack, so the old and new tab overlap while one slides out and the other in.
+            ZStack(alignment: .topLeading) {
+                HStack(alignment: .top, spacing: Self.spacing) {
+                    if let pinned {
+                        column(pinned, now: now, cardWidth: Self.columnWidth)
+                    }
+                    if pinned != nil, stage != nil || !rest.isEmpty {
+                        Divider()
+                    }
+                    ZStack(alignment: .topLeading) {
+                        main(rest, pinned: pinned != nil, now: now)
+                            .id(stageKey)
+                            .transition(NotchStyle.slide(from: stage == nil ? .leading : .trailing, reduceMotion: reduceMotion))
+                    }
                 }
-                if pinned != nil, stage != nil || !rest.isEmpty {
-                    Divider()
-                }
-                switch (stage, onStage) {
-                case (.agent(let stage)?, let onStage?):
-                    StageView(stage: stage, now: now, linesHeight: maxHeight.map { max(60, $0 - Self.stageChrome) },
-                              perform: perform, onStage: onStage)
-                        .id(stage.agent)
-                case (.newTask(let stage)?, let onStage?):
-                    NewTaskView(stage: stage, onStage: onStage)
-                default:
-                    if !rest.isEmpty { scrolling(rest, now: now, cardWidth: cardWidth(rest, pinned: pinned != nil)) }
-                }
+                .id(shown)
+                .transition(NotchStyle.slide(from: shown == .agents ? .leading : .trailing, reduceMotion: reduceMotion))
             }
             .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, Self.inset)
             .padding(.vertical, NotchStyle.medium)
+        }
+    }
+
+    /// Beside the queue: the open stage, or the rest of the columns.
+    @ViewBuilder
+    private func main(_ rest: [BarColumn], pinned: Bool, now: Date) -> some View {
+        switch (stage, onStage) {
+        case (.agent(let stage)?, let onStage?):
+            StageView(stage: stage, now: now, linesHeight: maxHeight.map { max(60, $0 - Self.stageChrome) },
+                      perform: perform, onStage: onStage)
+        case (.newTask(let stage)?, let onStage?):
+            NewTaskView(stage: stage, onStage: onStage)
+        default:
+            if !rest.isEmpty { scrolling(rest, now: now, cardWidth: cardWidth(rest, pinned: pinned)) }
+        }
+    }
+
+    /// Which stage is open, if any, so opening, switching and closing one slides but its lines
+    /// updating does not.
+    private var stageKey: String {
+        switch stage {
+        case .agent(let stage)?: "agent/\(stage.agent)"
+        case .newTask?: "new-task"
+        case nil: "columns"
         }
     }
 

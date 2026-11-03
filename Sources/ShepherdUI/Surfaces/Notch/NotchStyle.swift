@@ -28,6 +28,23 @@ enum NotchStyle {
     static let title: CGFloat = 13
 
     static let meterHeight: CGFloat = 6
+
+    // Motion. Each runs on a change only, never at idle.
+    /// Switching tabs, opening a stage and the tab pill.
+    static let slide = Animation.spring(duration: 0.3, bounce: 0.1)
+    /// What Reduce Motion gets instead: no movement, a short fade.
+    static let fade = Animation.easeInOut(duration: 0.15)
+    static let meter = Animation.easeOut(duration: 0.4)
+    /// How far content travels as it slides in or out.
+    static let travel: CGFloat = 24
+
+    /// A slide plus fade that enters and leaves on the side of `edge`, so content on the left
+    /// (Agents, the columns) goes left and content on the right (Gadgets, a stage) goes right.
+    /// Only the fade with Reduce Motion.
+    static func slide(from edge: HorizontalEdge, reduceMotion: Bool) -> AnyTransition {
+        guard !reduceMotion else { return .opacity }
+        return .opacity.combined(with: .offset(x: edge == .leading ? -travel : travel))
+    }
 }
 
 extension EnvironmentValues {

@@ -8,6 +8,7 @@ struct GadgetCardView: View {
     let card: GadgetCard
     let now: Date
     @Environment(\.isMonochrome) private var isMonochrome
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// A meter at or past this share of its limit turns orange.
     static let warning = 0.8
@@ -71,6 +72,7 @@ struct GadgetCardView: View {
                         Capsule()
                             .fill(meter.fraction >= Self.warning ? Color.orange : isMonochrome ? Color.primary : Color.accentColor)
                             .frame(width: max(meter.fraction > 0 ? height : 0, geometry.size.width * meter.fraction))
+                            .animation(isMonochrome && !reduceMotion ? NotchStyle.meter : nil, value: meter.fraction)
                     }
                 }
         }

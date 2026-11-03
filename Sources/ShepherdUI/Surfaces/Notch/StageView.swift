@@ -144,18 +144,35 @@ struct StageButtonStyle: ButtonStyle {
     @Environment(\.isMonochrome) private var isMonochrome
 
     func makeBody(configuration: Configuration) -> some View {
+        StageButton(configuration: configuration, fill: fill, prominent: prominent, isEnabled: isEnabled, isMonochrome: isMonochrome)
+    }
+}
+
+/// The button itself, which holds its hover: in the notch a hovered button brightens.
+private struct StageButton: View {
+    let configuration: ButtonStyleConfiguration
+    let fill: Color?
+    let prominent: Bool
+    let isEnabled: Bool
+    let isMonochrome: Bool
+
+    @State private var isHovered = false
+
+    var body: some View {
         configuration.label
             .font(.system(size: isMonochrome ? NotchStyle.body : 12, weight: prominent ? .semibold : .medium))
             .foregroundStyle(prominent ? AnyShapeStyle(Color.black) : AnyShapeStyle(.foreground))
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(RoundedRectangle(cornerRadius: NotchStyle.rowRadius).fill(background(pressed: configuration.isPressed)))
+            .background(RoundedRectangle(cornerRadius: NotchStyle.rowRadius).fill(background))
             .opacity(isEnabled ? 1 : 0.45)
             .contentShape(Rectangle())
+            .onHover { isHovered = isMonochrome && isEnabled && $0 }
     }
 
-    private func background(pressed: Bool) -> Color {
-        if prominent { return Color.white.opacity(pressed ? 0.8 : 1) }
-        return fill ?? Color.primary.opacity(pressed ? 0.18 : 0.1)
+    private var background: Color {
+        let pressed = configuration.isPressed
+        if prominent { return Color.white.opacity(pressed ? 0.8 : isHovered ? 0.9 : 1) }
+        return fill ?? Color.primary.opacity(pressed ? 0.18 : isHovered ? 0.14 : 0.1)
     }
 }
