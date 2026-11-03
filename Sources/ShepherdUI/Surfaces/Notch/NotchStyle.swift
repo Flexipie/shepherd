@@ -5,22 +5,17 @@ import SwiftUI
 /// which is always dark. Not a theme: the palette keeps its own look, and the few tokens it shares
 /// (the card fill, the new task form's spacing and fields) are the values it always had.
 enum NotchStyle {
-    // Fills.
     static let selected = Color.primary.opacity(0.12)
-    static let hover = Color.primary.opacity(0.07)
     static let card = Color.primary.opacity(0.045)
     static let track = Color.primary.opacity(0.1)
     static let field = Color.primary.opacity(0.07)
 
-    // Text.
     static let secondary = Color.primary.opacity(0.6)
     static let tertiary = Color.primary.opacity(0.35)
 
-    // Radii.
     static let rowRadius: CGFloat = 7
     static let cardRadius: CGFloat = 10
 
-    // Spacing and type.
     static let small: CGFloat = 4
     static let medium: CGFloat = 8
     static let large: CGFloat = 12
@@ -42,7 +37,7 @@ enum NotchStyle {
     /// A slide plus fade that enters and leaves on the side of `edge`, so content on the left
     /// (Agents, the columns) goes left and content on the right (Gadgets, a stage) goes right.
     /// Only the fade with Reduce Motion.
-    static func slide(from edge: HorizontalEdge, reduceMotion: Bool) -> AnyTransition {
+    static func slideTransition(from edge: HorizontalEdge, reduceMotion: Bool) -> AnyTransition {
         guard !reduceMotion else { return .opacity }
         return .opacity.combined(with: .offset(x: edge == .leading ? -travel : travel))
     }

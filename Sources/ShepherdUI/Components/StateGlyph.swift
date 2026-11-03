@@ -29,11 +29,10 @@ struct StateGlyph: View {
 
     /// In the notch only blocked keeps a colour; the symbol tells the rest apart.
     private var color: Color {
-        if isMonochrome { return status == .blocked ? .orange : status == .idle || status == .unknown ? .secondary : .primary }
-        return switch status {
+        switch status {
         case .blocked: .orange
-        case .done: .green
-        case .working: .blue
+        case .done: isMonochrome ? .primary : .green
+        case .working: isMonochrome ? .primary : .blue
         case .idle, .unknown: .secondary
         }
     }

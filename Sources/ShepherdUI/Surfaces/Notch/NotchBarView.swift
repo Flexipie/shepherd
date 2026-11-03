@@ -106,11 +106,11 @@ public struct NotchBarView: View {
                     ZStack(alignment: .topLeading) {
                         main(rest, pinned: pinned != nil, now: now)
                             .id(stageKey)
-                            .transition(NotchStyle.slide(from: stage == nil ? .leading : .trailing, reduceMotion: reduceMotion))
+                            .transition(NotchStyle.slideTransition(from: stage == nil ? .leading : .trailing, reduceMotion: reduceMotion))
                     }
                 }
                 .id(shown)
-                .transition(NotchStyle.slide(from: shown == .agents ? .leading : .trailing, reduceMotion: reduceMotion))
+                .transition(NotchStyle.slideTransition(from: shown == .agents ? .leading : .trailing, reduceMotion: reduceMotion))
             }
             .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, Self.inset)

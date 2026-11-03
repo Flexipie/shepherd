@@ -29,7 +29,7 @@ private struct RowChrome: ViewModifier {
         content
             .padding(.horizontal, 8)
             .padding(.vertical, vertical)
-            .background(RoundedRectangle(cornerRadius: 7).fill(isSelected ? fill : .clear))
+            .background(RoundedRectangle(cornerRadius: NotchStyle.rowRadius).fill(isSelected ? fill : .clear))
             .contentShape(Rectangle())
     }
 

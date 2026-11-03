@@ -140,11 +140,9 @@ struct StageView: View {
 struct StageButtonStyle: ButtonStyle {
     var fill: Color?
     var prominent = false
-    @Environment(\.isEnabled) private var isEnabled
-    @Environment(\.isMonochrome) private var isMonochrome
 
     func makeBody(configuration: Configuration) -> some View {
-        StageButton(configuration: configuration, fill: fill, prominent: prominent, isEnabled: isEnabled, isMonochrome: isMonochrome)
+        StageButton(configuration: configuration, fill: fill, prominent: prominent)
     }
 }
 
@@ -153,10 +151,10 @@ private struct StageButton: View {
     let configuration: ButtonStyleConfiguration
     let fill: Color?
     let prominent: Bool
-    let isEnabled: Bool
-    let isMonochrome: Bool
 
     @State private var isHovered = false
+    @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.isMonochrome) private var isMonochrome
 
     var body: some View {
         configuration.label

@@ -2,13 +2,15 @@ import ShepherdCore
 import SwiftUI
 
 /// The Agents | Gadgets switch at the top of the notch bar, with a faint ⌘1 and ⌘2 after each
-/// title. One pill marks the selected tab and slides between them. Drawn by hand rather than as
-/// a segmented picker, which is an AppKit control that snapshots cannot render.
+/// title. One pill marks the selected tab and slides between them (jumps, with Reduce Motion).
+/// Drawn by hand rather than as a segmented picker, which is an AppKit control that snapshots
+/// cannot render.
 struct PanelTabBar: View {
     let selected: PanelTab
     let onTab: (PanelTab) -> Void
 
     @Namespace private var pill
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         HStack(spacing: 2) {
@@ -38,6 +40,7 @@ struct PanelTabBar: View {
         }
         .padding(2)
         .background(Capsule().fill(NotchStyle.card))
+        .transaction { if reduceMotion { $0.animation = nil } }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Tabs")
     }
