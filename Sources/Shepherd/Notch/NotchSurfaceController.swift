@@ -197,7 +197,7 @@ final class NotchSurfaceController: NSObject, NSWindowDelegate {
         morphToken += 1
         let token = morphToken
         let animation: Animation = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
-            ? .easeInOut(duration: 0.15) : .spring(duration: 0.35, bounce: 0.12)
+            ? .easeInOut(duration: 0.15) : .spring(duration: 0.4, bounce: 0.15)
         withAnimation(animation, completionCriteria: .removed) {
             change()
         } completion: { [weak self] in

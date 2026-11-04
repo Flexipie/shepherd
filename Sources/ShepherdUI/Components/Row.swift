@@ -6,10 +6,7 @@ extension View {
     /// The padding and selection highlight every row shares, in the notch bar and the palette. The
     /// whole row takes clicks.
     func rowChrome(isSelected: Bool, vertical: CGFloat) -> some View {
-        padding(.horizontal, 8)
-            .padding(.vertical, vertical)
-            .background(RoundedRectangle(cornerRadius: 7).fill(isSelected ? Color.accentColor.opacity(0.18) : .clear))
-            .contentShape(Rectangle())
+        modifier(RowChrome(isSelected: isSelected, vertical: vertical))
     }
 
     /// Makes a row choosable within its section: a click performs `action` (⌘-click jumps when
@@ -21,6 +18,22 @@ extension View {
             .onHover { inside in if inside, let id { rows.select(id) } }
             .id(id)
     }
+}
+
+private struct RowChrome: ViewModifier {
+    let isSelected: Bool
+    let vertical: CGFloat
+    @Environment(\.isMonochrome) private var isMonochrome
+
+    func body(content: Content) -> some View {
+        content
+            .padding(.horizontal, 8)
+            .padding(.vertical, vertical)
+            .background(RoundedRectangle(cornerRadius: NotchStyle.rowRadius).fill(isSelected ? fill : .clear))
+            .contentShape(Rectangle())
+    }
+
+    private var fill: Color { isMonochrome ? NotchStyle.selected : Color.accentColor.opacity(0.18) }
 }
 
 /// What a section's rows need from the surface that shows them: which section they are in, what

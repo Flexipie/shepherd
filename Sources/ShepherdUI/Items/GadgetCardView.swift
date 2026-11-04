@@ -7,6 +7,8 @@ import SwiftUI
 struct GadgetCardView: View {
     let card: GadgetCard
     let now: Date
+    @Environment(\.isMonochrome) private var isMonochrome
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// A meter at or past this share of its limit turns orange.
     static let warning = 0.8
@@ -61,14 +63,16 @@ struct GadgetCardView: View {
                     .font(.system(size: 11, weight: .medium).monospacedDigit())
             }
             .lineLimit(1)
+            let height = isMonochrome ? NotchStyle.meterHeight : 4
             Capsule()
-                .fill(Color.primary.opacity(0.12))
-                .frame(height: 4)
+                .fill(isMonochrome ? NotchStyle.track : Color.primary.opacity(0.12))
+                .frame(height: height)
                 .overlay(alignment: .leading) {
                     GeometryReader { geometry in
                         Capsule()
-                            .fill(meter.fraction >= Self.warning ? Color.orange : Color.accentColor)
-                            .frame(width: max(meter.fraction > 0 ? 4 : 0, geometry.size.width * meter.fraction))
+                            .fill(meter.fraction >= Self.warning ? Color.orange : isMonochrome ? Color.primary : Color.accentColor)
+                            .frame(width: max(meter.fraction > 0 ? height : 0, geometry.size.width * meter.fraction))
+                            .animation(isMonochrome && !reduceMotion ? NotchStyle.meter : nil, value: meter.fraction)
                     }
                 }
         }

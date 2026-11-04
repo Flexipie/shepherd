@@ -13,6 +13,7 @@ struct NewTaskView: View {
     @State private var branch = ""
     @State private var kind: String
     @State private var prompt = ""
+    @Environment(\.isMonochrome) private var isMonochrome
 
     init(stage: NewTaskStage, onStage: @escaping (StageAction) -> Void) {
         self.stage = stage
@@ -22,10 +23,10 @@ struct NewTaskView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: NotchStyle.medium) {
             HStack {
                 Text("New task")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: NotchStyle.title, weight: .semibold))
                 Spacer()
                 Button {
                     onStage(.close)
@@ -36,7 +37,7 @@ struct NewTaskView: View {
                 .help("Back to the projects (Escape)")
                 .accessibilityLabel("Close")
             }
-            HStack(alignment: .top, spacing: 12) {
+            HStack(alignment: .top, spacing: NotchStyle.large) {
                 VStack(alignment: .leading, spacing: 6) {
                     Picker("Project", selection: $project) {
                         ForEach(stage.projects, id: \.id) { project in
@@ -53,10 +54,10 @@ struct NewTaskView: View {
                     TextField("What should it do?", text: $prompt, axis: .vertical)
                         .lineLimit(3...5)
                         .textFieldStyle(.plain)
-                        .font(.system(size: 13))
+                        .font(.system(size: NotchStyle.title))
                         .padding(.horizontal, 10)
                         .padding(.vertical, 7)
-                        .background(RoundedRectangle(cornerRadius: 10).fill(Color.primary.opacity(0.07)))
+                        .background(RoundedRectangle(cornerRadius: NotchStyle.cardRadius).fill(NotchStyle.field))
                         .onKeyPress(.return, phases: .down) { press in
                             // While an input method is composing, Return confirms its candidate.
                             let composing = (NSApp.keyWindow?.firstResponder as? NSTextView)?.hasMarkedText() ?? false
@@ -65,12 +66,14 @@ struct NewTaskView: View {
                             return .handled
                         }
                         .help("Return starts the task; Shift- or Option-Return adds a line")
-                    HStack(spacing: 8) {
+                    HStack(spacing: NotchStyle.medium) {
                         Button(stage.isStarting ? "Starting…" : "Start", action: start)
-                            .buttonStyle(StageButtonStyle(fill: Color.accentColor.opacity(0.35)))
+                            .buttonStyle(StageButtonStyle(fill: isMonochrome ? nil : Color.accentColor.opacity(0.35),
+                                                          prominent: isMonochrome))
                             .disabled(project == nil || stage.isStarting)
+                        if isMonochrome { KeyHint("Return") }
                         Text("Creates a worktree, starts \(kind) in it and sends the prompt.")
-                            .font(.system(size: 11))
+                            .font(.system(size: NotchStyle.body))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
@@ -83,7 +86,7 @@ struct NewTaskView: View {
                 } icon: {
                     Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
                 }
-                .font(.system(size: 11))
+                .font(.system(size: NotchStyle.body))
             }
         }
         .font(.system(size: 12))
@@ -92,10 +95,10 @@ struct NewTaskView: View {
     private func field(_ title: String, text: Binding<String>) -> some View {
         TextField(title, text: text)
             .textFieldStyle(.plain)
-            .font(.system(size: 13))
+            .font(.system(size: NotchStyle.title))
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
-            .background(RoundedRectangle(cornerRadius: 10).fill(Color.primary.opacity(0.07)))
+            .background(RoundedRectangle(cornerRadius: NotchStyle.cardRadius).fill(NotchStyle.field))
     }
 
     private func start() {

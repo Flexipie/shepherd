@@ -7,6 +7,7 @@ struct StateGlyph: View {
     let status: HerdStatus
     var isLive = true
     var size: CGFloat = 13
+    @Environment(\.isMonochrome) private var isMonochrome
 
     var body: some View {
         Image(systemName: symbol)
@@ -26,11 +27,12 @@ struct StateGlyph: View {
         }
     }
 
+    /// In the notch only blocked keeps a colour; the symbol tells the rest apart.
     private var color: Color {
         switch status {
         case .blocked: .orange
-        case .done: .green
-        case .working: .blue
+        case .done: isMonochrome ? .primary : .green
+        case .working: isMonochrome ? .primary : .blue
         case .idle, .unknown: .secondary
         }
     }

@@ -22,6 +22,7 @@ struct AgentRow: View {
     var onJump: (() -> Void)?
 
     @State private var isHovered = false
+    @Environment(\.isMonochrome) private var isMonochrome
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -88,7 +89,7 @@ struct AgentRow: View {
             Text(checkout.name.isEmpty ? "Untitled" : checkout.name)
                 .font(.system(size: 13, weight: .semibold))
             if checkout.isFocusedInSource {
-                Circle().fill(Color.accentColor).frame(width: 5, height: 5)
+                Circle().fill(isMonochrome ? Color.primary : Color.accentColor).frame(width: 5, height: 5)
             }
         }
         .layoutPriority(1)

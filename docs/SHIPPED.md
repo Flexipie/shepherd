@@ -352,3 +352,9 @@ Oldest first.
   so an open bar with a fractional measured height left a 1-pixel line of wallpaper above it. The
   panel now rounds its frame outward and places the canvas against the frame it got. The app
   target has its first test target, `ShepherdTests`.
+- Notch monochrome refresh (#125): the notch is white and grey on black, orange only for "needs
+  you", with the tokens in `NotchStyle` and an `isMonochrome` environment flag the bar sets so the
+  shared rows, cards, meters and buttons change in the notch and not in the palette. Thicker
+  meters that animate, one sliding tab pill with faint ⌘1 and ⌘2, a solid white Start button,
+  Return hints, hover on stage buttons, and a slide plus fade for tabs and stages (fades with
+  Reduce Motion).
