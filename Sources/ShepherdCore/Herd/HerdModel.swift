@@ -119,6 +119,9 @@ public struct HerdAgent: Sendable, Equatable, Identifiable {
     /// A source- or plugin-provided label for the current state, if any.
     public let statusLabel: String?
     public let since: Since?
+    /// For a screen reading, when the screen settled back on `status` after a change that did not
+    /// settle, such as a turn that ended within the settle time. Later than `since`; nil otherwise.
+    public let confirmed: Date?
     /// The agent's own tokens; its project's are on the project.
     public let tokens: [String: String]
     /// The source's own UI has this agent focused, so the user may be looking at it.
@@ -136,7 +139,8 @@ public struct HerdAgent: Sendable, Equatable, Identifiable {
     public let isInferred: Bool
 
     public init(id: AgentID, kind: String? = nil, name: String, projectID: ProjectID? = nil, project: String = "",
-                status: HerdStatus, statusLabel: String? = nil, since: Since? = nil, tokens: [String: String] = [:],
+                status: HerdStatus, statusLabel: String? = nil, since: Since? = nil, confirmed: Date? = nil,
+                tokens: [String: String] = [:],
                 isFocusedInSource: Bool = false, session: AgentSession? = nil, message: String? = nil,
                 question: String? = nil, cwd: String? = nil, isInferred: Bool = false) {
         self.id = id
@@ -147,6 +151,7 @@ public struct HerdAgent: Sendable, Equatable, Identifiable {
         self.status = status
         self.statusLabel = statusLabel
         self.since = since
+        self.confirmed = confirmed
         self.tokens = tokens
         self.isFocusedInSource = isFocusedInSource
         self.session = session

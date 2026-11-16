@@ -48,8 +48,11 @@ struct PaneTracker {
         var shown: HerdStatus
         /// When `shown` began.
         var since: Date
-        /// A different state the screen now shows, and since when, not yet held for `settle`.
+        /// A state the screen now shows, and since when, not yet held for `settle`: a different one,
+        /// or `shown` again after a different one was pending.
         var pending: Pending?
+        /// When the screen settled back on `shown` after a change that did not settle, nil until then.
+        var confirmed: Date? = nil
         /// The pane as it was last seen, kept so its going away can say what it was.
         var observation: PaneObservation
     }
@@ -94,18 +97,26 @@ struct PaneTracker {
             }
             entry.observation = observation
             if target == entry.shown {
-                entry.pending = nil
+                // Back before the change settled: once that holds too, the screen confirmed its state again.
+                if let pending = entry.pending, pending.status != target {
+                    entry.pending = Pending(status: target, since: now)
+                } else if let pending = entry.pending, now.timeIntervalSince(pending.since) >= Self.settle {
+                    entry.confirmed = pending.since
+                    entry.pending = nil
+                }
             } else if target == .blocked {
                 transitions.append(Self.transition(observation, from: entry.shown, to: target, at: now))
                 entry.shown = target
                 entry.since = now
                 entry.pending = nil
+                entry.confirmed = nil
             } else if let pending = entry.pending, pending.status == target {
                 if now.timeIntervalSince(pending.since) >= Self.settle {
                     transitions.append(Self.transition(observation, from: entry.shown, to: target, at: pending.since))
                     entry.shown = target
                     entry.since = pending.since
                     entry.pending = nil
+                    entry.confirmed = nil
                 }
             } else {
                 entry.pending = Pending(status: target, since: now)
@@ -154,6 +165,7 @@ struct PaneTracker {
                          name: observation.kind,
                          projectID: path.isEmpty ? nil : ProjectID(source: source, local: path),
                          project: projectName(path), status: entry.shown, since: Since(entry.since, .exact),
+                         confirmed: entry.confirmed,
                          isFocusedInSource: observation.isFocused, cwd: observation.path.isEmpty ? nil : observation.path,
                          isInferred: true)
     }

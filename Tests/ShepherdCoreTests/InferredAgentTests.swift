@@ -192,6 +192,22 @@ import Testing
         #expect(store.lastTransitions == [told])
     }
 
+    // A turn that ends before the screen's working settled leaves its idle begun before the report's
+    // working; the screen settling back on idle after it counts (#118). A blocked report keeps needs-you.
+    @Test func aWorkingReportGivesWayToAScreenThatSettledBackOnIdle() {
+        let store = makeStore()
+        let back = HerdAgent(id: AgentID(source: "tmux", local: Self.pane), kind: "claude", name: "claude",
+                             projectID: ProjectID(source: "tmux", local: folder), project: "app", status: .idle,
+                             since: Since(Date(timeIntervalSince1970: 90), .exact),
+                             confirmed: Date(timeIntervalSince1970: 102), isInferred: true)
+        store.apply(SourceUpdate(agents: [back], state: .live), from: "tmux")
+        store.apply(SourceUpdate(agents: [reportAgent(status: .working, at: 100)], state: .live), from: "report")
+        #expect(store.agents.map(\.status) == [.idle])
+        store.apply(SourceUpdate(agents: [reportAgent(status: .blocked, at: 101)], state: .live), from: "report")
+        #expect(store.agents.map(\.status) == [.blocked])
+        #expect(store.needsYou.map(\.id) == [back.id])
+    }
+
     // The usual approval: the report blocks after the screen last settled, so the report's state stands,
     // and a done report over an idle screen stays done.
     @Test func aReportNewerThanTheScreenKeepsTheRow() {

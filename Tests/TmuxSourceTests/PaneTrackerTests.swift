@@ -56,6 +56,33 @@ import Testing
         #expect(back.agents.first?.status == .working)
     }
 
+    // A turn that ends before its working settled: the screen is back on idle, which counts once it holds (#118).
+    @Test func aChangeThatDidNotSettleConfirmsTheStateOnceTheScreenHoldsIt() {
+        var tracker = PaneTracker()
+        _ = tracker.apply([pane(.idle)], at: start)
+        _ = tracker.apply([pane(.working, seen: start.addingTimeInterval(1))], at: start.addingTimeInterval(1))
+        let back = tracker.apply([pane(.idle)], at: start.addingTimeInterval(1.5))
+        #expect(back.agents.first?.confirmed == nil)
+        #expect(back.nextDeadline == start.addingTimeInterval(3.5))
+        let held = tracker.apply([pane(.idle)], at: start.addingTimeInterval(3.5))
+        #expect(held.transitions.isEmpty)
+        #expect(held.agents.first?.status == .idle)
+        #expect(held.agents.first?.since == Since(start, .exact))
+        #expect(held.agents.first?.confirmed == start.addingTimeInterval(1.5))
+    }
+
+    @Test func aStateBackForOneReadIsNotConfirmed() {
+        var tracker = PaneTracker()
+        _ = tracker.apply([pane(.idle)], at: start)
+        _ = tracker.apply([pane(.working, seen: start.addingTimeInterval(1))], at: start.addingTimeInterval(1))
+        _ = tracker.apply([pane(.idle)], at: start.addingTimeInterval(1.5))
+        let again = tracker.apply([pane(.working, seen: start.addingTimeInterval(1.6))], at: start.addingTimeInterval(1.6))
+        let later = tracker.apply([pane(.working, seen: start.addingTimeInterval(3.6))], at: start.addingTimeInterval(3.6))
+        #expect(again.agents.first?.confirmed == nil)
+        #expect(later.agents.first?.status == .working)
+        #expect(later.agents.first?.confirmed == nil)
+    }
+
     @Test func workingGoesStaleWhenNoReadHasSeenIt() {
         var tracker = PaneTracker()
         _ = tracker.apply([pane(.working)], at: start)

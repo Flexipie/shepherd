@@ -358,3 +358,9 @@ Oldest first.
   meters that animate, one sliding tab pill with faint ⌘1 and ⌘2, a solid white Start button,
   Return hints, hover on stage buttons, and a slide plus fade for tabs and stages (fades with
   Reduce Motion).
+- Merged tmux row shows idle after a turn that ended inside the settle time (#118): Esc right
+  after submitting, or a turn that ends at once with no Stop hook, left the screen's idle begun
+  before the report's working, since its brief working never settled, so the row read working
+  until the report went quiet (15 min). A screen reading now carries `confirmed`, when the screen
+  settled back on its state after a change that did not, and a working report gives way to it.
+  Blocked and done reports keep the old rule.

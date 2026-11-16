@@ -221,6 +221,51 @@ struct TmuxSourceTests {
         #expect(try String(contentsOf: answer, encoding: .utf8) == "1\n")
     }
 
+    // Esc right after submitting: the screen works for under the settle time and is idle again, and
+    // no hook says so. The row shows idle once the screen holds it, not after the report goes quiet (#118).
+    @Test func aTurnEndedInsideTheSettleWindowShowsIdle() async throws {
+        let folder = try scratch()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let go = folder.appending(path: "go")
+        let clear = "printf '\\033[2J\\033[H'"
+        try """
+        #!/bin/sh
+        cat <<'SCREEN'
+        \(Self.idle)
+        SCREEN
+        while [ ! -f \(go.path) ]; do sleep 0.1; done
+        \(clear)
+        cat <<'SCREEN'
+        \(Self.working)
+        SCREEN
+        sleep 0.5
+        \(clear)
+        cat <<'SCREEN'
+        \(Self.idle)
+        SCREEN
+        sleep 120
+
+        """.write(to: folder.appending(path: "claude"), atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: folder.appending(path: "claude").path)
+        let tmux = try PrivateTmux(binary: binary, folder: folder, command: "\(folder.path)/claude")
+        let spool = ReportSpool(directory: folder.appending(path: "reports"))
+        let store = HerdStore()
+        store.add(ReportSource(spool: spool, debounce: .milliseconds(10)))
+        let (_, source) = try running(folder, store: store)
+        defer { Task { await source.stop() } }
+        await until { store.agents.first?.status == .idle }
+        #expect(store.agents.first?.status == .idle)
+
+        try spool.write(ReportFile(agent: "tmux:\(tmux.socket):%0", status: .working, kind: "claude", cwd: folder.path,
+                                   updatedAt: Date()))
+        try Data().write(to: go)
+        await until { store.agents.first?.isInferred == false }
+        #expect(store.agents.map(\.status) == [.working])
+        await until { store.agents.first?.status == .idle }
+        #expect(store.agents.map(\.status) == [.idle])
+        #expect(store.agents.first?.isInferred == true)
+    }
+
     /// A terminal attached to `session`, as `tmux attach` in a terminal window: `script` gives it a
     /// tty. Ends when the test does.
     func attach(_ tmux: PrivateTmux, _ session: String) throws -> Process {
