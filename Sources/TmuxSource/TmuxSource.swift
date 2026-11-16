@@ -21,8 +21,8 @@ public final class TmuxSource: AgentSource {
     static let startRetryDelay: Duration = .seconds(5)
     /// Further listings after a non-agent pane's command changed (`scheduleRechecks`), each after the last.
     static let recheckDelays: [Duration] = [.seconds(4), .seconds(10)]
-    /// One more read after a pane the subscription reported changed (`scheduleFollowUp`).
-    static let followUpDelay: Duration = .milliseconds(1100)
+    /// Two more reads after a pane's last output (`scheduleFollowUp`), each this long after it.
+    static let followUpDelays: [Duration] = [.milliseconds(1100), .milliseconds(2500)]
 
     public let id = TmuxSource.sourceID
     public let displayName = "tmux"
@@ -355,7 +355,7 @@ public final class TmuxSource: AgentSource {
                 key: key, socket: pane.socket, paneID: pane.paneID, windowID: pane.windowID, session: pane.session,
                 kind: agent.kind, path: pane.path, checkout: agent.checkout,
                 isFocused: pane.isActive && clients.contains { $0.session == pane.session },
-                status: agent.status, workingSeen: agent.status == .working ? now : nil)
+                status: agent.status, workingSeen: agent.status == .working ? now : nil, readAt: now)
         }
         observations = current
         listedPanes = scan.panes
@@ -411,6 +411,7 @@ public final class TmuxSource: AgentSource {
             let key = PaneObservation.key(socket: socket, paneID: pane)
             if observations[key] != nil {
                 scheduleRead(key)
+                scheduleFollowUp(key)
             } else if !listedPanes.contains(key) {
                 scheduleList(after: Self.newPaneDelay)
             }
@@ -488,15 +489,21 @@ public final class TmuxSource: AgentSource {
         }
     }
 
-    /// One more read a little after a subscription's: the format counts window activity in whole
-    /// seconds, so a change later in the same second, with the cursor where it was, shows no new value.
+    /// Reads after a pane's output stops. The first: the subscription's format counts window activity
+    /// in whole seconds, so a change later in the same second, with the cursor where it was, shows no
+    /// new value. The second comes after the screen had time to settle, so a turn that ended at once is
+    /// read holding idle (`HerdAgent.confirmed`). New output starts them again; a quiet pane is not read.
     private func scheduleFollowUp(_ key: String) {
         followUps[key]?.cancel()
         followUps[key] = Task { [weak self] in
-            try? await Task.sleep(for: Self.followUpDelay)
-            guard !Task.isCancelled, let self else { return }
-            self.followUps[key] = nil
-            self.scheduleRead(key, after: .zero)
+            var waited: Duration = .zero
+            for delay in Self.followUpDelays {
+                try? await Task.sleep(for: delay - waited)
+                waited = delay
+                guard !Task.isCancelled, let self else { return }
+                self.scheduleRead(key, after: .zero)
+            }
+            self?.followUps[key] = nil
         }
     }
 
@@ -511,6 +518,7 @@ public final class TmuxSource: AgentSource {
         let now = Date()
         observations[key]?.status = status
         observations[key]?.workingSeen = status == .working ? now : nil
+        observations[key]?.readAt = now
         publish(at: now)
     }
 
