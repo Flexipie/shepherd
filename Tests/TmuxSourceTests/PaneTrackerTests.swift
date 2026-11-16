@@ -6,10 +6,11 @@ import Testing
 @Suite struct PaneTrackerTests {
     let start = Date(timeIntervalSince1970: 1_800_000_000)
 
-    func pane(_ status: HerdStatus, seen: Date? = nil, path: String = "/work/app", paneID: String = "%1") -> PaneObservation {
+    func pane(_ status: HerdStatus, seen: Date? = nil, read: Date? = nil, path: String = "/work/app",
+              paneID: String = "%1") -> PaneObservation {
         PaneObservation(key: PaneObservation.key(socket: "/tmp/s", paneID: paneID), socket: "/tmp/s", paneID: paneID,
                         windowID: "@0", session: "w", kind: "claude", path: path, isFocused: false, status: status,
-                        workingSeen: status == .working ? (seen ?? start) : nil)
+                        workingSeen: status == .working ? (seen ?? start) : nil, readAt: read)
     }
 
     @Test func aKeyIsTheReportIdentityFormat() {
@@ -56,31 +57,35 @@ import Testing
         #expect(back.agents.first?.status == .working)
     }
 
-    // A turn that ends before its working settled: the screen is back on idle, which counts once it holds (#118).
-    @Test func aChangeThatDidNotSettleConfirmsTheStateOnceTheScreenHoldsIt() {
+    // The last read that showed the state with nothing else pending, so a merged row can tell a turn
+    // that ended inside the settle time (#118). A read back before a change settled waits for it too.
+    @Test func confirmedIsTheLastReadThatShowedTheStateHeld() {
         var tracker = PaneTracker()
-        _ = tracker.apply([pane(.idle)], at: start)
-        _ = tracker.apply([pane(.working, seen: start.addingTimeInterval(1))], at: start.addingTimeInterval(1))
-        let back = tracker.apply([pane(.idle)], at: start.addingTimeInterval(1.5))
-        #expect(back.agents.first?.confirmed == nil)
-        #expect(back.nextDeadline == start.addingTimeInterval(3.5))
-        let held = tracker.apply([pane(.idle)], at: start.addingTimeInterval(3.5))
+        _ = tracker.apply([pane(.idle, read: start)], at: start)
+        let steady = tracker.apply([pane(.idle, read: start.addingTimeInterval(0.5))], at: start.addingTimeInterval(0.5))
+        #expect(steady.agents.first?.confirmed == start.addingTimeInterval(0.5))
+        let one = start.addingTimeInterval(1), back = start.addingTimeInterval(1.5)
+        _ = tracker.apply([pane(.working, seen: one, read: one)], at: one)
+        let early = tracker.apply([pane(.idle, read: back)], at: back)
+        #expect(early.agents.first?.confirmed == start.addingTimeInterval(0.5))
+        #expect(early.nextDeadline == start.addingTimeInterval(3.5))
+        let held = tracker.apply([pane(.idle, read: back)], at: start.addingTimeInterval(3.5))
         #expect(held.transitions.isEmpty)
-        #expect(held.agents.first?.status == .idle)
         #expect(held.agents.first?.since == Since(start, .exact))
-        #expect(held.agents.first?.confirmed == start.addingTimeInterval(1.5))
+        #expect(held.agents.first?.confirmed == back)
     }
 
     @Test func aStateBackForOneReadIsNotConfirmed() {
         var tracker = PaneTracker()
-        _ = tracker.apply([pane(.idle)], at: start)
-        _ = tracker.apply([pane(.working, seen: start.addingTimeInterval(1))], at: start.addingTimeInterval(1))
-        _ = tracker.apply([pane(.idle)], at: start.addingTimeInterval(1.5))
-        let again = tracker.apply([pane(.working, seen: start.addingTimeInterval(1.6))], at: start.addingTimeInterval(1.6))
-        let later = tracker.apply([pane(.working, seen: start.addingTimeInterval(3.6))], at: start.addingTimeInterval(3.6))
-        #expect(again.agents.first?.confirmed == nil)
+        _ = tracker.apply([pane(.idle, read: start)], at: start)
+        let times = [1, 1.5, 1.6, 3.6].map { start.addingTimeInterval($0) }
+        _ = tracker.apply([pane(.working, seen: times[0], read: times[0])], at: times[0])
+        _ = tracker.apply([pane(.idle, read: times[1])], at: times[1])
+        _ = tracker.apply([pane(.working, seen: times[2], read: times[2])], at: times[2])
+        let later = tracker.apply([pane(.working, seen: times[3], read: times[3])], at: times[3])
         #expect(later.agents.first?.status == .working)
-        #expect(later.agents.first?.confirmed == nil)
+        #expect(later.agents.first?.since == Since(times[2], .exact))
+        #expect(later.agents.first?.confirmed == times[3])
     }
 
     @Test func workingGoesStaleWhenNoReadHasSeenIt() {

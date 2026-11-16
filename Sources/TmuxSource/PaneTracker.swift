@@ -19,6 +19,8 @@ struct PaneObservation: Equatable {
     var status: HerdStatus
     /// When the last read showed `working`, nil otherwise.
     var workingSeen: Date?
+    /// When the screen was last read, nil before the first read.
+    var readAt: Date? = nil
 
     /// The same key `ReportIdentity` gives a pane, so a report and a screen reading of one pane meet.
     static func key(socket: String, paneID: String) -> String {
@@ -40,7 +42,7 @@ struct PaneObservation: Equatable {
 /// `working` reading also goes stale when no read has seen it for `quietLimit`, the same rule as
 /// `ReportTracker`.
 struct PaneTracker {
-    static let settle: TimeInterval = 2
+    static let settle = HerdAgent.screenSettle
     static let quietLimit: TimeInterval = 15 * 60
     static let source: SourceID = "tmux"
 
@@ -51,7 +53,7 @@ struct PaneTracker {
         /// A state the screen now shows, and since when, not yet held for `settle`: a different one,
         /// or `shown` again after a different one was pending.
         var pending: Pending?
-        /// When the screen settled back on `shown` after a change that did not settle, nil until then.
+        /// When a read last showed `shown` with no other state pending.
         var confirmed: Date? = nil
         /// The pane as it was last seen, kept so its going away can say what it was.
         var observation: PaneObservation
@@ -89,7 +91,8 @@ struct PaneTracker {
             guard let observation = current[key] else { continue }
             let target = Self.target(observation, at: now)
             guard var entry = entries[key] else {
-                entries[key] = Entry(shown: target, since: now, pending: nil, observation: observation)
+                entries[key] = Entry(shown: target, since: now, pending: nil, confirmed: observation.readAt,
+                                     observation: observation)
                 if hasBaseline {
                     transitions.append(Self.transition(observation, from: nil, to: target, at: now))
                 }
@@ -97,11 +100,10 @@ struct PaneTracker {
             }
             entry.observation = observation
             if target == entry.shown {
-                // Back before the change settled: once that holds too, the screen confirmed its state again.
+                // Back before the change settled: that waits for `settle` too, so one read back does not count.
                 if let pending = entry.pending, pending.status != target {
                     entry.pending = Pending(status: target, since: now)
                 } else if let pending = entry.pending, now.timeIntervalSince(pending.since) >= Self.settle {
-                    entry.confirmed = pending.since
                     entry.pending = nil
                 }
             } else if target == .blocked {
@@ -109,18 +111,17 @@ struct PaneTracker {
                 entry.shown = target
                 entry.since = now
                 entry.pending = nil
-                entry.confirmed = nil
             } else if let pending = entry.pending, pending.status == target {
                 if now.timeIntervalSince(pending.since) >= Self.settle {
                     transitions.append(Self.transition(observation, from: entry.shown, to: target, at: pending.since))
                     entry.shown = target
                     entry.since = pending.since
                     entry.pending = nil
-                    entry.confirmed = nil
                 }
             } else {
                 entry.pending = Pending(status: target, since: now)
             }
+            if target == entry.shown, entry.pending == nil { entry.confirmed = observation.readAt }
             if let pending = entry.pending {
                 deadlines.append(pending.since.addingTimeInterval(Self.settle))
             }

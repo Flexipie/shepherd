@@ -192,20 +192,25 @@ import Testing
         #expect(store.lastTransitions == [told])
     }
 
-    // A turn that ends before the screen's working settled leaves its idle begun before the report's
-    // working; the screen settling back on idle after it counts (#118). A blocked report keeps needs-you.
-    @Test func aWorkingReportGivesWayToAScreenThatSettledBackOnIdle() {
+    // A turn that ends inside the settle time leaves the screen's idle begun before the report's
+    // working. A read that late still showing idle ends it (#118); one right after the prompt, before
+    // the spinner draws, does not. A blocked report keeps needs-you.
+    @Test func aWorkingReportGivesWayToAnIdleScreenReadAfterTheSettleTime() {
         let store = makeStore()
-        let back = HerdAgent(id: AgentID(source: "tmux", local: Self.pane), kind: "claude", name: "claude",
-                             projectID: ProjectID(source: "tmux", local: folder), project: "app", status: .idle,
-                             since: Since(Date(timeIntervalSince1970: 90), .exact),
-                             confirmed: Date(timeIntervalSince1970: 102), isInferred: true)
-        store.apply(SourceUpdate(agents: [back], state: .live), from: "tmux")
+        func screen(read: TimeInterval) -> HerdAgent {
+            HerdAgent(id: AgentID(source: "tmux", local: Self.pane), kind: "claude", name: "claude",
+                      projectID: ProjectID(source: "tmux", local: folder), project: "app", status: .idle,
+                      since: Since(Date(timeIntervalSince1970: 90), .exact),
+                      confirmed: Date(timeIntervalSince1970: read), isInferred: true)
+        }
+        store.apply(SourceUpdate(agents: [screen(read: 101)], state: .live), from: "tmux")
         store.apply(SourceUpdate(agents: [reportAgent(status: .working, at: 100)], state: .live), from: "report")
+        #expect(store.agents.map(\.status) == [.working])
+        store.apply(SourceUpdate(agents: [screen(read: 102)], state: .live), from: "tmux")
         #expect(store.agents.map(\.status) == [.idle])
-        store.apply(SourceUpdate(agents: [reportAgent(status: .blocked, at: 101)], state: .live), from: "report")
+        store.apply(SourceUpdate(agents: [reportAgent(status: .blocked, at: 99)], state: .live), from: "report")
         #expect(store.agents.map(\.status) == [.blocked])
-        #expect(store.needsYou.map(\.id) == [back.id])
+        #expect(store.needsYou.map(\.id) == [AgentID(source: "tmux", local: Self.pane)])
     }
 
     // The usual approval: the report blocks after the screen last settled, so the report's state stands,

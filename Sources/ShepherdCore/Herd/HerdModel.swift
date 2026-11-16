@@ -119,8 +119,8 @@ public struct HerdAgent: Sendable, Equatable, Identifiable {
     /// A source- or plugin-provided label for the current state, if any.
     public let statusLabel: String?
     public let since: Since?
-    /// For a screen reading, when the screen settled back on `status` after a change that did not
-    /// settle, such as a turn that ended within the settle time. Later than `since`; nil otherwise.
+    /// For a screen reading, when a read last showed `status` with no other state pending; nil
+    /// before any read and for other sources.
     public let confirmed: Date?
     /// The agent's own tokens; its project's are on the project.
     public let tokens: [String: String]
@@ -163,6 +163,10 @@ public struct HerdAgent: Sendable, Equatable, Identifiable {
 }
 
 extension HerdAgent {
+    /// How long a screen reading must hold a new state before it counts: a redraw can show neither
+    /// marker for a moment.
+    public static let screenSettle: TimeInterval = 2
+
     /// What the agent is doing, in words: the source's label if it has one.
     public var statusText: String {
         if let statusLabel { return statusLabel }

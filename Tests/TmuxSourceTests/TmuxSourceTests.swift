@@ -221,8 +221,9 @@ struct TmuxSourceTests {
         #expect(try String(contentsOf: answer, encoding: .utf8) == "1\n")
     }
 
-    // Esc right after submitting: the screen works for under the settle time and is idle again, and
-    // no hook says so. The row shows idle once the screen holds it, not after the report goes quiet (#118).
+    // A turn that ends at once (an API error, or Esc right after submitting): the screen is idle again
+    // before a read sees it work, and no hook says so. The row shows idle once a read after the settle
+    // time still shows it, not after the report goes quiet (#118).
     @Test func aTurnEndedInsideTheSettleWindowShowsIdle() async throws {
         let folder = try scratch()
         defer { try? FileManager.default.removeItem(at: folder) }
@@ -238,7 +239,6 @@ struct TmuxSourceTests {
         cat <<'SCREEN'
         \(Self.working)
         SCREEN
-        sleep 1.2
         \(clear)
         cat <<'SCREEN'
         \(Self.idle)

@@ -53,15 +53,18 @@ struct HerdMerge: Equatable {
     /// turn, or No at an approval), so its report stays working or blocked while the screen shows
     /// idle; a working report gone quiet reads unknown while the screen may still read working. The
     /// screen counts once it settled on idle or working after the report's state began, except a
-    /// done report over an idle screen, which is the same moment told better. Against a working
-    /// report, settling back on its state counts too: a turn that ended before its working settled.
-    /// A blocked report keeps to when the screen's state began, so a redraw never takes it away.
+    /// done report over an idle screen, which is the same moment told better. A working report also
+    /// gives way when a read `screenSettle` after it began still shows idle: a turn that ended before
+    /// the screen's working settled, or before any read saw it. A blocked report keeps to when the
+    /// screen's state began, so a redraw never takes needs-you away.
     private static func isStale(_ report: HerdAgent, against screen: HerdAgent) -> Bool {
         guard [.idle, .working].contains(screen.status), screen.status != report.status,
               !(report.status == .done && screen.status == .idle) else { return false }
         if report.status == .unknown { return true }
-        let screenTime = report.status == .working ? screen.confirmed ?? screen.since?.date : screen.since?.date
-        guard let reported = report.since?.date, let shown = screenTime else { return false }
+        guard let reported = report.since?.date else { return false }
+        if report.status == .working, let read = screen.confirmed,
+           read.timeIntervalSince(reported) >= HerdAgent.screenSettle { return true }
+        guard let shown = screen.since?.date else { return false }
         return shown > reported
     }
 
