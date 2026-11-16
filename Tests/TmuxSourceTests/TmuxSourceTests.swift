@@ -238,7 +238,7 @@ struct TmuxSourceTests {
         cat <<'SCREEN'
         \(Self.working)
         SCREEN
-        sleep 0.5
+        sleep 1.2
         \(clear)
         cat <<'SCREEN'
         \(Self.idle)
