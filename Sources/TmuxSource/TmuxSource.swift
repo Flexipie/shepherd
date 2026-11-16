@@ -355,7 +355,7 @@ public final class TmuxSource: AgentSource {
                 key: key, socket: pane.socket, paneID: pane.paneID, windowID: pane.windowID, session: pane.session,
                 kind: agent.kind, path: pane.path, checkout: agent.checkout,
                 isFocused: pane.isActive && clients.contains { $0.session == pane.session },
-                status: agent.status, workingSeen: agent.status == .working ? now : nil)
+                status: agent.status, workingSeen: agent.status == .working ? now : nil, readAt: now)
         }
         observations = current
         listedPanes = scan.panes
