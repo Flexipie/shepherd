@@ -1,0 +1,63 @@
+# Chaperone v20 harness profile. Mirrors the frontmatter of ~/dotfiles/claude/pipeline/profiles/flexipie-shepherd.md;
+# the harness reads [tests], [size] and [diff] only from this file on the base branch.
+slug = "Flexipie/shepherd"
+name = "shepherd"
+
+[tracker]
+kind = "github"
+key = "#[0-9]+"
+
+[git]
+base = "main"
+branch = "{short}"
+
+[pr]
+flow = "pr"
+create = "gh"
+address = "builtin"
+merge = "squash"
+stack = "none"
+
+[review]
+daisy = false
+
+[lanes]
+enabled = true
+
+# Lane records live in Chaperone's own ledger.
+[ledger]
+kind = "chaperone"
+
+# What `check run tests` runs: CI's `make build` and `make test` (no target_dir: `.build` is per checkout).
+[tests]
+commands = [
+  ["swift", "build"],
+  ["swift", "test"],
+]
+
+# The shipped executables, for `chaperone impact --entry-points`.
+[[entry_points]]
+kind = "app"
+name = "Shepherd"
+path = "Sources/Shepherd/main.swift"
+
+[[entry_points]]
+kind = "command"
+name = "shepherd-report"
+path = "Sources/ShepherdReport/main.swift"
+
+# Every tracked file must be in exactly one area, or impact --entry-points refuses.
+[areas]
+herdr = ["Sources/HerdrKit/**", "Sources/HerdrFake/**", "Sources/HerdrSource/**", "Sources/FakeHerdr/**", "Sources/RecordFixture/**"]
+sources = ["Sources/ClaudeSessionSource/**", "Sources/ReportKit/**", "Sources/ReportSource/**", "Sources/ShepherdReport/**", "Sources/TmuxKit/**", "Sources/TmuxSource/**"]
+plugins = ["Sources/ShellPlugins/**", "examples/**"]
+core = ["Sources/ShepherdCore/**", "Sources/ShepherdModules/**"]
+ui = ["Sources/ShepherdUI/**"]
+app = ["Sources/Shepherd/**", "Sources/DemoHerd/**"]
+tests = ["Tests/**"]
+build = ["Package.swift", "Makefile", "scripts/**", ".github/**", ".gitignore"]
+docs = ["docs/**", "README.md", "CLAUDE.md", "LICENSE"]
+
+# Test files, which the 400-line code cap leaves out.
+[size]
+tests = ["Tests/**"]
