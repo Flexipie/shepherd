@@ -221,13 +221,9 @@ struct TmuxSourceTests {
         #expect(try String(contentsOf: answer, encoding: .utf8) == "1\n")
     }
 
-    // A turn that ends at once (an API error, or Esc right after submitting): the screen is idle again
-    // before a read sees it work, and no hook says so. The row shows idle once a read after the settle
-    // time still shows it, not after the report goes quiet (#118).
-    @Test func aTurnEndedInsideTheSettleWindowShowsIdle() async throws {
-        let folder = try scratch()
-        defer { try? FileManager.default.removeItem(at: folder) }
-        let go = folder.appending(path: "go")
+    /// A `claude` script that shows idle, and once `go` exists shows working and idle again at once:
+    /// a turn that ends before a read sees it work.
+    func fakeTurnThatEndsAtOnce(in folder: URL, go: URL) throws {
         let clear = "printf '\\033[2J\\033[H'"
         try """
         #!/bin/sh
@@ -247,6 +243,16 @@ struct TmuxSourceTests {
 
         """.write(to: folder.appending(path: "claude"), atomically: true, encoding: .utf8)
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: folder.appending(path: "claude").path)
+    }
+
+    // A turn that ends at once (an API error, or Esc right after submitting): the screen is idle again
+    // before a read sees it work, and no hook says so. The row shows idle once a read after the settle
+    // time still shows it, not after the report goes quiet (#118).
+    @Test func aTurnEndedInsideTheSettleWindowShowsIdle() async throws {
+        let folder = try scratch()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let go = folder.appending(path: "go")
+        try fakeTurnThatEndsAtOnce(in: folder, go: go)
         let tmux = try PrivateTmux(binary: binary, folder: folder, command: "\(folder.path)/claude")
         let spool = ReportSpool(directory: folder.appending(path: "reports"))
         let store = HerdStore()
@@ -262,6 +268,34 @@ struct TmuxSourceTests {
         await until { store.agents.first?.isInferred == false }
         #expect(store.agents.map(\.status) == [.working])
         await until { store.agents.first?.status == .idle }
+        #expect(store.agents.map(\.status) == [.idle])
+        #expect(store.agents.first?.isInferred == true)
+    }
+
+    // A listing reads every screen as well, so it counts as the screen's last read: a report that comes
+    // after one, dated before the turn ended, still gives way to the idle screen.
+    @Test func aListingCountsAsAReadOfTheScreen() async throws {
+        let folder = try scratch()
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let go = folder.appending(path: "go")
+        try fakeTurnThatEndsAtOnce(in: folder, go: go)
+        let tmux = try PrivateTmux(binary: binary, folder: folder, command: "\(folder.path)/claude")
+        let spool = ReportSpool(directory: folder.appending(path: "reports"))
+        let store = HerdStore()
+        store.add(ReportSource(spool: spool, debounce: .milliseconds(10)))
+        let (_, source) = try running(folder, store: store)
+        defer { Task { await source.stop() } }
+        await until { store.agents.first?.status == .idle }
+        let submitted = Date()
+        try Data().write(to: go)
+        // The follow-up reads are over; a new window makes tmux list every pane again.
+        try await Task.sleep(for: .seconds(3.5))
+        try PrivateTmux.run(binary, ["-S", tmux.socket, "new-window", "-d", "cat"])
+        try await Task.sleep(for: .seconds(1))
+        try spool.write(ReportFile(agent: "tmux:\(tmux.socket):%0", status: .working, kind: "claude", cwd: folder.path,
+                                   updatedAt: submitted))
+        // The row is the screen's before the report lands too, so give it time to land.
+        try await Task.sleep(for: .seconds(1))
         #expect(store.agents.map(\.status) == [.idle])
         #expect(store.agents.first?.isInferred == true)
     }
